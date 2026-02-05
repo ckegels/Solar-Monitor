@@ -8,14 +8,9 @@ A tabletop display to change the way you use and monitor your solar energy produ
 
 Example images of the Solar Display can be found in the `ReadmeImages` folder:
 
-- `solardisplay1.jpg`
-- `solardisplay2.jpg`
-- `solardisplay3.jpg`
-- `solardisplay4.jpg`
-- `solardisplay5.jpg`
-- `solardisplay6.jpg`
-- `solardisplay7.jpg`
-- `solardisplay8.jpg`
+
+![Solar Display example](/ReadmeImages/solardisplay3.jpg)
+
 
 ---
 
@@ -140,3 +135,16 @@ The case can be 3D printed, but the design is **not ideal**. This was one of the
 To screw the display into the case, you will need a **bendable screwdriver attachment** (such as one from an iFixit kit), as access is very tight.
 
 If anyone wants to redesign the case, please PM me for the CAD files.
+
+
+---
+
+## More pictures
+
+![Solar Display example](/ReadmeImages/solardisplay2.jpg)
+![Solar Display example](/ReadmeImages/solardisplay3.jpg)
+![Solar Display example](/ReadmeImages/solardisplay4.jpg)
+![Solar Display example](/ReadmeImages/solardisplay5.jpg)
+![Solar Display example](/ReadmeImages/solardisplay6.jpg)
+![Solar Display example](/ReadmeImages/solardisplay7.jpg)
+![Solar Display example](/ReadmeImages/solardisplay8.jpg)
