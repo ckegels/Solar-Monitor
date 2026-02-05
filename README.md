@@ -48,7 +48,7 @@ Home Assistant is the **backbone** of this project.
 
 #### Files needed in Home Assistant
 
-P these files in the packages folder (config/packages/)
+Place these files in the packages folder (config/packages/)
 
 - **`energy.yaml`**  
   Used for creating energy meters, usable sensors, helpers, and other required entities.
@@ -63,7 +63,7 @@ P these files in the packages folder (config/packages/)
 
 ### Sigenergy Notes
 
-Once the integration is installed, make sure the entity naming is **standardized**.
+Once the integration is installed, make sure the entity naming is the **standard** sigenergy naming.
 
 sensor.sigen_inverter_...
 
@@ -77,7 +77,7 @@ Because I have **two inverters**, I needed to use the *SolarEdge Modbus Multi* i
 
 I also needed an energy file to handle many of the additional calculations.
 
-My current naming convention is:
+My current naming convention is (this is the standard provided by the integration do not change):
 - **B1** – Battery
 - **I1 / I2** – Inverters
 - **M1** – Meter
