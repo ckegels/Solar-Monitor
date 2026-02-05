@@ -3,14 +3,14 @@
 A Display to change the way you use and monitor your solar energy production and your energy consumption.
 
 
-`![Solar Display example](/ReadmeImages/solardisplay1.jpg)`
-`![Solar Display example](/ReadmeImages/solardisplay2.jpg)`
-`![Solar Display example](/ReadmeImages/solardisplay3.jpg)`
-`![Solar Display example](/ReadmeImages/solardisplay4.jpg)`
-`![Solar Display example](/ReadmeImages/solardisplay5.jpg)`
-`![Solar Display example](/ReadmeImages/solardisplay6.jpg)`
-`![Solar Display example](/ReadmeImages/solardisplay7.jpg)`
-`![Solar Display example](/ReadmeImages/solardisplay8.jpg)`
+![Solar Display example](/ReadmeImages/solardisplay1.jpg)
+![Solar Display example](/ReadmeImages/solardisplay2.jpg)
+![Solar Display example](/ReadmeImages/solardisplay3.jpg)
+![Solar Display example](/ReadmeImages/solardisplay4.jpg)
+![Solar Display example](/ReadmeImages/solardisplay5.jpg)
+![Solar Display example](/ReadmeImages/solardisplay6.jpg)
+![Solar Display example](/ReadmeImages/solardisplay7.jpg)
+![Solar Display example](/ReadmeImages/solardisplay8.jpg)
 
 I have never done a git project before, this is the first time i share one of my projects as the amount of time i put into it feels pointless if not one other person can enjoy it with me.
 I just wanted a pretty power flow Display, this idea then snowbaled into, but could i add (insert random graph or value)
