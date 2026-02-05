@@ -63,7 +63,7 @@ P these files in the packages folder (config/packages/)
 
 ### Sigenergy Notes
 
-Once the integration is installed, make sure the entity naming is **standardized**.
+Once the integration is installed, make sure the entity naming is the **standard** sigenergy naming.
 
 sensor.sigen_inverter_...
 
