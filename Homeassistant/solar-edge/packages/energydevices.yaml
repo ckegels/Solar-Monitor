@@ -1,0 +1,14 @@
+#Add Devices for the solar display here.
+#device 1 will create a home assistant entitie called hu_device_1_usage
+#device 2 will create a home assistant entitie called hu_device_2_usage
+#device 3 will create a home assistant entitie called hu_device_3_usage
+#device 4 will create a home assistant entitie called hu_device_4_usage
+#device 5 will create a home assistant entitie called hu_device_5_usage
+
+device1: "sensor.elferweg_energy_channel_a_power"
+device2: "sensor.elferweg_energy_channel_b_power"
+device3: "sensor.elferweg_energy_channel_c_power"
+device4: "sensor.apartment_energy_channel_1_power"
+device5: "sensor.apartment_energy_channel_1_power"
+subpanel1: "sensor.elferweg_energy_channel_a_power"
+subpanel2: "sensor.elferweg_energy_channel_a_power"

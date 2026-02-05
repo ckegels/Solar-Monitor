@@ -1,0 +1,2186 @@
+# ======================================================================
+# ORIGINAL PACKAGE (COMMENTED OUT FOR REFERENCE — ALL ENTITIES INCLUDED)
+# ======================================================================
+# template:
+#   - trigger:
+#       - platform: homeassistant
+#         event: start
+#       - platform: time
+#         at: "00:00:01"     # reset right after midnight
+#       - platform: time_pattern
+#         seconds: "59"      # run at HH:MM:59 every minute (hits 00:59:59, 01:59:59, ...)
+#     sensor:
+#       - name: "Battery SoC Hours"
+#         unique_id: battery_soc_hours
+#         icon: mdi:battery-clock
+#         unit_of_measurement: "%"
+#         state: "{{ states('sensor.solar_battery_soc_rolling') | float(0) | round(1) }}"
+#         attributes:
+#           date: "{{ now().date().isoformat() }}"
+#           h00: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 0 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h00') | default(0) }}
+#             {% endif %}
+#           h01: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 1 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h01') | default(0) }}
+#             {% endif %}
+#           h02: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 2 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h02') | default(0) }}
+#             {% endif %}
+#           h03: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 3 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h03') | default(0) }}
+#             {% endif %}
+#           h04: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 4 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h04') | default(0) }}
+#             {% endif %}
+#           h05: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 5 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h05') | default(0) }}
+#             {% endif %}
+#           h06: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 6 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h06') | default(0) }}
+#             {% endif %}
+#           h07: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 7 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h07') | default(0) }}
+#             {% endif %}
+#           h08: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 8 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h08') | default(0) }}
+#             {% endif %}
+#           h09: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 9 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h09') | default(0) }}
+#             {% endif %}
+#           h10: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 10 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h10') | default(0) }}
+#             {% endif %}
+#           h11: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 11 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h11') | default(0) }}
+#             {% endif %}
+#           h12: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 12 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h12') | default(0) }}
+#             {% endif %}
+#           h13: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 13 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h13') | default(0) }}
+#             {% endif %}
+#           h14: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 14 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h14') | default(0) }}
+#             {% endif %}
+#           h15: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 15 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h15') | default(0) }}
+#             {% endif %}
+#           h16: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 16 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h16') | default(0) }}
+#             {% endif %}
+#           h17: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 17 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h17') | default(0) }}
+#             {% endif %}
+#           h18: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 18 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h18') | default(0) }}
+#             {% endif %}
+#           h19: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 19 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h19') | default(0) }}
+#             {% endif %}
+#           h20: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 20 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h20') | default(0) }}
+#             {% endif %}
+#           h21: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 21 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h21') | default(0) }}
+#             {% endif %}
+#           h22: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 22 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h22') | default(0) }}
+#             {% endif %}
+#           h23: >
+#             {% set ent = 'sensor.battery_soc_hours' %}
+#             {% set soc = states('sensor.solar_battery_soc_rolling') | float(0) | round(1) %}
+#             {% if now().hour == 0 and now().minute == 0 %}
+#               0
+#             {% elif now().hour == 23 and now().minute >= 59 %}
+#               {{ soc }}
+#             {% else %}
+#               {{ state_attr(ent,'h23') | default(0) }}
+#             {% endif %}
+#   # --- 2) NON-TRIGGERED template sensors (all your other sensors + 24 one-liners) ---
+#   - sensor:
+#       # 24 one-liners from the hub (easy to graph)
+#       - name: "Battery SoC H00"
+#         unique_id: solar_battery_soc_by_hour_h00
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h00') }}"
+#       - name: "Battery SoC H01"
+#         unique_id: solar_battery_soc_by_hour_h01
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h01') }}"
+#       - name: "Battery SoC H02"
+#         unique_id: solar_battery_soc_by_hour_h02
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h02') }}"
+#       - name: "Battery SoC H03"
+#         unique_id: solar_battery_soc_by_hour_h03
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h03') }}"
+#       - name: "Battery SoC H04"
+#         unique_id: solar_battery_soc_by_hour_h04
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h04') }}"
+#       - name: "Battery SoC H05"
+#         unique_id: solar_battery_soc_by_hour_h05
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h05') }}"
+#       - name: "Battery SoC H06"
+#         unique_id: solar_battery_soc_by_hour_h06
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h06') }}"
+#       - name: "Battery SoC H07"
+#         unique_id: solar_battery_soc_by_hour_h07
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h07') }}"
+#       - name: "Battery SoC H08"
+#         unique_id: solar_battery_soc_by_hour_h08
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h08') }}"
+#       - name: "Battery SoC H09"
+#         unique_id: solar_battery_soc_by_hour_h09
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h09') }}"
+#       - name: "Battery SoC H10"
+#         unique_id: solar_battery_soc_by_hour_h10
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h10') }}"
+#       - name: "Battery SoC H11"
+#         unique_id: solar_battery_soc_by_hour_h11
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h11') }}"
+#       - name: "Battery SoC H12"
+#         unique_id: solar_battery_soc_by_hour_h12
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h12') }}"
+#       - name: "Battery SoC H13"
+#         unique_id: solar_battery_soc_by_hour_h13
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h13') }}"
+#       - name: "Battery SoC H14"
+#         unique_id: solar_battery_soc_by_hour_h14
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h14') }}"
+#       - name: "Battery SoC H15"
+#         unique_id: solar_battery_soc_by_hour_h15
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h15') }}"
+#       - name: "Battery SoC H16"
+#         unique_id: solar_battery_soc_by_hour_h16
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h16') }}"
+#       - name: "Battery SoC H17"
+#         unique_id: solar_battery_soc_by_hour_h17
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h17') }}"
+#       - name: "Battery SoC H18"
+#         unique_id: solar_battery_soc_by_hour_h18
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h18') }}"
+#       - name: "Battery SoC H19"
+#         unique_id: solar_battery_soc_by_hour_h19
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h19') }}"
+#       - name: "Battery SoC H20"
+#         unique_id: solar_battery_soc_by_hour_h20
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h20') }}"
+#       - name: "Battery SoC H21"
+#         unique_id: solar_battery_soc_by_hour_h21
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h21') }}"
+#       - name: "Battery SoC H22"
+#         unique_id: solar_battery_soc_by_hour_h22
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h22') }}"
+#       - name: "Battery SoC H23"
+#         unique_id: solar_battery_soc_by_hour_h23
+#         unit_of_measurement: "%"
+#         state: "{{ state_attr('sensor.battery_soc_hours','h23') }}"
+#
+#
+#       - name: "Solar Selfconsumption Ratio"
+#         unique_id: solar_selfconsumption_ratio
+#         icon: mdi:percent-outline
+#         unit_of_measurement: "%"
+#         state: >
+#           {% set panel_to_house_daily = states('sensor.solar_panel_to_house_daily') | float(0) %}
+#           {% set battery_in_daily = states('sensor.solar_battery_in_daily') | float(0) %}
+#           {% set exported_power_daily = states('sensor.solar_exported_power_daily') | float(0) %}
+#
+#           {% if (panel_to_house_daily + battery_in_daily + exported_power_daily <= 0) %}
+#             0
+#           {% else %}
+#             {{ ((panel_to_house_daily + battery_in_daily) / (panel_to_house_daily + battery_in_daily + exported_power_daily) * 100) | round (1) }}
+#           {% endif %}
+#       - name: "Solar Autarkie Ratio"
+#         unique_id: solar_autarkie_ratio
+#         icon: mdi:percent-outline
+#         unit_of_measurement: "%"
+#         state: >
+#
+#           {% set house_consumption_daily = states('sensor.solar_house_consumption_daily') | float(0) %}
+#           {% set imported_power_daily = states('sensor.solar_imported_power_daily') | float(0) %}
+#
+#           {% if (house_consumption_daily <= 0) %}
+#             0
+#           {% else %}
+#             {{ ((1 - (imported_power_daily / house_consumption_daily) )*100) | round (1) }}
+#           {% endif %}
+#
+#       - name: "Solar Inverter Effectiveness"
+#         unique_id: solar_inverter_effectiveness
+#         icon: mdi:percent-outline
+#         unit_of_measurement: "%"
+#         state: >
+#           {% set i1_dc_power = states('sensor.solaredge_i1_dc_power') | float(0) %}
+#           {% set i2_dc_power = states('sensor.solaredge_i2_dc_power') | float(0) %}
+#           {% set i1_ac_power = states('sensor.solaredge_i1_ac_power') | float(0) %}
+#           {% set i2_ac_power = states('sensor.solaredge_i2_ac_power') | float(0) %}
+#           {% set inverter_effectiveness = states('sensor.solar_inverter_effectiveness') %}
+#
+#           {% if (is_state('sensor.solar_inverter_effectiveness', 'unknown')) %}
+#             1
+#           {% elif (i1_dc_power + i2_dc_power < 100 or i1_ac_power + i2_ac_power < 100) %}
+#             {{ inverter_effectiveness }}
+#           {% else %}
+#             {{ (i1_ac_power + i2_ac_power) / (i1_dc_power + i2_dc_power) }}
+#           {% endif %}
+#       - name: "Solar Battery Effectiveness"
+#         unique_id: solar_battery_effectiveness
+#         icon: mdi:percent-outline
+#         unit_of_measurement: "%"
+#         state: >
+#           {% set i1_dc_power = states('sensor.solaredge_i1_dc_power') | float(0) %}
+#           {% set i2_dc_power = states('sensor.solaredge_i2_dc_power') | float(0) %}
+#           {% set b1_dc_power = states('sensor.solaredge_b1_dc_power') | float(0) %}
+#           {% set battery_effectiveness = states('sensor.solar_battery_effectiveness') %}
+#           {% if (is_state('sensor.solar_battery_effectiveness', 'unknown') or (solar_battery_effectiveness == 0)) %}
+#             1
+#           {% elif (i1_dc_power + i2_dc_power + b1_dc_power <= 0) %}
+#             {% if (b1_dc_power >= 0 or i1_dc_power + i2_dc_power <= 0) %}
+#               {{ battery_effectiveness }}
+#             {% else %}
+#               {{ (1 - ((b1_dc_power * -1 - (i1_dc_power + i2_dc_power)) / b1_dc_power * -1)) }}
+#             {% endif %}
+#           {% else %}
+#             {{ battery_effectiveness }}
+#           {% endif %}
+#
+#       - name: "Solar Panel Production W"
+#         unique_id: solar_panel_production_w
+#         unit_of_measurement: "W"
+#         icon: mdi:solar-power
+#         state: >
+#           {% set i1_dc_power = states('sensor.solaredge_i1_dc_power') | float(0) %}
+#           {% set i2_dc_power = states('sensor.solaredge_i2_dc_power') | float(0) %}
+#           {% set b1_dc_power = states('sensor.solaredge_b1_dc_power') | float(0) %}
+#
+#           {% if (is_state('sensor.solaredge_i1_dc_power', 'unknown') or is_state('sensor.solaredge_i2_dc_power', 'unknown') or is_state('sensor.solaredge_b1_dc_power', 'unknown')) %}
+#             0
+#           {% elif (i1_dc_power + i2_dc_power + b1_dc_power <= 0) %}
+#             0
+#           {% else %}
+#             {{ (i1_dc_power + i2_dc_power + b1_dc_power) }}
+#           {% endif %}
+#
+#       - name: "Solar Panel To House W"
+#         unique_id: solar_panel_to_house_w
+#         unit_of_measurement: "W"
+#         icon: mdi:solar-power
+#         state: >
+#           {% set i1_dc_power = states('sensor.solaredge_i1_dc_power') | float(0) %}
+#           {% set i2_dc_power = states('sensor.solaredge_i2_dc_power') | float(0) %}
+#           {% set i1_ac_power = states('sensor.solaredge_i1_ac_power') | float(0) %}
+#           {% set i2_ac_power = states('sensor.solaredge_i2_ac_power') | float(0) %}
+#           {% set b1_dc_power = states('sensor.solaredge_b1_dc_power') | float(0) %}
+#           {% set m1_ac_power = states('sensor.solaredge_m1_ac_power') | float(0) %}
+#           {% set inverter_effectiveness = states('sensor.solar_inverter_effectiveness') | float(0) %}
+#
+#           {% if (b1_dc_power >= 0 and m1_ac_power > 0) %}
+#             {% if (i1_dc_power < 0 and i1_ac_power <= 0) %}
+#               {{ (i1_dc_power + i2_ac_power - m1_ac_power) }}
+#             {% else %}
+#               {{ (i1_ac_power + i2_ac_power - m1_ac_power) }}
+#             {% endif %}
+#           {% elif (b1_dc_power >= 0 and m1_ac_power <= 0) %}
+#             {% if (i1_dc_power < 0 and i1_ac_power <= 0) %}
+#               {{ (i1_dc_power + i2_ac_power) }}
+#             {% else %}
+#               {{ (i1_ac_power + i2_ac_power) }}
+#             {% endif %}
+#           {% elif (b1_dc_power < 0) %}
+#             {% if (i1_dc_power + i2_dc_power + b1_dc_power < 0) %}
+#               0
+#             {% else %}
+#               {{ ((i1_dc_power + i2_dc_power + b1_dc_power) * inverter_effectiveness) }}
+#             {% endif %}   
+#           {% else %}
+#             0
+#           {% endif %}
+#
+#
+#
+#
+#       - name: "Solar battery remaining energy kWh"
+#         unique_id: solar_battery_remaining_energy_kwh
+#         unit_of_measurement: "kwh"
+#         icon: mdi:battery-positive
+#         state: >
+#           {% set percentage = states('sensor.solaredge_b1_state_of_energy') | float(0) %}
+#           {% set battery_size = states('sensor.solaredge_b1_maximum_energy') | float(0) %}
+#           {% if (percentage > 0) %}
+#             {{ (battery_size * (percentage / 100) | round (2)) }}
+#           {% endif %}
+#       - name: "Solar battery remaining energy W"
+#         unique_id: solar_battery_remaining_energy_w
+#         unit_of_measurement: "w"
+#         icon: mdi:battery-positive
+#         state: >
+#           {% set percentage = states('sensor.solaredge_b1_state_of_energy') | float(0) %}
+#           {% set battery_size = states('sensor.solaredge_b1_maximum_energy') | float(0) %}
+#           {% if (percentage > 0) %}
+#             {{ ((battery_size * (percentage / 100)*1000) | round (2)) }}
+#           {% endif %}
+#       - name: "Solar Panel To Battery W"
+#         unique_id: solar_panel_to_battery_w
+#         unit_of_measurement: "W"
+#         icon: mdi:solar-power
+#         state: >
+#           {% set b1_dc_power = states('sensor.solaredge_b1_dc_power') | float(0) %}
+#           {% set grid_to_battery_w = states('sensor.solar_grid_to_battery_w') | float(0) %}
+#
+#           {% if (b1_dc_power > 0) %}
+#             {% if (grid_to_battery_w > 0) %}
+#               0
+#             {% else %}
+#               {{ b1_dc_power }}
+#             {% endif %} 
+#           {% else %}
+#             0
+#           {% endif %}
+#
+#       - name: "Solar Panel To Grid W"
+#         unique_id: solar_panel_to_grid_w
+#         unit_of_measurement: "W"
+#         icon: mdi:solar-power
+#         state: >
+#           {% set panel_production_w = states('sensor.solar_panel_production_w') | float(0) %}
+#           {% set exported_power_w = states('sensor.solar_exported_power_w') | float(0) %}
+#
+#           {% if (exported_power_w > 0 and panel_production_w > 0) %}
+#             {% if (exported_power_w > panel_production_w) %}
+#               {{ panel_production_w }}
+#             {% else %}
+#               {{ exported_power_w }}
+#             {% endif %}
+#           {% else %}
+#             0
+#           {% endif %}
+#
+#       - name: "Solar Battery To House W"
+#         unique_id: solar_battery_to_house_w
+#         unit_of_measurement: "W"
+#         icon: mdi:battery-negative
+#         state: >
+#           {% set b1_dc_power = states('sensor.solaredge_b1_dc_power') | float(0) %}
+#           {% set battery_effectiveness = states('sensor.solar_battery_effectiveness') | float(0) %}
+#           {% set inverter_effectiveness = states('sensor.solar_inverter_effectiveness') | float(0) %}
+#
+#           {% if (b1_dc_power < 0) %}
+#             {{ (b1_dc_power * -1 * battery_effectiveness * inverter_effectiveness) }}
+#           {% else %}
+#             0
+#           {% endif %}
+#
+#       - name: "Solar Battery To Grid W"
+#         unique_id: solar_battery_to_grid_w
+#         unit_of_measurement: "W"
+#         icon: mdi:solar-power
+#         state: >
+#           {% set exported_power_w = states('sensor.solar_exported_power_w') | float(0) %}
+#           {% set panel_to_grid_w = states('sensor.solar_panel_to_grid_w') | float(0) %}
+#
+#           {% if (exported_power_w > panel_to_grid_w) %}
+#             {{ exported_power_w - panel_to_grid_w }}
+#           {% else %}
+#             0
+#           {% endif %}
+#
+#       - name: "Solar Grid To House W"
+#         unique_id: solar_grid_to_house_w
+#         unit_of_measurement: "W"
+#         icon: mdi:transmission-tower-export
+#         state: >
+#           {% set m1_ac_power = states('sensor.solaredge_m1_ac_power') | float(0) %}
+#
+#           {% if (m1_ac_power <= 0) %}
+#             {{ (m1_ac_power * -1) }}
+#           {% else %}
+#             0
+#           {% endif %}
+#
+#       - name: "Solar Grid To Battery W"
+#         unique_id: solar_grid_to_battery_w
+#         unit_of_measurement: "W"
+#         icon: mdi:battery-positive
+#         state: >
+#           {% set i1_ac_power = states('sensor.solaredge_i1_ac_power') | float(0) %}
+#           {% set i2_ac_power = states('sensor.solaredge_i2_ac_power') | float(0) %}
+#           {% set b1_dc_power = states('sensor.solaredge_b1_dc_power') | float(0) %}
+#
+#           {% if (i1_ac_power <= 0 and i2_ac_power <= 0 and b1_dc_power > 0) %}
+#             {{ b1_dc_power }}
+#           {% else %}
+#             0
+#           {% endif %}
+#
+#       - name: "Solar Battery In W"
+#         unique_id: solar_battery_in_w
+#         unit_of_measurement: "W"
+#         icon: mdi:battery-positive
+#         state: >
+#           {% set grid_to_battery_w = states('sensor.solar_grid_to_battery_w') | float(0) %}
+#           {% set panel_to_battery_w = states('sensor.solar_panel_to_battery_w') | float(0) %}
+#
+#           {{ (grid_to_battery_w + panel_to_battery_w) }}
+#
+#       - name: "Solar House Consumption W"
+#         unique_id: solar_house_consumption_w
+#         unit_of_measurement: "W"
+#         icon: mdi:home
+#         state: >
+#           {% set panel_to_house_w = states('sensor.solar_panel_to_house_w') | float(0) %}
+#           {% set battery_to_house_w = states('sensor.solar_battery_to_house_w') | float(0) %}
+#           {% set grid_to_house_w = states('sensor.solar_grid_to_house_w') | float(0) %}
+#
+#           {{ (panel_to_house_w + battery_to_house_w + grid_to_house_w) }}
+#
+#       - name: "Solar Imported Power W"
+#         unique_id: solar_imported_power_w
+#         unit_of_measurement: "W"
+#         icon: mdi:transmission-tower-export
+#         state: >
+#           {% set m1_ac_power = states('sensor.solaredge_m1_ac_power') | float(0) %}
+#
+#           {% if (m1_ac_power < 0) %}
+#             {{ (m1_ac_power * -1) }}
+#           {% else %}
+#             0
+#           {% endif %}
+#
+#       - name: "Solar Exported Power W"
+#         unique_id: solar_exported_power_w
+#         unit_of_measurement: "W"
+#         icon: mdi:transmission-tower-import
+#         state: >
+#           {% set m1_ac_power = states('sensor.solaredge_m1_ac_power') | float(0) %}
+#
+#           {% if (m1_ac_power > 0) %}
+#             {{ (m1_ac_power) }}
+#           {% else %}
+#             0
+#           {% endif %}
+#
+#       - name: "Solar Lifetime Production"
+#         unique_id: solar_lifetime_production
+#         unit_of_measurement: "MWh"
+#         icon: mdi:solar-power
+#         state: >
+#           {% set ac_energy_kwh = states('sensor.solaredge_ac_energy_kwh') | float(0) %}
+#
+#           {{ ((ac_energy_kwh / 1000) | round (2)) }}
+#
+# sensor:
+#   - platform: integration
+#     source: sensor.solar_panel_production_w
+#     method: left
+#     unit_prefix: k
+#     name: solar_panel_production_kwh
+#   - platform: integration
+#     source: sensor.solar_battery_to_house_w
+#     method: left
+#     unit_prefix: k
+#     name: solar_battery_out_kwh
+#   - platform: integration
+#     source: sensor.solar_battery_in_w
+#     method: left
+#     unit_prefix: k
+#     name: solar_battery_in_kwh
+#   - platform: integration
+#     source: sensor.solar_house_consumption_w
+#     method: left
+#     unit_prefix: k
+#     name: solar_house_consumption_kwh
+#   - platform: integration
+#     source: sensor.solar_imported_power_w
+#     method: left
+#     unit_prefix: k
+#     name: solar_imported_power_kwh
+#   - platform: integration
+#     source: sensor.solar_exported_power_w
+#     method: left
+#     unit_prefix: k
+#     name: solar_exported_power_kwh
+#   - platform: integration
+#     source: sensor.solar_panel_to_house_w
+#     method: left
+#     unit_prefix: k
+#     name: solar_panel_to_house_kwh
+#
+#   - platform: statistics
+#     name: "Solar Battery Effectiveness Average"
+#     unique_id: solar_battery_effectiveness_average
+#     state_characteristic: mean
+#     sampling_size: 1200
+#     max_age:
+#       hours: 24
+#     entity_id: sensor.solar_battery_effectiveness
+#
+#   - platform: statistics
+#     name: "Solar Inverter Effectiveness Average"
+#     unique_id: solar_inverter_effectiveness_average
+#     state_characteristic: mean
+#     sampling_size: 1200
+#     max_age:
+#       hours: 24
+#     entity_id: sensor.solar_inverter_effectiveness
+#
+#   - platform: statistics
+#     name: "Solar Battery SOC Rolling"
+#     entity_id: sensor.solaredge_b1_state_of_energy
+#     state_characteristic: mean
+#     sampling_size: 1200
+#     max_age:
+#       hours: 1
+#
+# utility_meter:
+#   solar_panel_production_daily:
+#     source: sensor.solar_panel_production_kwh
+#     name: Solar Panel Production Daily
+#     cycle: daily
+#   solar_battery_in_daily:
+#     source: sensor.solar_battery_in_kwh
+#     name: Solar Battery In Daily
+#     cycle: daily
+#   solar_battery_out_daily:
+#     source: sensor.solar_battery_out_kwh
+#     name: Solar Battery Out Daily
+#     cycle: daily
+#   solar_house_consumption_daily:
+#     source: sensor.solar_house_consumption_kwh
+#     name: Solar House Consumption Daily
+#     cycle: daily
+#   solar_imported_power_daily:
+#     source: sensor.solar_imported_power_kwh
+#     name: Solar Imported Power Daily
+#     cycle: daily
+#   solar_imported_power_daily_solaredge:
+#     source: sensor.solaredge_m1_imported_kwh
+#     name: Solar Imported Power Daily Solar Edge
+#     cycle: daily
+#   solar_exported_power_daily:
+#     source: sensor.solar_exported_power_kwh
+#     name: Solar Exported Power Daily
+#     cycle: daily
+#   solar_panel_to_house_daily:
+#     source: sensor.solar_panel_to_house_kwh
+#     name: Solar Panel To House Daily
+#     cycle: daily
+#
+#   solar_panel_to_house_weekly:
+#     source: sensor.solar_panel_to_house_kwh
+#     name: Solar Panel To House Weekly
+#     cycle: weekly
+#   solar_imported_power_weekly:
+#     source: sensor.solar_imported_power_kwh
+#     name: Solar Imported Power Weekly
+#     cycle: weekly
+#   solar_house_consumption_weekly:
+#     source: sensor.solar_house_consumption_kwh
+#     name: Solar House Consumption Weekly
+#     cycle: weekly
+#   solar_panel_production_weekly:
+#     source: sensor.solar_panel_production_kwh
+#     name: Solar Panel Production Weekly
+#     cycle: weekly
+#   solar_battery_in_weekly:
+#     source: sensor.solar_battery_in_kwh
+#     name: Solar Battery In Weekly
+#     cycle: weekly
+#   solar_battery_out_weekly:
+#     source: sensor.solar_battery_out_kwh
+#     name: Solar Battery Out Weekly
+#     cycle: weekly
+#   solar_exported_power_weekly:
+#     source: sensor.solar_exported_power_kwh
+#     name: Solar Exported Power Weekly
+#     cycle: weekly
+#
+#   solar_panel_to_house_monthly:
+#     source: sensor.solar_panel_to_house_kwh
+#     name: Solar Panel To House Monthly
+#     cycle: monthly
+#   solar_imported_power_monthly:
+#     source: sensor.solar_imported_power_kwh
+#     name: Solar Imported Power Monthly
+#     cycle: monthly
+#   solar_house_consumption_monthly:
+#     source: sensor.solar_house_consumption_kwh
+#     name: Solar House Consumption Monthly
+#     cycle: monthly
+#   solar_panel_production_monthly:
+#     source: sensor.solar_panel_production_kwh
+#     name: Solar Panel Production Monthly
+#     cycle: monthly
+#   solar_battery_in_monthly:
+#     source: sensor.solar_battery_in_kwh
+#     name: Solar Battery In Monthly
+#     cycle: monthly
+#   solar_battery_out_monthly:
+#     source: sensor.solar_battery_out_kwh
+#     name: Solar Battery Out Monthly
+#     cycle: monthly
+#   solar_exported_power_monthly:
+#     source: sensor.solar_exported_power_kwh
+#     name: Solar Exported Power Monthly
+#     cycle: monthly
+#
+#   solar_panel_to_house_yearly:
+#     source: sensor.solar_panel_to_house_kwh
+#     name: Solar Panel To House Yearly
+#     cycle: yearly
+#   solar_imported_power_yearly:
+#     source: sensor.solar_imported_power_kwh
+#     name: Solar Imported Power Yearly
+#     cycle: yearly
+#   solar_house_consumption_yearly:
+#     source: sensor.solar_house_consumption_kwh
+#     name: Solar House Consumption Yearly
+#     cycle: yearly
+#   solar_panel_production_yearly:
+#     source: sensor.solar_panel_production_kwh
+#     name: Solar Panel Production Yearly
+#     cycle: yearly
+#   solar_battery_in_yearly:
+#     source: sensor.solar_battery_in_kwh
+#     name: Solar Battery In Yearly
+#     cycle: yearly
+#   solar_battery_out_yearly:
+#     source: sensor.solar_battery_out_kwh
+#     name: Solar Battery Out Yearly
+#     cycle: yearly
+#   solar_exported_power_yearly:
+#     source: sensor.solar_exported_power_kwh
+#     name: Solar Exported Power Yearly
+#     cycle: yearly
+#
+#
+#
+#
+#   #Hourly utility meters  
+#
+#   solar_panel_production_by_hour:
+#     source: sensor.solar_panel_production_kwh
+#     cycle: daily
+#     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+#   solar_panel_to_house_by_hour:
+#     source: sensor.solar_panel_to_house_kwh
+#     cycle: daily
+#     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+#   solar_house_consumption_by_hour:
+#     source: sensor.solar_house_consumption_kwh
+#     cycle: daily
+#     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+#   solar_imported_power_by_hour:
+#     source: sensor.solar_imported_power_kwh
+#     cycle: daily
+#     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+#   solar_exported_power_by_hour:
+#     source: sensor.solar_exported_power_kwh
+#     cycle: daily
+#     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+#   solar_battery_in_by_hour:
+#     source: sensor.solar_battery_in_kwh
+#     cycle: daily
+#     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+#   solar_battery_out_by_hour:
+#     source: sensor.solar_battery_out_kwh
+#     cycle: daily
+#     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+# automation:
+#   - id: um_set_hour_tariff_on_start_all
+#     alias: UM - Set hour tariff on start (all)
+#     trigger:
+#       - platform: homeassistant
+#         event: start
+#     action:
+#       - service: select.select_option
+#         target:
+#           entity_id:
+#             - select.solar_panel_production_by_hour
+#             - select.solar_panel_to_house_by_hour
+#             - select.solar_house_consumption_by_hour
+#             - select.solar_imported_power_by_hour
+#             - select.solar_exported_power_by_hour
+#             - select.solar_battery_in_by_hour
+#             - select.solar_battery_out_by_hour
+#         data:
+#           option: "{{ 'H%02d' | format(now().hour) }}"
+#
+#   - id: um_rotate_hour_tariffs_all
+#     alias: UM - Rotate hour tariffs (all)
+#     trigger:
+#       - platform: time_pattern
+#         minutes: "0"
+#         seconds: "0"
+#     action:
+#       - service: select.select_option
+#         target:
+#           entity_id:
+#             - select.solar_panel_production_by_hour
+#             - select.solar_panel_to_house_by_hour
+#             - select.solar_house_consumption_by_hour
+#             - select.solar_imported_power_by_hour
+#             - select.solar_exported_power_by_hour
+#             - select.solar_battery_in_by_hour
+#             - select.solar_battery_out_by_hour
+#         data:
+#           option: "{{ 'H%02d' | format(now().hour) }}"
+
+# ======================================================================
+# SIGENERGY-ADAPTED PACKAGE (ACTIVE) — structure mirrors the original
+# Unit handling: NO heuristics; per-entity input_select controls (W/kW/auto)
+# ======================================================================
+
+template:
+  # --- 1) TRIGGERED template sensors (hub that stores 24 hourly SoC attributes) ---
+  - trigger:
+      - platform: homeassistant
+        event: start
+      - platform: time
+        at: "00:00:01"
+      - platform: time_pattern
+        seconds: "59"
+    sensor:
+      - name: "package_sigen_battery_soc_hours"
+        unique_id: package_sigen_battery_soc_hours
+        icon: mdi:battery-clock
+        unit_of_measurement: "%"
+        state: "{{ states('sensor.package_sigen_battery_soc') | float(0) | round(1) }}"
+        attributes:
+          date: "{{ now().date().isoformat() }}"
+          h00: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 0 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h00') | default(0) }}
+            {% endif %}
+          h01: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 1 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h01') | default(0) }}
+            {% endif %}
+          h02: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 2 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h02') | default(0) }}
+            {% endif %}
+          h03: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 3 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h03') | default(0) }}
+            {% endif %}
+          h04: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 4 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h04') | default(0) }}
+            {% endif %}
+          h05: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 5 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h05') | default(0) }}
+            {% endif %}
+          h06: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 6 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h06') | default(0) }}
+            {% endif %}
+          h07: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 7 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h07') | default(0) }}
+            {% endif %}
+          h08: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 8 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h08') | default(0) }}
+            {% endif %}
+          h09: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 9 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h09') | default(0) }}
+            {% endif %}
+          h10: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 10 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h10') | default(0) }}
+            {% endif %}
+          h11: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 11 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h11') | default(0) }}
+            {% endif %}
+          h12: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 12 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h12') | default(0) }}
+            {% endif %}
+          h13: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 13 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h13') | default(0) }}
+            {% endif %}
+          h14: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 14 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h14') | default(0) }}
+            {% endif %}
+          h15: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 15 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h15') | default(0) }}
+            {% endif %}
+          h16: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 16 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h16') | default(0) }}
+            {% endif %}
+          h17: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 17 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h17') | default(0) }}
+            {% endif %}
+          h18: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 18 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h18') | default(0) }}
+            {% endif %}
+          h19: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 19 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h19') | default(0) }}
+            {% endif %}
+          h20: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 20 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h20') | default(0) }}
+            {% endif %}
+          h21: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 21 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h21') | default(0) }}
+            {% endif %}
+          h22: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 22 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h22') | default(0) }}
+            {% endif %}
+          h23: >
+            {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
+            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% if now().hour == 0 and now().minute == 0 %}
+              0
+            {% elif now().hour == 23 and now().minute >= 59 %}
+              {{ soc }}
+            {% else %}
+              {{ state_attr(ent,'h23') | default(0) }}
+            {% endif %}
+
+  # --- 2) NON-TRIGGERED template sensors (all your other sensors + 24 one-liners) ---
+  - sensor:
+      - name: "HU Subpanel 1 Usage"
+        unique_id: hu_subpanel_1_usage
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        variables: !include energydevices.yaml
+        state: "{{ states(subpanel1) | float(0) }}"
+        
+      - name: "HU Subpanel 2 Usage"
+        unique_id: hu_subpanel_2_usage
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        variables: !include energydevices.yaml
+        state: "{{ states(subpanel2) | float(0) }}"
+      - name: "HU Device 1 Usage"
+        unique_id: hu_device_1_usage
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        variables: !include energydevices.yaml
+        state: "{{ states(device1) | float(0) }}"
+    
+      - name: "HU Device 2 Usage"
+        unique_id: hu_device_2_usage
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        variables: !include energydevices.yaml
+        state: "{{ states(device2) | float(0) }}"
+    
+      - name: "HU Device 3 Usage"
+        unique_id: hu_device_3_usage
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        variables: !include energydevices.yaml
+        state: "{{ states(device3) | float(0) }}"
+        
+      - name: "HU Device 4 Usage"
+        unique_id: hu_device_4_usage
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        variables: !include energydevices.yaml
+        state: "{{ states(device4) | float(0) }}"
+    
+      - name: "HU Device 5 Usage"
+        unique_id: hu_device_5_usage
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        variables: !include energydevices.yaml
+        state: "{{ states(device5) | float(0) }}"
+
+      # 24 one-liners from the hub (hour 00)
+      - name: "Battery SoC H00"
+        unique_id: package_sigen_battery_soc_by_hour_h00
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h00') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H00"
+        # unique_id: solar_battery_soc_by_hour_h00
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h00') }}"
+      # 24 one-liners from the hub (hour 01)
+      - name: "Battery SoC H01"
+        unique_id: package_sigen_battery_soc_by_hour_h01
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h01') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H01"
+        # unique_id: solar_battery_soc_by_hour_h01
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h01') }}"
+      # 24 one-liners from the hub (hour 02)
+      - name: "Battery SoC H02"
+        unique_id: package_sigen_battery_soc_by_hour_h02
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h02') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H02"
+        # unique_id: solar_battery_soc_by_hour_h02
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h02') }}"
+      # 24 one-liners from the hub (hour 03)
+      - name: "Battery SoC H03"
+        unique_id: package_sigen_battery_soc_by_hour_h03
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h03') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H03"
+        # unique_id: solar_battery_soc_by_hour_h03
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h03') }}"
+      # 24 one-liners from the hub (hour 04)
+      - name: "Battery SoC H04"
+        unique_id: package_sigen_battery_soc_by_hour_h04
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h04') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H04"
+        # unique_id: solar_battery_soc_by_hour_h04
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h04') }}"
+      # 24 one-liners from the hub (hour 05)
+      - name: "Battery SoC H05"
+        unique_id: package_sigen_battery_soc_by_hour_h05
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h05') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H05"
+        # unique_id: solar_battery_soc_by_hour_h05
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h05') }}"
+      # 24 one-liners from the hub (hour 06)
+      - name: "Battery SoC H06"
+        unique_id: package_sigen_battery_soc_by_hour_h06
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h06') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H06"
+        # unique_id: solar_battery_soc_by_hour_h06
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h06') }}"
+      # 24 one-liners from the hub (hour 07)
+      - name: "Battery SoC H07"
+        unique_id: package_sigen_battery_soc_by_hour_h07
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h07') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H07"
+        # unique_id: solar_battery_soc_by_hour_h07
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h07') }}"
+      # 24 one-liners from the hub (hour 08)
+      - name: "Battery SoC H08"
+        unique_id: package_sigen_battery_soc_by_hour_h08
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h08') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H08"
+        # unique_id: solar_battery_soc_by_hour_h08
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h08') }}"
+      # 24 one-liners from the hub (hour 09)
+      - name: "Battery SoC H09"
+        unique_id: package_sigen_battery_soc_by_hour_h09
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h09') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H09"
+        # unique_id: solar_battery_soc_by_hour_h09
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h09') }}"
+      # 24 one-liners from the hub (hour 10)
+      - name: "Battery SoC H10"
+        unique_id: package_sigen_battery_soc_by_hour_h10
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h10') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H10"
+        # unique_id: solar_battery_soc_by_hour_h10
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h10') }}"
+      # 24 one-liners from the hub (hour 11)
+      - name: "Battery SoC H11"
+        unique_id: package_sigen_battery_soc_by_hour_h11
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h11') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H11"
+        # unique_id: solar_battery_soc_by_hour_h11
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h11') }}"
+      # 24 one-liners from the hub (hour 12)
+      - name: "Battery SoC H12"
+        unique_id: package_sigen_battery_soc_by_hour_h12
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h12') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H12"
+        # unique_id: solar_battery_soc_by_hour_h12
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h12') }}"
+      # 24 one-liners from the hub (hour 13)
+      - name: "Battery SoC H13"
+        unique_id: package_sigen_battery_soc_by_hour_h13
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h13') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H13"
+        # unique_id: solar_battery_soc_by_hour_h13
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h13') }}"
+      # 24 one-liners from the hub (hour 14)
+      - name: "Battery SoC H14"
+        unique_id: package_sigen_battery_soc_by_hour_h14
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h14') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H14"
+        # unique_id: solar_battery_soc_by_hour_h14
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h14') }}"
+      # 24 one-liners from the hub (hour 15)
+      - name: "Battery SoC H15"
+        unique_id: package_sigen_battery_soc_by_hour_h15
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h15') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H15"
+        # unique_id: solar_battery_soc_by_hour_h15
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h15') }}"
+      # 24 one-liners from the hub (hour 16)
+      - name: "Battery SoC H16"
+        unique_id: package_sigen_battery_soc_by_hour_h16
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h16') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H16"
+        # unique_id: solar_battery_soc_by_hour_h16
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h16') }}"
+      # 24 one-liners from the hub (hour 17)
+      - name: "Battery SoC H17"
+        unique_id: package_sigen_battery_soc_by_hour_h17
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h17') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H17"
+        # unique_id: solar_battery_soc_by_hour_h17
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h17') }}"
+      # 24 one-liners from the hub (hour 18)
+      - name: "Battery SoC H18"
+        unique_id: package_sigen_battery_soc_by_hour_h18
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h18') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H18"
+        # unique_id: solar_battery_soc_by_hour_h18
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h18') }}"
+      # 24 one-liners from the hub (hour 19)
+      - name: "Battery SoC H19"
+        unique_id: package_sigen_battery_soc_by_hour_h19
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h19') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H19"
+        # unique_id: solar_battery_soc_by_hour_h19
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h19') }}"
+      # 24 one-liners from the hub (hour 20)
+      - name: "Battery SoC H20"
+        unique_id: package_sigen_battery_soc_by_hour_h20
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h20') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H20"
+        # unique_id: solar_battery_soc_by_hour_h20
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h20') }}"
+      # 24 one-liners from the hub (hour 21)
+      - name: "Battery SoC H21"
+        unique_id: package_sigen_battery_soc_by_hour_h21
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h21') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H21"
+        # unique_id: solar_battery_soc_by_hour_h21
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h21') }}"
+      # 24 one-liners from the hub (hour 22)
+      - name: "Battery SoC H22"
+        unique_id: package_sigen_battery_soc_by_hour_h22
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h22') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H22"
+        # unique_id: solar_battery_soc_by_hour_h22
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h22') }}"
+      # 24 one-liners from the hub (hour 23)
+      - name: "Battery SoC H23"
+        unique_id: package_sigen_battery_soc_by_hour_h23
+        unit_of_measurement: "%"
+        state: "{{ state_attr('sensor.package_sigen_battery_soc_hours','h23') }}"
+        # ORIGINAL (commented for reference):
+        # name: "Battery SoC H23"
+        # unique_id: solar_battery_soc_by_hour_h23
+        # unit_of_measurement: "%"
+        # state: "{{ state_attr('sensor.battery_soc_hours','h23') }}"
+
+  # --- 3) NON-TRIGGERED template sensors (instant powers, flows, lifetime, etc.) ---
+  - sensor:
+      # --- Instant powers (unit-switch controlled) ---
+      - name: "package_sigen_pv_power"
+        unique_id: package_sigen_pv_power
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:solar-power
+        state: >-
+          {% set _raw = states('sensor.sigen_plant_pv_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_pv') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_pv_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_pv = (_raw * mult) %}
+          {{ P_pv | round(2) }}
+
+      - name: "package_sigen_house_consumption_w"
+        unique_id: package_sigen_house_consumption_w
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:home-lightning-bolt
+        state: >-
+          {% set _raw = states('sensor.sigen_plant_consumed_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_load') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_consumed_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_load = (_raw * mult) %}
+          {{ P_load | round(2) }}
+
+      - name: "package_sigen_imported_power_w"
+        unique_id: package_sigen_imported_power_w
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:transmission-tower-import
+        state: >-
+          {% set _raw = states('sensor.sigen_plant_grid_import_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_grid_import') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_grid_import_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_imp = (_raw * mult) %}
+          {{ P_imp | round(2) }}
+
+      - name: "package_sigen_exported_power_w"
+        unique_id: package_sigen_exported_power_w
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:transmission-tower-export
+        state: >-
+          {% set _raw = states('sensor.sigen_plant_grid_export_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_grid_export') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_grid_export_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_exp = (_raw * mult) %}
+          {{ P_exp | round(2) }}
+
+      # --- Flow sensors (built from the unit-switched W values) ---
+      # --- Aggregated battery flow sensors (built from flow sensors above) ---
+      - name: "package_sigen_battery_in_w"
+        unique_id: package_sigen_battery_in_w
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:battery-arrow-down
+        availability: >-
+          {{ states('sensor.package_sigen_pv_to_battery_w') not in ['unknown','unavailable']
+             and states('sensor.package_sigen_grid_to_battery_w') not in ['unknown','unavailable'] }}
+        state: >-
+          {% set pv2b = states('sensor.package_sigen_pv_to_battery_w') | float(0) %}
+          {% set g2b  = states('sensor.package_sigen_grid_to_battery_w') | float(0) %}
+          {{ (pv2b + g2b) | round(2) }}
+
+      - name: "package_sigen_battery_out_w"
+        unique_id: package_sigen_battery_out_w
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:battery-arrow-up
+        availability: >-
+          {{ states('sensor.package_sigen_battery_to_house_w') not in ['unknown','unavailable']
+             and states('sensor.package_sigen_battery_to_grid_w') not in ['unknown','unavailable'] }}
+        state: >-
+          {% set b2h = states('sensor.package_sigen_battery_to_house_w') | float(0) %}
+          {% set b2g = states('sensor.package_sigen_battery_to_grid_w') | float(0) %}
+          {{ (b2h + b2g) | round(2) }}
+
+      - name: "package_sigen_pv_to_house_w"
+        unique_id: package_sigen_pv_to_house_w
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:home-lightning-bolt
+        availability: "{{ states('sensor.sigen_plant_pv_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_consumed_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_battery_power') not in ['unknown','unavailable'] }}"
+        state: >-
+          {% set _raw = states('sensor.sigen_plant_pv_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_pv') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_pv_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_pv = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_consumed_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_load') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_consumed_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_load = (_raw * mult) %}
+          {% if P_pv <= 0 or P_load <= 0 %}
+            0
+          {% elif P_pv < P_load %}
+            {{ P_pv | round(2) }}
+          {% else %}
+            {{ P_load | round(2) }}
+          {% endif %}
+
+      - name: "package_sigen_pv_to_battery_w"
+        unique_id: package_sigen_pv_to_battery_w
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:battery-plus
+        availability: "{{ states('sensor.sigen_plant_pv_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_consumed_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_battery_power') not in ['unknown','unavailable'] }}"
+        state: >-
+          {% set _raw = states('sensor.sigen_plant_pv_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_pv') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_pv_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_pv = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_consumed_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_load') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_consumed_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_load = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_battery_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_battery') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_battery_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_batt = (_raw * mult) %}
+          {% set P_batt = P_batt | abs %}
+          {% set surplus = (P_pv - P_load) %}
+          {% if surplus < 0 or not is_state('binary_sensor.sigen_plant_battery_charging','on') %}
+            0
+          {% else %}
+            {% set pv_to_batt = P_batt if P_batt < surplus else surplus %}
+            {{ pv_to_batt | round(2) }}
+          {% endif %}
+
+      - name: "package_sigen_pv_to_grid_w"
+        unique_id: package_sigen_pv_to_grid_w
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:transmission-tower-export
+        availability: "{{ states('sensor.sigen_plant_pv_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_consumed_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_battery_power') not in ['unknown','unavailable'] }}"
+        state: >-
+          {% set _raw = states('sensor.sigen_plant_pv_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_pv') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_pv_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_pv = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_consumed_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_load') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_consumed_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_load = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_battery_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_battery') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_battery_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_batt = (_raw * mult) %}
+          {% set P_batt = P_batt | abs %}
+          {% set surplus = (P_pv - P_load) %}
+          {% if surplus <= 0 %}
+            0
+          {% else %}
+            {% if is_state('binary_sensor.sigen_plant_battery_charging','on') %}
+              {% set pv_to_batt = P_batt if P_batt < surplus else surplus %}
+            {% else %}
+              {% set pv_to_batt = 0 %}
+            {% endif %}
+            {% set pv_to_grid = surplus - pv_to_batt %}
+            {{ (0 if pv_to_grid < 0 else pv_to_grid) | round(2) }}
+          {% endif %}
+
+      - name: "package_sigen_grid_to_house_w"
+        unique_id: package_sigen_grid_to_house_w
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:home-import-outline
+        availability: "{{ states('sensor.sigen_plant_pv_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_consumed_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_battery_power') not in ['unknown','unavailable'] }}"
+        state: >-
+          {% set _raw = states('sensor.sigen_plant_pv_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_pv') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_pv_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_pv = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_consumed_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_load') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_consumed_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_load = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_battery_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_battery') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_battery_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_batt = (_raw * mult) %}
+          {% set P_batt = P_batt | abs %}
+          {% set deficit = (P_load - P_pv) %}
+          {% if deficit <= 0 %}
+            0
+          {% else %}
+            {% if is_state('binary_sensor.sigen_plant_battery_discharging','on') %}
+              {% set batt_to_house = P_batt if P_batt < deficit else deficit %}
+            {% else %}
+              {% set batt_to_house = 0 %}
+            {% endif %}
+            {% set grid_to_house = deficit - batt_to_house %}
+            {{ (0 if grid_to_house < 0 else grid_to_house) | round(2) }}
+          {% endif %}
+
+      - name: "package_sigen_grid_to_battery_w"
+        unique_id: package_sigen_grid_to_battery_w
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:battery-plus-outline
+        availability: "{{ states('sensor.sigen_plant_pv_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_consumed_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_battery_power') not in ['unknown','unavailable'] }}"
+        state: >-
+          {% set _raw = states('sensor.sigen_plant_pv_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_pv') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_pv_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_pv = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_consumed_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_load') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_consumed_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_load = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_battery_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_battery') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_battery_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_batt = (_raw * mult) %}
+          {% set P_batt = P_batt | abs %}
+          {% if not is_state('binary_sensor.sigen_plant_battery_charging','on') %}
+            0
+          {% else %}
+            {% set surplus = (P_pv - P_load) %}
+            {% if surplus < 0 %}
+              {% set surplus = 0 %}
+            {% endif %}
+            {% set pv_to_batt = P_batt if P_batt < surplus else surplus %}
+            {% set grid_to_batt = P_batt - pv_to_batt %}
+            {{ (0 if grid_to_batt < 0 else grid_to_batt) | round(2) }}
+          {% endif %}
+
+      - name: "package_sigen_battery_to_house_w"
+        unique_id: package_sigen_battery_to_house_w
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:home-battery
+        availability: "{{ states('sensor.sigen_plant_pv_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_consumed_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_battery_power') not in ['unknown','unavailable'] }}"
+        state: >-
+          {% set _raw = states('sensor.sigen_plant_pv_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_pv') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_pv_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_pv = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_consumed_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_load') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_consumed_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_load = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_battery_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_battery') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_battery_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_batt = (_raw * mult) %}
+          {% set P_batt = P_batt | abs %}
+          {% if not is_state('binary_sensor.sigen_plant_battery_discharging','on') %}
+            0
+          {% else %}
+            {% set deficit = (P_load - P_pv) %}
+            {% if deficit < 0 %}
+              0
+            {% else %}
+              {% set out = P_batt if P_batt < deficit else deficit %}
+              {{ out | round(2) }}
+            {% endif %}
+          {% endif %}
+
+      - name: "package_sigen_battery_to_grid_w"
+        unique_id: package_sigen_battery_to_grid_w
+        unit_of_measurement: "W"
+        device_class: power
+        icon: mdi:battery-arrow-up
+        availability: "{{ states('sensor.sigen_plant_pv_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_consumed_power') not in ['unknown','unavailable'] and states('sensor.sigen_plant_battery_power') not in ['unknown','unavailable'] }}"
+        state: >-
+          {% set _raw = states('sensor.sigen_plant_pv_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_pv') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_pv_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_pv = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_consumed_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_load') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_consumed_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_load = (_raw * mult) %}
+          {% set _raw = states('sensor.sigen_plant_battery_power') | float(0) %}
+          {% set mode = states('input_select.package_sigen_unit_battery') %}
+          {% if mode == 'kW' %}
+            {% set mult = 1000 %}
+          {% elif mode == 'W' %}
+            {% set mult = 1 %}
+          {% else %}
+            {% set uom = state_attr('sensor.sigen_plant_battery_power','unit_of_measurement') %}
+            {% set mult = 1000 if uom in ['kW','kW ','kw','KW'] else 1 %}
+          {% endif %}
+          {% set P_batt = (_raw * mult) %}
+          {% set P_batt = P_batt | abs %}
+          {% if not is_state('binary_sensor.sigen_plant_battery_discharging','on') %}
+            0
+          {% else %}
+            {% set deficit = (P_load - P_pv) %}
+            {% if deficit < 0 %}
+              {{ P_batt | round(2) }}
+            {% else %}
+              {% set batt_to_house = P_batt if P_batt < deficit else deficit %}
+              {% set batt_to_grid  = P_batt - batt_to_house %}
+              {{ (0 if batt_to_grid < 0 else batt_to_grid) | round(2) }}
+            {% endif %}
+          {% endif %}
+
+      - name: "package_sigen_battery_soc"
+        unique_id: package_sigen_battery_soc
+        unit_of_measurement: "%"
+        device_class: battery
+        icon: mdi:battery
+        state: >-
+          {{ states('sensor.sigen_plant_battery_state_of_charge') | float(0) }}
+
+      - name: "package_sigen_battery_remaining_energy_kwh"
+        unique_id: package_sigen_battery_remaining_energy_kwh
+        unit_of_measurement: "kWh"
+        device_class: energy
+        icon: mdi:battery-clock
+        state: >-
+          {% set cap = states('input_number.package_sigen_battery_capacity_kwh') | float(0) %}
+          {% set soc = states('sensor.package_sigen_battery_soc') | float(0) %}
+          {{ (cap * soc / 100.0) | round(3) }}
+
+      - name: "package_sigen_lifetime_pv_mwh"
+        unique_id: package_sigen_lifetime_pv_mwh
+        unit_of_measurement: "MWh"
+        icon: mdi:solar-power
+        state: >-
+          {% set kwh = states('sensor.sigen_plant_total_pv_generation') | float(0) %}
+          {{ (kwh / 1000.0) | round(2) }}
+
+sensor:
+
+  - platform: integration
+    source: sensor.package_sigen_pv_power
+    method: left
+    unit_prefix: k
+    name: package_sigen_pv_kwh
+
+  - platform: integration
+    source: sensor.package_sigen_battery_in_w
+    method: left
+    unit_prefix: k
+    name: package_sigen_battery_in_kwh
+
+  - platform: integration
+    source: sensor.package_sigen_battery_out_w
+    method: left
+    unit_prefix: k
+    name: package_sigen_battery_out_kwh
+
+  - platform: integration
+    source: sensor.package_sigen_house_consumption_w
+    method: left
+    unit_prefix: k
+    name: package_sigen_house_consumption_kwh
+
+  - platform: integration
+    source: sensor.package_sigen_imported_power_w
+    method: left
+    unit_prefix: k
+    name: package_sigen_imported_power_kwh
+
+  - platform: integration
+    source: sensor.package_sigen_exported_power_w
+    method: left
+    unit_prefix: k
+    name: package_sigen_exported_power_kwh
+
+  - platform: integration
+    source: sensor.package_sigen_pv_to_house_w
+    method: left
+    unit_prefix: k
+    name: package_sigen_pv_to_house_kwh
+
+utility_meter:
+  package_sigen_battery_in_weekly:
+    source: sensor.package_sigen_battery_in_kwh
+    cycle: weekly
+
+  package_sigen_battery_out_weekly:
+    source: sensor.package_sigen_battery_out_kwh
+    cycle: weekly
+
+  package_sigen_pv_daily:
+    source: sensor.package_sigen_pv_kwh
+    cycle: daily
+  package_sigen_battery_in_daily:
+    source: sensor.package_sigen_battery_in_kwh
+    cycle: daily
+  package_sigen_battery_out_daily:
+    source: sensor.package_sigen_battery_out_kwh
+    cycle: daily
+  package_sigen_house_consumption_daily:
+    source: sensor.package_sigen_house_consumption_kwh
+    cycle: daily
+  package_sigen_imported_power_daily:
+    source: sensor.package_sigen_imported_power_kwh
+    cycle: daily
+  package_sigen_exported_power_daily:
+    source: sensor.package_sigen_exported_power_kwh
+    cycle: daily
+  package_sigen_pv_to_house_daily:
+    source: sensor.package_sigen_pv_to_house_kwh
+    cycle: daily
+  package_sigen_pv_weekly:
+    source: sensor.package_sigen_pv_kwh
+    cycle: weekly
+  package_sigen_exported_power_weekly:
+    source: sensor.package_sigen_exported_power_kwh
+    cycle: weekly
+  package_sigen_imported_power_weekly:
+    source: sensor.package_sigen_imported_power_kwh
+    cycle: weekly
+  package_sigen_house_consumption_weekly:
+    source: sensor.package_sigen_house_consumption_kwh
+    cycle: weekly
+  package_sigen_pv_to_house_weekly:
+    source: sensor.package_sigen_pv_to_house_kwh
+    cycle: weekly
+  package_sigen_pv_monthly:
+    source: sensor.package_sigen_pv_kwh
+    cycle: monthly
+  package_sigen_battery_in_monthly:
+    source: sensor.package_sigen_battery_in_kwh
+    cycle: monthly
+  package_sigen_battery_out_monthly:
+    source: sensor.package_sigen_battery_out_kwh
+    cycle: monthly
+  package_sigen_exported_power_monthly:
+    source: sensor.package_sigen_exported_power_kwh
+    cycle: monthly
+  package_sigen_imported_power_monthly:
+    source: sensor.package_sigen_imported_power_kwh
+    cycle: monthly
+  package_sigen_house_consumption_monthly:
+    source: sensor.package_sigen_house_consumption_kwh
+    cycle: monthly
+  package_sigen_pv_to_house_monthly:
+    source: sensor.package_sigen_pv_to_house_kwh
+    cycle: monthly
+  package_sigen_pv_yearly:
+    source: sensor.package_sigen_pv_kwh
+    cycle: yearly
+  package_sigen_battery_in_yearly:
+    source: sensor.package_sigen_battery_in_kwh
+    cycle: yearly
+  package_sigen_battery_out_yearly:
+    source: sensor.package_sigen_battery_out_kwh
+    cycle: yearly
+  package_sigen_exported_power_yearly:
+    source: sensor.package_sigen_exported_power_kwh
+    cycle: yearly
+  package_sigen_imported_power_yearly:
+    source: sensor.package_sigen_imported_power_kwh
+    cycle: yearly
+  package_sigen_house_consumption_yearly:
+    source: sensor.package_sigen_house_consumption_kwh
+    cycle: yearly
+  package_sigen_pv_to_house_yearly:
+    source: sensor.package_sigen_pv_to_house_kwh
+    cycle: yearly
+  package_sigen_pv_by_hour:
+    source: sensor.package_sigen_pv_kwh
+    cycle: daily
+    tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+  package_sigen_pv_to_house_by_hour:
+    source: sensor.package_sigen_pv_to_house_kwh
+    cycle: daily
+    tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+  package_sigen_house_consumption_by_hour:
+    source: sensor.package_sigen_house_consumption_kwh
+    cycle: daily
+    tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+  package_sigen_imported_power_by_hour:
+    source: sensor.package_sigen_imported_power_kwh
+    cycle: daily
+    tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+  package_sigen_exported_power_by_hour:
+    source: sensor.package_sigen_exported_power_kwh
+    cycle: daily
+    tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+  package_sigen_battery_in_by_hour:
+    source: sensor.package_sigen_battery_in_kwh
+    cycle: daily
+    tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+  package_sigen_battery_out_by_hour:
+    source: sensor.package_sigen_battery_out_kwh
+    cycle: daily
+    tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
+automation:
+  - id: package_sigen_um_set_hour_tariff_on_start_all
+    alias: "UM - Set hour tariff on start (all, sigen)"
+    trigger:
+      - platform: homeassistant
+        event: start
+    action:
+      - service: select.select_option
+        target:
+          entity_id:
+            - select.package_sigen_pv_by_hour
+            - select.package_sigen_pv_to_house_by_hour
+            - select.package_sigen_house_consumption_by_hour
+            - select.package_sigen_imported_power_by_hour
+            - select.package_sigen_exported_power_by_hour
+            - select.package_sigen_battery_in_by_hour
+            - select.package_sigen_battery_out_by_hour
+        data:
+          option: "{{ 'H%02d' | format(now().hour) }}"
+
+  - id: package_sigen_um_set_hour_tariff_every_hour_all
+    alias: "UM - Set hour tariff every hour (all, sigen)"
+    trigger:
+      - platform: time_pattern
+        minutes: "0"
+        seconds: "0"
+    action:
+      - service: select.select_option
+        target:
+          entity_id:
+            - select.package_sigen_pv_by_hour
+            - select.package_sigen_pv_to_house_by_hour
+            - select.package_sigen_house_consumption_by_hour
+            - select.package_sigen_imported_power_by_hour
+            - select.package_sigen_exported_power_by_hour
+            - select.package_sigen_battery_in_by_hour
+            - select.package_sigen_battery_out_by_hour
+        data:
+          option: "{{ 'H%02d' | format(now().hour) }}"
+
+input_select:
+  package_sigen_unit_pv:
+    name: "PV unit"
+    options: ['auto','W','kW']
+    initial: 'auto'
+  package_sigen_unit_load:
+    name: "Load unit"
+    options: ['auto','W','kW']
+    initial: 'auto'
+  package_sigen_unit_battery:
+    name: "Battery unit"
+    options: ['auto','W','kW']
+    initial: 'auto'
+  package_sigen_unit_grid_import:
+    name: "Grid import unit"
+    options: ['auto','W','kW']
+    initial: 'auto'
+  package_sigen_unit_grid_export:
+    name: "Grid export unit"
+    options: ['auto','W','kW']
+    initial: 'auto'
+
+input_number:
+  package_sigen_battery_capacity_kwh:
+    name: "Battery Capacity (kWh)"
+    min: 1
+    max: 1000
+    step: 0.1
+    mode: box
+    unit_of_measurement: "kWh"
