@@ -1,67 +1,142 @@
 # solar-display
 
-A Display to change the way you use and monitor your solar energy production and your energy consumption.
+A tabletop display to change the way you use and monitor your solar energy production and energy consumption.
+
+---
+
+## Images
+
+Example images of the Solar Display can be found in the `ReadmeImages` folder:
+
+- `solardisplay1.jpg`
+- `solardisplay2.jpg`
+- `solardisplay3.jpg`
+- `solardisplay4.jpg`
+- `solardisplay5.jpg`
+- `solardisplay6.jpg`
+- `solardisplay7.jpg`
+- `solardisplay8.jpg`
+
+---
+
+## About This Project
+
+I have never done a GitHub project before. This is the first time I am sharing one of my projects, and it felt pointless to keep it to myself after putting so much time into it if no one else could enjoy or use it.
+
+I originally just wanted a **pretty power flow display**. That idea quickly snowballed into:
+
+> “But could I also add this graph… or that value?”
+
+There **will be issues**, so please let me know if you find any. I will try to resolve them or help where I can.
+
+---
+
+## Inverter Compatibility
+
+### Sigenergy
+- Currently there is a version that works with the **Sigenergy inverter**
+- This version is made for systems **with a battery**
+- Home Assistant Integration (HACS):
+  - **Sigenergy ESS**
+
+### SolarEdge
+- There is also a version for **SolarEdge**
+- Home Assistant Integration (HACS):
+  - **SolarEdge Modbus Multi**
+
+---
+
+## Software
+
+### Home Assistant
+Home Assistant is the **backbone** of this project.
+
+#### Files needed in Home Assistant
+
+- **`energy.yaml`**  
+  Used for creating energy meters, usable sensors, helpers, and other required entities.
+
+- **`energydevices.yaml`**  
+  This file is used to add Home Assistant entities as devices.  
+  On the *Home Usage* page, there is an option to display power flow within the house. This allows energy to flow from the home to the first subpanel and then to individual devices.
+
+  The power entities are added here so they can be displayed in the power flow view. Once devices are added, they can be selected in the display settings. There are several images you can choose from for device icons.
+
+---
+
+### Sigenergy Notes
+
+Once the integration is installed, make sure the entity naming is **standardized**.
+
+Example:
+
+sensor.sigen_inverter_...
 
 
-![Solar Display example](/ReadmeImages/solardisplay1.jpg)
-![Solar Display example](/ReadmeImages/solardisplay2.jpg)
-![Solar Display example](/ReadmeImages/solardisplay3.jpg)
-![Solar Display example](/ReadmeImages/solardisplay4.jpg)
-![Solar Display example](/ReadmeImages/solardisplay5.jpg)
-![Solar Display example](/ReadmeImages/solardisplay6.jpg)
-![Solar Display example](/ReadmeImages/solardisplay7.jpg)
-![Solar Display example](/ReadmeImages/solardisplay8.jpg)
+This naming is required for the energy files to work correctly.
 
-I have never done a git project before, this is the first time i share one of my projects as the amount of time i put into it feels pointless if not one other person can enjoy it with me.
-I just wanted a pretty power flow Display, this idea then snowbaled into, but could i add (insert random graph or value)
-There will be issues so please let me know, i will try to resolve or help where i can.
+---
 
+### SolarEdge Notes
 
+Because I have **two inverters**, I needed to use the *SolarEdge Modbus Multi* integration.
 
-Inverter Compatibility:
-Currently there is a version that works with the sigenergy inverter, this is made to work with a inverter with a battery.
-Hacs Integration:
-Sigenergy ESS
+I also needed an energy file to handle many of the additional calculations.
 
-there is also a version for solar-edge.
-Hacs Integration:
-SolarEdge Modbus Multi
+My current naming convention is:
+- **B1** – Battery
+- **I1 / I2** – Inverters
+- **M1** – Meter
 
-Software:
-HOME ASSISTANT:
-The backbone of this project.
-Files needed in home assistant: 
-Energy.yaml : A file for making energy meters, for Making usable sensors and allot of helpers and other needed entities.
-energydevices.yaml : This file is to add entities from home assistant into the device, on the Home usage page there is the option to display powerflow within the house meaning energy flows from home to the first subpanel and to different devices after that.
-                     we add the files power entities to this file to display this power flow. once devices are added you can select them in the settings of the display, there is a couple of images you can choose.
+I will try to redo the energy file so this setup will also work for **single inverter systems**.
 
-Sigenergy:
-once you have the integration installed make sure the naming is standerd, like this sensor.sigen_inverter... as we will need it to be standard for the energy file
+---
 
-solar-edge:
-as i have 2 inverters i needed to use the modbus multi integration for this, and i needed a energy file to do many of the extra calculations for this, i have the naming like this: B1 (battery), I1 and I2 (inverters), M1 (Meter). I will try to redo the energy file so this will also be possible for single inverter systems.
+## ESPHome
 
-ESPHOME:
-Recommended version: 2025.10.0 (i had issues with newer version) I recommend building this using a Command line version of esphome builder on a powerfull computer, as building this on a raspberry pi is very demanding. 
+- **Recommended version:** `2025.10.0`  
+  I had issues with newer versions.
 
+I recommend building this using the **command-line version of ESPHome** on a powerful computer. Building on a Raspberry Pi is very demanding and not recommended.
 
+---
 
-Hardware:
-- 3D printed Case: 
-- Display: Waveshare -S3 7inch Display Development Board Type B,
-           ESP32 With Display, 1024×600, Optional For Touch Function, 32-bit LX7 Dual-core Processor,
-           to 240MHz Frequency, Supports WiFi & Bluetooth
-- 8 Heatset inserts M3
-- 12 small scews M3
-- MMWave Sensor https://de.aliexpress.com/item/1005007103251173.html?gatewayAdapt=glo2deu Using 3.3v/ground and OT2 on the gpio of the display (the display will work without, best to go into the settings and change the motion sensor option)
-- Power plug https://de.aliexpress.com/item/1005007524400372.html?gatewayAdapt=glo2deu buy the 6 pin version as this will work with both direction of a usb c cable and the display is very difficult with power.
+## Hardware
 
+- **3D Printed Case**
 
+- **Display:**  
+  Waveshare S3 7-inch Display Development Board (Type B)  
+  ESP32 with Display  
+  Resolution: 1024×600  
+  Optional touch function  
+  32-bit LX7 dual-core processor (up to 240 MHz)  
+  WiFi & Bluetooth support
 
-The case can be 3d printed, however my design for the case is not ideal as this is one of the first models i have made.
-To screw the display to the case you will need a bendable screwing attachement like in the ifixit kit, If someone wants to redesign please PM for the CAD files.
+- **8× M3 heat-set inserts**
+- **12× M3 small screws**
 
+- **MMWave Sensor**  
+  Uses 3.3V, GND, and OT2 on the display GPIO.  
+  (The display works without this sensor. If not used, go into the settings and disable the motion sensor option.)
 
+- **USB-C Power Plug**  
+  Buy the **6-pin version** so it works regardless of USB-C cable orientation.  
+  The display is very sensitive to power issues.
 
+- **Fabric Covering**  
+  Fabric is glued and stretched around the case to give it a finished look.  
+  The fabric used here was from an old polo shirt.  
+  Glue used: *Tesa permanent spray glue*.
 
+  I recommend using a stretchable fabric — this step was very difficult.
 
+---
+
+## Case Notes
+
+The case can be 3D printed, but the design is **not ideal**. This was one of the first models I ever made.
+
+To screw the display into the case, you will need a **bendable screwdriver attachment** (such as one from an iFixit kit), as access is very tight.
+
+If anyone wants to redesign the case, please PM me for the CAD files.
