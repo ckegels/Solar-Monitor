@@ -150,3 +150,7 @@ If anyone wants to redesign the case, please PM me for the CAD files.
 ![Solar Display example](/ReadmeImages/solardisplay6.jpg)
 ![Solar Display example](/ReadmeImages/solardisplay7.jpg)
 ![Solar Display example](/ReadmeImages/solardisplay8.jpg)
+![Solar Display example](/ReadmeImages/solardisplay9.jpg)
+![Solar Display example](/ReadmeImages/solardisplay10.jpg)
+![Solar Display example](/ReadmeImages/solardisplay11.jpg)
+![Solar Display example](/ReadmeImages/solardisplay12.jpg)
