@@ -4,7 +4,7 @@ A tabletop display to change the way you use and monitor your solar energy produ
 
 ---
 
-## Images
+## Image
 
 Example images of the Solar Display can be found in the `ReadmeImages` folder:
 
