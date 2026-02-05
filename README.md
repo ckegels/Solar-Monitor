@@ -48,6 +48,8 @@ Home Assistant is the **backbone** of this project.
 
 #### Files needed in Home Assistant
 
+P these files in the packages folder (config/packages/)
+
 - **`energy.yaml`**  
   Used for creating energy meters, usable sensors, helpers, and other required entities.
 
@@ -55,7 +57,7 @@ Home Assistant is the **backbone** of this project.
   This file is used to add Home Assistant entities as devices.  
   On the *Home Usage* page, there is an option to display power flow within the house. This allows energy to flow from the home to the first subpanel and then to individual devices.
 
-  The power entities are added here so they can be displayed in the power flow view. Once devices are added, they can be selected in the display settings. There are several images you can choose from for device icons.
+  The power entities are added here so they can be displayed in the power flow view. Once devices are added, they can be selected in the device usage settings. There are several images you can choose from for device icons, and you have to set the name of the device on the display.
 
 ---
 
@@ -63,12 +65,9 @@ Home Assistant is the **backbone** of this project.
 
 Once the integration is installed, make sure the entity naming is **standardized**.
 
-Example:
-
 sensor.sigen_inverter_...
 
-
-This naming is required for the energy files to work correctly.
+This naming is required for the energy file to work correctly.
 
 ---
 
@@ -107,6 +106,7 @@ I recommend building this using the **command-line version of ESPHome** on a pow
   Optional touch function  
   32-bit LX7 dual-core processor (up to 240 MHz)  
   WiFi & Bluetooth support
+  [Waveshhare Display Link](https://www.waveshare.com/esp32-s3-lcd-7b.htm?sku=31726)
 
 - **8× M3 heat-set inserts**
 - **12× M3 small screws**
@@ -114,10 +114,12 @@ I recommend building this using the **command-line version of ESPHome** on a pow
 - **MMWave Sensor**  
   Uses 3.3V, GND, and OT2 on the display GPIO.  
   (The display works without this sensor. If not used, go into the settings and disable the motion sensor option.)
+  [Example Link](https://de.aliexpress.com/item/1005007103251173.html?gatewayAdapt=glo2deu)
 
 - **USB-C Power Plug**  
   Buy the **6-pin version** so it works regardless of USB-C cable orientation.  
   The display is very sensitive to power issues.
+  [Example Link](https://de.aliexpress.com/item/1005007524400372.html?gatewayAdapt=glo2deu)
 
 - **Fabric Covering**  
   Fabric is glued and stretched around the case to give it a finished look.  
