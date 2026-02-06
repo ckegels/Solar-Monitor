@@ -144,6 +144,55 @@ If anyone wants to redesign the case, please PM me for the CAD files.
 ## More pictures
 
 ![Solar Display example](/ReadmeImages/solardisplay2.jpg)
+
+
+---
+
+## installation
+
+
+Home assistant:
+First pick what inverter sigenergy or solaredge.
+place the package files in the package folder in home assistant.
+
+
+Esphome Builder:
+Before we can actually flash the device we need a decent computer to actually do this, to make flashing faster i used the command line on windows as my pi5 16gb could not handle this file.
+
+download and install esphome builder with version `2025.10.0` [Installing ESPHome Manually](https://esphome.io/guides/installing_esphome/) 
+
+For windows i think the command should be this:
+```
+python -m pip install --upgrade pip wheel "esphome==2025.10.0"
+
+```
+
+If you have a decent pc running home assistant you can install version 2025.10.0 in this addon repository.
+(not advised if using raspberry pi)  [Esphome Legacy Addons](https://github.com/khenderick/esphome-legacy-addons)
+
+Esphome:
+open the solaredge or sigenergy folder and open powershell in this folder
+open the solar-display file and make sure to add your substitutions and to fill in the secrets file.
+
+now use the command (making sure to plug in the display to the pc)
+
+```
+esphome run solar-display.yaml
+
+```
+
+---
+
+## First boot
+
+once finally booted you should automatically connect to your wifi, you can find the device ip adress in the settings to add it to your home assistant, if it fails to connect to wifi you can add this in the settings, however i recommend to reflash it with the wifi credentials.
+
+Enjoy!
+
+---
+
+## And some more pictures
+
 ![Solar Display example](/ReadmeImages/solardisplay3.jpg)
 ![Solar Display example](/ReadmeImages/solardisplay4.jpg)
 ![Solar Display example](/ReadmeImages/solardisplay5.jpg)
