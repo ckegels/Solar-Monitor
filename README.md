@@ -1,28 +1,26 @@
-# solar-display
+# Solar Display
 
-A tabletop display to change the way you use and monitor your solar energy production and energy consumption.
-
----
-
-## Image
-
-Example images of the Solar Display can be found in the `ReadmeImages` folder:
-
-
-![Solar Display example](/ReadmeImages/solardisplay3.jpg)
-
+A tabletop display that changes how you view and understand your **solar energy production** and **home energy consumption**.
 
 ---
 
-## About This Project
+## Project Overview
 
-I have never done a GitHub project before. This is the first time I am sharing one of my projects, and it felt pointless to keep it to myself after putting so much time into it if no one else could enjoy or use it.
+This is my **first GitHub project** and the first time I’m publicly sharing one of my projects. After putting so much time into it, it felt pointless to keep it to myself if no one else could enjoy or use it.
 
 I originally just wanted a **pretty power flow display**. That idea quickly snowballed into:
 
 > “But could I also add this graph… or that value?”
 
-There **will be issues**, so please let me know if you find any. I will try to resolve them or help where I can.
+There **will be issues**, so please let me know if you find any. I’ll try to resolve them or help where I can.
+
+---
+
+## Images
+
+Example images of the Solar Display can be found in the `ReadmeImages` folder:
+
+![Solar Display example](/ReadmeImages/solardisplay3.jpg)
 
 ---
 
@@ -44,28 +42,36 @@ There **will be issues**, so please let me know if you find any. I will try to r
 ## Software
 
 ### Home Assistant
+
 Home Assistant is the **backbone** of this project.
 
 #### Files needed in Home Assistant
 
-Place these files in the packages folder (config/packages/)
+Place these files in the packages folder:
+
+```
+config/packages/
+```
 
 - **`energy.yaml`**  
   Used for creating energy meters, usable sensors, helpers, and other required entities.
 
 - **`energydevices.yaml`**  
-  This file is used to add Home Assistant entities as devices.  
+  Used to add Home Assistant entities as devices.
+
   On the *Home Usage* page, there is an option to display power flow within the house. This allows energy to flow from the home to the first subpanel and then to individual devices.
 
-  The power entities are added here so they can be displayed in the power flow view. Once devices are added, they can be selected in the device usage settings. There are several images you can choose from for device icons, and you have to set the name of the device on the display.
+  Power entities are added here so they can be displayed in the power flow view. Once devices are added, they can be selected in the device usage settings. You can choose device icons and set the name shown on the display.
 
 ---
 
 ### Sigenergy Notes
 
-Once the integration is installed, make sure the entity naming is the **standard** sigenergy naming.
+Once the integration is installed, make sure the entity naming is the **standard Sigenergy naming**:
 
+```
 sensor.sigen_inverter_...
+```
 
 This naming is required for the energy file to work correctly.
 
@@ -77,7 +83,8 @@ Because I have **two inverters**, I needed to use the *SolarEdge Modbus Multi* i
 
 I also needed an energy file to handle many of the additional calculations.
 
-My current naming convention is (this is the standard provided by the integration do not change):
+Current naming convention (this is the standard provided by the integration — **do not change**):
+
 - **B1** – Battery
 - **I1 / I2** – Inverters
 - **M1** – Meter
@@ -91,7 +98,10 @@ I will try to redo the energy file so this setup will also work for **single inv
 - **Recommended version:** `2025.10.0`  
   I had issues with newer versions.
 
-I recommend building this using the **command-line version of ESPHome** on a powerful computer. Building on a Raspberry Pi is very demanding and not recommended.
+### Build Recommendation
+
+I recommend building this using the **command-line version of ESPHome** on a powerful computer.  
+Building on a Raspberry Pi is very demanding and **not recommended**.
 
 ---
 
@@ -105,7 +115,7 @@ I recommend building this using the **command-line version of ESPHome** on a pow
   Resolution: 1024×600  
   Optional touch function  
   32-bit LX7 dual-core processor (up to 240 MHz)  
-  WiFi & Bluetooth support
+  WiFi & Bluetooth support  
   [Waveshhare Display Link](https://www.waveshare.com/esp32-s3-lcd-7b.htm?sku=31726)
 
 - **8× M3 heat-set inserts**
@@ -113,12 +123,12 @@ I recommend building this using the **command-line version of ESPHome** on a pow
 
 - **MMWave Sensor**  
   Uses 3.3V, GND, and OT2 on the display GPIO.  
-  (The display works without this sensor. If not used, go into the settings and disable the motion sensor option.)
+  (The display works without this sensor. If not used, disable the motion sensor option in settings.)  
   [Example Link](https://de.aliexpress.com/item/1005007103251173.html?gatewayAdapt=glo2deu)
 
 - **USB-C Power Plug**  
   Buy the **6-pin version** so it works regardless of USB-C cable orientation.  
-  The display is very sensitive to power issues.
+  The display is very sensitive to power issues.  
   [Example Link](https://de.aliexpress.com/item/1005007524400372.html?gatewayAdapt=glo2deu)
 
 - **Fabric Covering**  
@@ -134,65 +144,78 @@ I recommend building this using the **command-line version of ESPHome** on a pow
 
 The case can be 3D printed, but the design is **not ideal**. This was one of the first models I ever made.
 
-To screw the display into the case, you will need a **bendable screwdriver attachment** (such as one from an iFixit kit), as access is very tight.
+To screw the display into the case, you’ll need a **bendable screwdriver attachment** (such as one from an iFixit kit), as access is very tight.
 
 If anyone wants to redesign the case, please PM me for the CAD files.
 
+---
+
+## Installation
+
+### Home Assistant
+
+1. Pick which inverter you are using (**Sigenergy** or **SolarEdge**)
+2. Place the package files into:
+
+```
+config/packages/
+```
 
 ---
 
-## More pictures
+### ESPHome Builder
 
-![Solar Display example](/ReadmeImages/solardisplay2.jpg)
+Before flashing the device, you’ll need a **decent computer**. Flashing from a Raspberry Pi is extremely slow and not recommended.
 
+I used the ESPHome **command-line tool on Windows**, as my Pi 5 (16GB) could not handle this build.
 
----
+Download and install ESPHome version `2025.10.0`:  
+[Installing ESPHome Manually](https://esphome.io/guides/installing_esphome/)
 
-## installation
+For Windows, the command should be:
 
-
-Home assistant:
-First pick what inverter sigenergy or solaredge.
-place the package files in the package folder in home assistant.
-
-
-Esphome Builder:
-Before we can actually flash the device we need a decent computer to actually do this, to make flashing faster i used the command line on windows as my pi5 16gb could not handle this file.
-
-download and install esphome builder with version `2025.10.0` [Installing ESPHome Manually](https://esphome.io/guides/installing_esphome/) 
-
-For windows i think the command should be this:
 ```
 python -m pip install --upgrade pip wheel "esphome==2025.10.0"
-
 ```
 
-If you have a decent pc running home assistant you can install version 2025.10.0 in this addon repository.
-(not advised if using raspberry pi)  [Esphome Legacy Addons](https://github.com/khenderick/esphome-legacy-addons)
+If you have a powerful PC running Home Assistant, you *can* install version `2025.10.0` from this add-on repository  
+(not advised for Raspberry Pi):
 
-Esphome:
-open the solaredge or sigenergy folder and open powershell in this folder
-open the solar-display file and make sure to add your substitutions and to fill in the secrets file.
+[Esphome Legacy Addons](https://github.com/khenderick/esphome-legacy-addons)
 
-now use the command (making sure to plug in the display to the pc)
+---
+
+### Flashing the Display
+
+1. Open the **Sigenergy** or **SolarEdge** folder
+2. Open PowerShell in that folder
+3. Open `solar-display.yaml`
+4. Fill in substitutions and the `secrets.yaml` file
+5. Plug the display into your computer
+
+Run:
 
 ```
 esphome run solar-display.yaml
-
 ```
 
 ---
 
-## First boot
+## First Boot
 
-once finally booted you should automatically connect to your wifi, you can find the device ip adress in the settings to add it to your home assistant, if it fails to connect to wifi you can add this in the settings, however i recommend to reflash it with the wifi credentials.
+Once booted, the device should automatically connect to Wi-Fi.
+
+You can find the device IP address in the settings and add it to Home Assistant.
+
+If Wi-Fi fails to connect, you *can* enter credentials in settings, but reflashing with the correct credentials is recommended.
 
 Enjoy!
 
 ---
 
-## And some more pictures
+## More Images
 
+![Solar Display example](/ReadmeImages/solardisplay2.jpg)
 ![Solar Display example](/ReadmeImages/solardisplay3.jpg)
 ![Solar Display example](/ReadmeImages/solardisplay4.jpg)
 ![Solar Display example](/ReadmeImages/solardisplay5.jpg)
@@ -204,12 +227,18 @@ Enjoy!
 ![Solar Display example](/ReadmeImages/solardisplay11.jpg)
 ![Solar Display example](/ReadmeImages/solardisplay12.jpg)
 
-## Future Updates?
+---
 
-I want to keep updating this, currently there is some text that is displayed on the homepage that puts into words what the house does, for example: battery low please reduce usage.
-These values it uses are currently hard coded without being able to change them, i want to add numbers for allot of values so it is easier to setup.
-also i would like to change the messages of these suggestions, however i am not sure what to change them to.
-Want to add specific graphs to be available in the interval page.
-I would also like to get this to work on newer versions of esphome but currently it bugs out on the newer versions, however i will keep trying.
+## Future Updates
 
-Any other suggestions would be really appreciated.
+I want to keep updating this project.
+
+Currently, some text displayed on the homepage describes what the house is doing (for example: *battery low, please reduce usage*).  
+These values are currently **hard-coded**, and I want to expose more numbers so setup is easier.
+
+I would also like to:
+- Allow changing the suggestion messages
+- Add specific graphs to the interval page
+- Improve compatibility with newer ESPHome versions (currently buggy)
+
+Any suggestions would be really appreciated.
