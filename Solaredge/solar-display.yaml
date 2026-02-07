@@ -38,6 +38,8 @@ substitutions:
   wifi_preset_1_label: "network 1"
   wifi_preset_2_label: "network 2"
   wifi_preset_3_label: "network 3"
+  api_key_full: !secret api_encryption_key
+  ota_key_full: !secret ota_password
 
 preferences:
   flash_write_interval: 5min

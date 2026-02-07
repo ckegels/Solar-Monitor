@@ -10,27 +10,27 @@ esphome:
     board_upload.maximum_ram_size: 524288
     board_build.flash_size: 16MB
   on_boot:
-    - priority: 500
-      then:
-        - delay: 3000ms
-        - switch.turn_on: backlight_switch
-        - light.turn_on:
-          id: lcd_backlight
-          brightness: 80%
-    - priority: 600
-      then:
-        - lambda: |-
-            id(force_ap_mode) = false;
-        - wifi.enable
+  - priority: 500
+    then:
+    - delay: 3000ms
+    - switch.turn_on: backlight_switch
+    - light.turn_on:
+        id: lcd_backlight
+        brightness: 80%
+  - priority: 600
+    then:
+      - lambda: |-
+          id(force_ap_mode) = false;
+      - wifi.enable
 
-    - priority: -100
-      then:
-        - script.execute: boot_flow
-    - priority: 900
-      then:
-        - lvgl.widget.hide: btn_boot_menu
-        - lvgl.page.show: boot_page
-        - script.execute: maybe_show_boot_menu
+  - priority: -100
+    then:
+      - script.execute: boot_flow
+  - priority: 900
+    then:
+      - lvgl.widget.hide: btn_boot_menu
+      - lvgl.page.show: boot_page
+      - script.execute: maybe_show_boot_menu
 
 substitutions:
   wifi_preset_1_label: "network 1"
@@ -38,6 +38,8 @@ substitutions:
   wifi_preset_3_label: "network 3"
   device_name: "solar-display"
   friendly_name: "Solar Display"
+  api_key_full: !secret api_encryption_key
+  ota_key_full: !secret ota_password
 preferences:
   flash_write_interval: 5min
 
@@ -205,12 +207,12 @@ switch:
   on_turn_on:
     then:
       - if:
-        condition:
-          switch.is_on: change_homepage 
-        then:
-          - lvgl.page.show: home_page         # old/original homepage
-        else:
-          - lvgl.page.show: home_page_2       # new homepage
+          condition:
+            switch.is_on: change_homepage 
+          then:
+            - lvgl.page.show: home_page         # old/original homepage
+          else:
+            - lvgl.page.show: home_page_2       # new homepage
 - platform: template
   id: change_homepage
   name: homepage toggle
@@ -219,21 +221,21 @@ switch:
   on_turn_on:
     then:
       - if:
-        condition:
-            lambda: return id(api_ready);
-        then:
-          - lvgl.page.show: home_page
-          - lambda: |-
-              id(use_original_home) = true;
+          condition:
+              lambda: return id(api_ready);
+          then:
+            - lvgl.page.show: home_page
+            - lambda: |-
+                id(use_original_home) = true;
   on_turn_off:
     then:
       - if:
-        condition:
-            lambda: return id(api_ready);
-        then:
-          - lvgl.page.show: home_page_2
-          - lambda: |-
-              id(use_original_home) = false;
+          condition:
+              lambda: return id(api_ready);
+          then:
+            - lvgl.page.show: home_page_2
+            - lambda: |-
+                id(use_original_home) = false;
 touchscreen:
 - platform: gt911
   id: my_touchscreen
@@ -569,16 +571,16 @@ binary_sensor:
   on_state:
     then:
       - if:
-        condition:
-            lambda: return id(api_ready) && (x == false);
-        then:
-          - if:
-            condition:
-              switch.is_on: change_homepage 
-            then:
-              - lvgl.page.show: home_page         # old/original homepage
-            else:
-              - lvgl.page.show: home_page_2       # new homepage
+          condition:
+              lambda: return id(api_ready) && (x == false);
+          then:
+            - if:
+                condition:
+                  switch.is_on: change_homepage 
+                then:
+                  - lvgl.page.show: home_page         # old/original homepage
+                else:
+                  - lvgl.page.show: home_page_2       # new homepage
 sensor:
 
 - platform: template
@@ -9067,24 +9069,24 @@ script:
     - delay: !lambda |
         return id(boot_extra_delay_ms);
     - if:
-      condition:
-        switch.is_on: change_homepage 
-      then:
-        - lvgl.page.show: home_page         # old/original homepage
-      else:
-        - lvgl.page.show: home_page_2       # new homepage
+        condition:
+          switch.is_on: change_homepage 
+        then:
+          - lvgl.page.show: home_page         # old/original homepage
+        else:
+          - lvgl.page.show: home_page_2       # new homepage
 - id: maybe_show_boot_menu
   mode: restart
   then:
     - delay: 30s
     - if:
-      condition:
-        api.connected: null
-      then:
-        - logger.log: API connected; keeping boot menu hidden
-      else:
-      - lvgl.widget.show: btn_boot_menu
-      - lambda: lv_label_set_text(id(lbl_boot_status), "No API connection yet. Open Menu.");
+        condition:
+          api.connected: null
+        then:
+          - logger.log: API connected; keeping boot menu hidden
+        else:
+        - lvgl.widget.show: btn_boot_menu
+        - lambda: lv_label_set_text(id(lbl_boot_status), "No API connection yet. Open Menu.");
 
 - id: interval_show_target_page
   mode: restart

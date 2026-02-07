@@ -203,3 +203,13 @@ Enjoy!
 ![Solar Display example](/ReadmeImages/solardisplay10.jpg)
 ![Solar Display example](/ReadmeImages/solardisplay11.jpg)
 ![Solar Display example](/ReadmeImages/solardisplay12.jpg)
+
+## Future Updates?
+
+I want to keep updating this, currently there is some text that is displayed on the homepage that puts into words what the house does, for example: battery low please reduce usage.
+These values it uses are currently hard coded without being able to change them, i want to add numbers for allot of values so it is easier to setup.
+also i would like to change the messages of these suggestions, however i am not sure what to change them to.
+Want to add specific graphs to be available in the interval page.
+I would also like to get this to work on newer versions of esphome but currently it bugs out on the newer versions, however i will keep trying.
+
+Any other suggestions would be really appreciated.
