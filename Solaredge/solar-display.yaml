@@ -236,9 +236,9 @@ touchscreen:
   id: my_touchscreen
   update_interval: 16ms
   interrupt_pin: 4
-  reset_pin:
-    waveshare_io_ch32v003: wave_io
-    number: 1
+  # No reset_pin: ESPHome's GT911 reset skips the datasheet's 50ms wait after
+  # releasing INT, so touch randomly failed to start ("Calibration error").
+  # The GT911 is already running at 0x5D on boot, so no reset is needed.
   on_touch:
   - if:
       condition:
@@ -1880,7 +1880,7 @@ lvgl:
               src: img_menu_res
               align: center
               bg_opa: 0
-              zoom: 0.5
+              scale: 0.5
   - id: home_usage_page
     bg_color: 0x141B21
     on_load:
@@ -2447,7 +2447,7 @@ lvgl:
                 src: img_menu_res
                 align: center
                 bg_opa: 0
-                zoom: 0.6    
+                scale: 0.6    
       - label:
           id: hu_title
           text: "Home usage"
@@ -2479,7 +2479,7 @@ lvgl:
           x: 390
           y: 110
           bg_opa: 0
-          zoom: 0.9
+          scale: 0.9
           hidden: true
       - label:
           id: hu_sp1_name
@@ -2504,7 +2504,7 @@ lvgl:
           x: 390
           y: 445
           bg_opa: 0
-          zoom: 0.9
+          scale: 0.9
           hidden: true
       - label:
           id: hu_sp2_name
@@ -2534,7 +2534,7 @@ lvgl:
           x: 720
           y: 120
           bg_opa: 0
-          zoom: 0.9
+          scale: 0.9
       - label:
           id: hu_dev1_name
           text: "Device 1"
@@ -2557,7 +2557,7 @@ lvgl:
           x: 720
           y: 220
           bg_opa: 0
-          zoom: 0.9
+          scale: 0.9
       - label:
           id: hu_dev2_name
           text: "Device 2"
@@ -2580,7 +2580,7 @@ lvgl:
           x: 720
           y: 320
           bg_opa: 0
-          zoom: 0.9
+          scale: 0.9
       - label:
           id: hu_dev3_name
           text: "Device 3"
@@ -2601,7 +2601,7 @@ lvgl:
           id: hu_dev4_icon
           src: hu_icon_homecog
           bg_opa: 0
-          zoom: 0.9
+          scale: 0.9
           x: 720
           y: 420
       - label:
@@ -2624,7 +2624,7 @@ lvgl:
           id: hu_dev5_icon
           src: hu_icon_homecog
           bg_opa: 0
-          zoom: 0.9
+          scale: 0.9
           x: 720
           y: 520
       - label:
@@ -2810,7 +2810,7 @@ lvgl:
               src: img_menu_res
               align: center
               bg_opa: 0
-              zoom: 0.5  
+              scale: 0.5  
 
     - obj:
         id: suggestion_box
@@ -2899,7 +2899,7 @@ lvgl:
                   align: top_mid
                   y: -60
                   bg_opa: 0%
-                  zoom: 0.7
+                  scale: 0.7
               - label:
                   text: Solar
                   text_font: my_font_medium
@@ -2947,7 +2947,7 @@ lvgl:
                   align: top_mid
                   y: -60
                   bg_opa: 0%
-                  zoom: 0.7
+                  scale: 0.7
               - label:
                   text: Home
                   text_font: my_font_medium
@@ -2995,7 +2995,7 @@ lvgl:
                   align: top_mid
                   y: -60
                   bg_opa: 0%
-                  zoom: 0.7
+                  scale: 0.7
               - label:
                   text: Grid
                   text_font: my_font_medium
@@ -3017,7 +3017,7 @@ lvgl:
                   x: -40
                   bg_opa: 0%
                   hidden: true
-                  zoom: 0.2
+                  scale: 0.2
 
               - image:
                   id: hp2_img_grid_arrow_down_inst    # WIDGET (lv_img)
@@ -3026,7 +3026,7 @@ lvgl:
                   x: -40
                   bg_opa: 0%
                   hidden: false
-                  zoom: 0.2
+                  scale: 0.2
           - obj:
               id: hp2_card_battery
               x: 704
@@ -3059,7 +3059,7 @@ lvgl:
                   src: hp2_batt_0010
                   align: top_mid
                   y: 0
-                  zoom: 1
+                  scale: 1
                   bg_opa: 0%
               - image:
                   id: hp2_batt_img_1020
@@ -3067,7 +3067,7 @@ lvgl:
                   align: top_mid
                   y: 0
                   bg_opa: 0%
-                  zoom: 1
+                  scale: 1
                   hidden: true
               - image:
                   id: hp2_batt_img_2030
@@ -3075,7 +3075,7 @@ lvgl:
                   align: top_mid
                   y: 0
                   bg_opa: 0%
-                  zoom: 1
+                  scale: 1
                   hidden: true
               - image:
                   id: hp2_batt_img_3040
@@ -3083,7 +3083,7 @@ lvgl:
                   align: top_mid
                   y: 0
                   bg_opa: 0%
-                  zoom: 1
+                  scale: 1
                   hidden: true
               - image:
                   id: hp2_batt_img_4050
@@ -3091,7 +3091,7 @@ lvgl:
                   align: top_mid
                   y: 0
                   bg_opa: 0%
-                  zoom: 1
+                  scale: 1
                   hidden: true
               - image:
                   id: hp2_batt_img_5060
@@ -3099,7 +3099,7 @@ lvgl:
                   align: top_mid
                   y: 0
                   bg_opa: 0%
-                  zoom: 1
+                  scale: 1
                   hidden: true
               - image:
                   id: hp2_batt_img_6070
@@ -3107,7 +3107,7 @@ lvgl:
                   align: top_mid
                   y: 0
                   bg_opa: 0%
-                  zoom: 1
+                  scale: 1
                   hidden: true
               - image:
                   id: hp2_batt_img_7080
@@ -3115,7 +3115,7 @@ lvgl:
                   align: top_mid
                   y: 0
                   bg_opa: 0%
-                  zoom: 1
+                  scale: 1
                   hidden: true
               - image:
                   id: hp2_batt_img_8090
@@ -3123,7 +3123,7 @@ lvgl:
                   align: top_mid
                   y: 0
                   bg_opa: 0%
-                  zoom: 1
+                  scale: 1
                   hidden: true
               - image:
                   id: hp2_batt_img_90100
@@ -3131,7 +3131,7 @@ lvgl:
                   align: top_mid
                   y: 0
                   bg_opa: 0%
-                  zoom: 1
+                  scale: 1
                   hidden: true
               - label:
                   text: Battery
@@ -3291,7 +3291,7 @@ lvgl:
               src: img_menu_res
               align: center
               bg_opa: 0
-              zoom: 0.6           
+              scale: 0.6           
     - button:
         id: hp2_btn_esphome
         width: 102
@@ -3317,7 +3317,7 @@ lvgl:
               src: esphome_logo
               align: center
               bg_opa: 0
-              zoom: 0.25          
+              scale: 0.25          
 
     - label:
         id: hp2_lbl_suggestion
@@ -3821,7 +3821,7 @@ lvgl:
               src: img_menu_res
               align: center
               bg_opa: 0
-              zoom: 0.5      
+              scale: 0.5      
 
   - id: battery_page
     bg_color: 0x141B21
@@ -4052,7 +4052,7 @@ lvgl:
               src: img_menu_res
               align: center
               bg_opa: 0
-              zoom: 0.5                              
+              scale: 0.5                              
 
   - id: solar_page
     bg_color: 0x141B21
@@ -4316,7 +4316,7 @@ lvgl:
               src: img_menu_res
               align: center
               bg_opa: 0
-              zoom: 0.5  
+              scale: 0.5  
 
   - id: grid_page
     bg_color: 0x141B21
@@ -4546,7 +4546,7 @@ lvgl:
               src: img_menu_res
               align: center
               bg_opa: 0
-              zoom: 0.5  
+              scale: 0.5  
 
   - id: menu_page
     bg_color: 0x141B21
@@ -4593,7 +4593,7 @@ lvgl:
                 src: img_close_res
                 align: center
                 bg_opa: 0
-                zoom: 0.5
+                scale: 0.5
 
       - obj:
           id: menu_grid
@@ -4878,7 +4878,7 @@ lvgl:
                 src: img_menu_res
                 align: center
                 bg_opa: 0
-                zoom: 0.5                              
+                scale: 0.5                              
       - label:
           id: interval_prelude_lbl
           x: 51
@@ -5009,7 +5009,7 @@ lvgl:
                 src: img_close_res
                 align: center
                 bg_opa: 0
-                zoom: 0.5                              
+                scale: 0.5                              
 
       # Seconds per page
       - label:
@@ -5316,7 +5316,7 @@ lvgl:
               src: img_menu_res
               align: center
               bg_opa: 0
-              zoom: 0.5  
+              scale: 0.5  
     - button:
         id: btn_settings_scroll_up
         x: 20
@@ -5913,7 +5913,7 @@ lvgl:
                 src: img_close_res
                 align: center
                 bg_opa: 0
-                zoom: 0.5
+                scale: 0.5
 
       # Device 1
       - obj:
@@ -6124,7 +6124,7 @@ lvgl:
                 src: img_close_res
                 align: center
                 bg_opa: 0
-                zoom: 0.5
+                scale: 0.5
       - obj:
           id: btn_usage_kb_done
           x: 20
@@ -6584,7 +6584,7 @@ lvgl:
                 src: img_close_res
                 align: center
                 bg_opa: 0
-                zoom: 0.5
+                scale: 0.5
 
       # Name
       - label:
@@ -7193,7 +7193,7 @@ lvgl:
                 src: img_close_res
                 align: center
                 bg_opa: 0
-                zoom: 0.5
+                scale: 0.5
 
       # Body text (placeholder explanation)
       - label:
@@ -7563,7 +7563,7 @@ lvgl:
                 src: img_menu_res
                 align: center
                 bg_opa: 0
-                zoom: 0.5  
+                scale: 0.5  
   - id: wifi_page
     bg_color: 0x141B21
     widgets:
@@ -7760,7 +7760,7 @@ lvgl:
                 src: img_close_res
                 align: center
                 bg_opa: 0
-                zoom: 0.5
+                scale: 0.5
       # RIGHT: Fallback AP (sticky)
       - button:
           x: 670
@@ -7966,7 +7966,7 @@ lvgl:
                 src: img_close_res
                 align: center
                 bg_opa: 0
-                zoom: 0.5
+                scale: 0.5
 
       # SSID field
       - label:
@@ -8877,15 +8877,17 @@ lvgl:
               src: img_menu_res
               align: center
               bg_opa: 0
-              zoom: 0.5  
+              scale: 0.5  
 button:
 - platform: restart
   id: restart_device
   name: Restart Device
 
 display:
-- platform: rpi_dpi_rgb
+- platform: mipi_rgb
+  model: RPI
   id: my_display
+  setup_priority: 800   # same start-up order as the old rpi_dpi_rgb driver
   update_interval: never
   auto_clear_enabled: false
   color_order: RGB
@@ -8899,9 +8901,6 @@ display:
   reset_pin:
     waveshare_io_ch32v003: wave_io
     number: 3
-#  enable_pin:
-#    ch422g: io_ex
-#    number: 4
   hsync_pulse_width: 162
   hsync_back_porch: 152
   hsync_front_porch: 48
@@ -8971,135 +8970,168 @@ color:
 - id: mdi_orange
   hex: FF9800
 image:
-- id: img_device1
+- platform: file
+  id: img_device1
   file: icons/device1.png
   type: RGB565
   transparency: alpha_channel
-- id: img_close_res
+- platform: file
+  id: img_close_res
   file: icons/close.png
   type: RGB565
   transparency: alpha_channel
-- id: img_menu_res
+- platform: file
+  id: img_menu_res
   file: icons/menu.png
   type: RGB565
   transparency: alpha_channel
-- id: arrow_down_res
+- platform: file
+  id: arrow_down_res
   file: icons/arrowdownred.png
   type: RGB565
   transparency: alpha_channel
-- id: arrow_up_res
+- platform: file
+  id: arrow_up_res
   file: icons/arrowupblue.png
   type: RGB565
   transparency: alpha_channel
-- id: node_solar_img
+- platform: file
+  id: node_solar_img
   file: icons/icon_sun_100.png
   type: RGB565
   transparency: alpha_channel
-- id: node_home_100
+- platform: file
+  id: node_home_100
   file: icons/icon_home_100.png
   type: RGB565
   transparency: alpha_channel
-- id: node_battery_100
+- platform: file
+  id: node_battery_100
   file: icons/icon_battery_100.png
   type: RGB565
   transparency: alpha_channel
-- id: node_grid_100
+- platform: file
+  id: node_grid_100
   file: icons/icon_grid_100.png
   type: RGB565
   transparency: alpha_channel
-- id: esphome_logo
+- platform: file
+  id: esphome_logo
   file: icons/esphome.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_img_solar
+- platform: file
+  id: hp2_img_solar
   file: icons/solar.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_img_grid
+- platform: file
+  id: hp2_img_grid
   file: icons/grid.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_img_home
+- platform: file
+  id: hp2_img_home
   file: icons/home.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_batt_0010
+- platform: file
+  id: hp2_batt_0010
   file: icons/battery10.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_batt_1020
+- platform: file
+  id: hp2_batt_1020
   file: icons/battery1020.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_batt_2030
+- platform: file
+  id: hp2_batt_2030
   file: icons/battery2030.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_batt_3040
+- platform: file
+  id: hp2_batt_3040
   file: icons/battery3040.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_batt_4050
+- platform: file
+  id: hp2_batt_4050
   file: icons/battery4050.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_batt_5060
+- platform: file
+  id: hp2_batt_5060
   file: icons/battery5060.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_batt_6070
+- platform: file
+  id: hp2_batt_6070
   file: icons/battery6070.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_batt_7080
+- platform: file
+  id: hp2_batt_7080
   file: icons/battery7080.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_batt_8090
+- platform: file
+  id: hp2_batt_8090
   file: icons/battery8090.png
   type: RGB565
   transparency: alpha_channel
-- id: hp2_batt_90100
+- platform: file
+  id: hp2_batt_90100
   file: icons/battery90100.png
   type: RGB565
   transparency: alpha_channel
-- id: hu_icon_homecog
+- platform: file
+  id: hu_icon_homecog
   file: icons/homecog.png
   type: RGB565
   transparency: alpha_channel
-- id: hu_icon_towel
+- platform: file
+  id: hu_icon_towel
   file: icons/towel.png
   type: RGB565
   transparency: alpha_channel
-- id: hu_icon_dehumidifier
+- platform: file
+  id: hu_icon_dehumidifier
   file: icons/dehumidifier.png
   type: RGB565
   transparency: alpha_channel
-- id: hu_icon_heater
+- platform: file
+  id: hu_icon_heater
   file: icons/heater.png
   type: RGB565
   transparency: alpha_channel
-- id: hu_icon_heating
+- platform: file
+  id: hu_icon_heating
   file: icons/heating.png
   type: RGB565
   transparency: alpha_channel
-- id: hu_icon_office
+- platform: file
+  id: hu_icon_office
   file: icons/office.png
   type: RGB565
   transparency: alpha_channel
-- id: hu_icon_pcdesk
+- platform: file
+  id: hu_icon_pcdesk
   file: icons/pcdesk.png
   type: RGB565
   transparency: alpha_channel
-- id: hu_icon_sauna
+- platform: file
+  id: hu_icon_sauna
   file: icons/sauna.png
   type: RGB565
   transparency: alpha_channel
-- id: hu_icon_sofa
+- platform: file
+  id: hu_icon_sofa
   file: icons/sofa.png
   type: RGB565
   transparency: alpha_channel
-- id: hu_icon_spa
+- platform: file
+  id: hu_icon_spa
   file: icons/spa.png
   type: RGB565
   transparency: alpha_channel

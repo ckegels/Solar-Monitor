@@ -85,6 +85,15 @@ To verify the options actually landed, check `<folder>/.esphome/build/solar-disp
   About 100 other containers/buttons still have no `scrollable` setting. They looked fine, but if a scrollbar shows up elsewhere, this is the fix.
 - **Gap between the 4 boxes and the summary card** (exported today / remaining battery / self use today): `hp2_summary_card` moved from `y: 400` to `y: 410`, making the gap 16 px, the same as `pad_column` between the cards. Layout math: `hp2_row` y=88, h=325, cards h=288, vertically centred → cards end at ~y=394. Summary card is 119 px tall → ends at ~529; the tips label (`hp2_lbl_suggestion`, `my_font_medium` 38 px, `bottom_mid` y=-10) starts ~545. A tip that wraps to two lines would grow upward towards the card.
 
+### Deprecations cleared and touch start-up fixed
+- `image:` block converted to the new format (`- platform: file` per image, 33 images).
+- `zoom:` → `scale:` on all 43 images (same values).
+- Display driver `rpi_dpi_rgb` → `mipi_rgb` with `model: RPI` (generic model, no init sequence) and the original pins/timings. `mipi_rgb` sets up the panel exactly like `rpi_dpi_rgb` (PSRAM framebuffer, 10-line bounce buffer, 1 FB). There is no built-in 7B model; `WAVESHARE-5-1024X600` uses the same pins but different timings and a CH422G reset pin. `setup_priority: 800` keeps the old start-up order (`rpi_dpi_rgb` is HARDWARE priority, `mipi_rgb` uses the default).
+- **Touch randomly failing to start** (`touchscreen is marked FAILED: Calibration error`, touch dead until the next reboot). Measured with repeated software restarts: `rpi_dpi_rgb` 3/8 failed, `mipi_rgb` 6/8 failed, so the bug was already there and the new driver only made it more likely.
+  Cause: ESPHome's GT911 `setup()` pulses reset (EXIO1 via the CH32V003), holds INT low, then 56 ms later switches INT to input and **immediately** talks I2C. The GT911 datasheet wants ≥50 ms *after* releasing INT, so the chip is sometimes not ready yet.
+  Fix: removed `reset_pin` from the `gt911` touchscreen. The chip is already running at 0x5D at boot (seen in the I2C scan before any reset), and without the reset ESPHome talks to it directly. Result: **0/10 failures** on `mipi_rgb`.
+  The reboot test scripts used for this (press the "Restart Device" button through the API, wait, then grep `esphome logs` for `touchscreen is marked FAILED`) were throwaway tools and are not in the repo.
+
 ### README
 ESPHome version requirement, an upgrade guide for people with modified YAMLs, OTA update instructions, a warning to generate your own API key, and the single-inverter SolarEdge package.
 
@@ -94,7 +103,7 @@ ESPHome version requirement, an upgrade guide for people with modified YAMLs, OT
 
 | Firmware | Compiles on 2026.9.1 | Tested on hardware |
 |---|---|---|
-| SolarEdge | yes | **yes**: boots, Wi-Fi, HA API, PSRAM, touch, layout; glitching and scrollbar confirmed fixed by the owner |
+| SolarEdge | yes | **yes**: boots, Wi-Fi, HA API, PSRAM, touch, layout; glitching and scrollbar confirmed fixed by the owner; `mipi_rgb` + no touch reset: 10/10 software restarts with working touch |
 | Sigenergy | yes | **no**: identical changes, but nobody has run it on a display yet |
 
 Build sizes: RAM ~54%, flash ~45% of the 8 MB app partition.
@@ -137,11 +146,9 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 
 | Item | Deadline / reason |
 |---|---|
-| Convert the old `image:` block to the new platform format | **removed in ESPHome 2027.1.0** |
 | Move OTA from `password` to `encryption` | plaintext OTA fallback removed in **2027.3.0** |
-| `zoom:` → `scale:` on images | deprecation warning |
 | "Show Tips/Suggestions" switch name: remove the `/` | becomes an error in **2027.7.0** |
-| `rpi_dpi_rgb` → `mipi_rgb` | deprecated; `mipi_rgb` has no 7B model, so it needs a custom config. Same framebuffer setup, so no expected gain |
+| Confirm touch also starts reliably after a real power cut (only software restarts were tested) | the GT911 fix relies on the chip coming up by itself at power-on |
 | Test the Sigenergy firmware on real hardware | only compile-tested |
 | Share common YAML between the two firmwares (ESPHome `packages:`) | removes the "fix it twice" problem |
 | Remove `Solaredge/energy.yaml` duplicate, `ch422g` leftovers, `old_icon_sun_100.png` | cleanup |

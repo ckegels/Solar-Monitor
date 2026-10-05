@@ -122,6 +122,10 @@ If you made your own changes to the old YAML, these are the changes needed for c
   - `get_lv_img_dsc()` → `get_lv_image_dsc()`
   - `lv_point_t` → `lv_point_precise_t` (for `lv_line_set_points`)
 - LVGL 9 has slightly different default padding; containers whose children fill them can suddenly show a scrollbar. Add `scrollable: false` and `scrollbar_mode: 'off'` to those containers.
+- `image:` entries now need `- platform: file` in front of each image (the old format is removed in ESPHome 2027.1)
+- `zoom:` on images is now `scale:`
+- The display driver `rpi_dpi_rgb` is deprecated; use `platform: mipi_rgb` with `model: RPI` (same pins and timings) and `setup_priority: 800`
+- Remove `reset_pin` from the `gt911` touchscreen. ESPHome's touch reset is too fast for this board and makes touch randomly fail to start (`touchscreen is marked FAILED: Calibration error`)
 
 ### Build Recommendation
 
@@ -275,6 +279,5 @@ These values are currently **hard-coded**, and I want to expose more numbers so 
 I would also like to:
 - Allow changing the suggestion messages
 - Add specific graphs to the interval page
-- Move the remaining deprecated config: the old `image:` format (removed in ESPHome 2027.1), `zoom` → `scale`, and `rpi_dpi_rgb` → `mipi_rgb`
 
 Any suggestions would be really appreciated.
