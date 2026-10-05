@@ -116,7 +116,7 @@ What each change does and why:
 - **`logger: level: INFO`** (SolarEdge had `logger: null` = DEBUG): DEBUG logged every one of ~250 HA sensor updates (~1,400 lines per 45 s).
 - **`esp32: framework: advanced: compiler_optimization: PERF`** (-O2 instead of -Os). Setting `CONFIG_COMPILER_OPTIMIZATION_PERF` in `sdkconfig_options` does **not** work; ESPHome overrides it.
 - **`lvgl: theme: button: shadow_width: 0`**: LVGL's default theme gives every button a grey drop shadow; shadows are among the slowest things to draw.
-- **No per-frame byte swap**: with `data_pins: {red, green, blue}` the `mipi_rgb` driver always swaps the two pixel bytes in its pin mapping and reports big-endian, so ESPHome sets `LV_COLOR_16_SWAP 1` and LVGL 9 byte-swaps **every pixel of every flushed frame** in PSRAM. Fix: `byte_order: little_endian` and a flat 16-pin list in natural order `[14, 38, 18, 17, 10, 39, 0, 45, 48, 47, 21, 1, 2, 42, 41, 40]` (B3–B7, G2–G7, R3–R7). Images are unaffected (ESPHome stores RGB565 images little-endian by default). A wrong pin order shows up as wrong colours, so check colours after touching this list.
+- **No per-frame byte swap**: with `data_pins: {red, green, blue}` the `mipi_rgb` driver always swaps the two pixel bytes in its pin mapping and reports big-endian, so ESPHome sets `LV_COLOR_16_SWAP 1` and LVGL 9 byte-swaps **every pixel of every flushed frame** in PSRAM. Fix: `byte_order: little_endian` and a flat 16-pin list in natural order `[14, 38, 18, 17, 10, 39, 0, 45, 48, 47, 21, 1, 2, 42, 41, 40]` (B3–B7, G2–G7, R3–R7). Images are unaffected (ESPHome stores RGB565 images little-endian by default). Colours confirmed correct on the display; a wrong pin order would show up as wrong colours, so check them after touching this list.
 - **Internal-RAM draw buffer** (`lvx_use_internal_draw_buffer(20)` in `on_boot`, priority −150): ESPHome always gives LVGL a buffer of at least 1/8 screen (here: full screen) in PSRAM, which is slow to draw into. The helper allocates a 20-line strip (40 KB) in internal RAM and calls `lv_display_set_buffers()`; LVGL then draws in strips. 30 s after boot it logs e.g. `Draw buffer: 40960 bytes in internal RAM; internal RAM free 51696 bytes (largest block 36864, lowest 37232)`. If there is not enough internal RAM it silently keeps the PSRAM buffer.
   Strip height trade-off (page loads in ms: settings / graph / info / menu / home):
 
@@ -131,6 +131,7 @@ What each change does and why:
   - A block (daily-totals alignment, SoC widgets, a settings pill) had been pasted **inside the 24-bar value-label loop** of the hourly graph, so it ran up to 24 times per tick. Each `lv_obj_align_to()` forces LVGL to recalculate a whole page layout. Removed; the one line that was only there (`batt_soc_arc` alignment) moved to the SoC section above.
   - The hourly graph (`graph_page`) and the solar-info alignment (`solar_info_page`) now update every tick only while that page is shown, and every ~30 s otherwise. A full graph refresh still takes ~85 ms.
   - Settings pills (`display_page`) and the old home page's suggestion box are restyled only when their state/message changes.
+- **Loading overlay without dimming**: the 61 navigation handlers show `loading_overlay`, switch page, wait 250 ms and hide it. It used to be a full-screen 40% black layer, so showing and hiding it made LVGL redraw the whole screen twice more per page change (~0.6–0.7 s per change). Now `loading_overlay` is a transparent 280×170 container the size of the spinner card, so only that area is redrawn: a page change is one full redraw plus the 250 ms spinner (~0.3 s). The handlers did not need to change.
 - **`lv_label_set_text()` skips identical text** (`lvgl_helpers.h` redefines it as a macro for the YAML lambdas): LVGL re-measures and redraws a label even when the new text is the same, and many labels are refreshed several times a second. Pass `nullptr` as text to force a refresh.
 
 Tried and **rejected**:
@@ -149,7 +150,7 @@ ESPHome version requirement, an upgrade guide for people with modified YAMLs, OT
 
 | Firmware | Compiles on 2026.9.1 | Tested on hardware |
 |---|---|---|
-| SolarEdge | yes | **yes**: boots, Wi-Fi, HA API, PSRAM, touch, layout; glitching and scrollbar confirmed fixed by the owner; `mipi_rgb` + no touch reset: 10/10 software restarts with working touch; performance changes: owner reports a stable picture and much smoother use (colours and flicker not explicitly confirmed yet) |
+| SolarEdge | yes | **yes**: boots, Wi-Fi, HA API, PSRAM, touch, layout; glitching and scrollbar confirmed fixed by the owner; `mipi_rgb` + no touch reset: 10/10 software restarts with working touch; performance changes confirmed by the owner (stable picture, correct colours, no flicker, much smoother) |
 | Sigenergy | yes | **no**: identical changes, but nobody has run it on a display yet |
 
 Build sizes: RAM ~56%, flash ~48% of the 8 MB app partition. Internal RAM free at runtime: ~50 KB (lowest seen ~37 KB).
@@ -187,7 +188,7 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 - `Solaredge/energy.yaml` duplicates the HA package and can confuse people; the HA files live in `Homeassistant/`.
 - **Internal RAM is the scarce resource**, not PSRAM. The draw buffer takes 40 KB of it; keep ~35 KB free for Wi-Fi, the API and OTA. Don't raise the strip height above 20 lines without checking the `Draw buffer:` log line.
 - `lv_label_set_text()` in the YAML lambdas is a macro from `lvgl_helpers.h` that skips identical text (see §3 Performance).
-- **Page changes redraw the full screen three times**: the 61 navigation handlers show the dimmed `loading_overlay`, switch page, wait 250 ms, then hide it. A page change takes ~0.6–0.7 s; drawing the page alone takes ~0.1–0.25 s.
+- Keep `loading_overlay` small and transparent. Making it full-screen again (e.g. to dim the page) brings back two extra full-screen redraws on every page change.
 
 ---
 
@@ -200,7 +201,7 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 | Confirm touch also starts reliably after a real power cut (only software restarts were tested) | the GT911 fix relies on the chip coming up by itself at power-on |
 | Test the Sigenergy firmware on real hardware | only compile-tested |
 | Share common YAML between the two firmwares (ESPHome `packages:`) | removes the "fix it twice" problem |
-| Faster page changes: drop or lighten the `loading_overlay` in the 61 navigation handlers | each page change costs 3 full-screen redraws + 270 ms of delays; owner to decide |
+| Optional: shorten the 250 ms spinner delay in the navigation handlers (e.g. to 100 ms) | it is now most of a page change; the owner kept 250 ms for now |
 | Graph page: replace the 24 `lv_obj_align_to()` calls for the value labels with computed positions | a graph refresh still takes ~85 ms every 750 ms while the graph page is open |
 | Remove `Solaredge/energy.yaml` duplicate, `ch422g` leftovers, `old_icon_sun_100.png` | cleanup |
 | From the README: configurable suggestion texts/thresholds, interval page graphs | features |

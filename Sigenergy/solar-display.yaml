@@ -1727,17 +1727,19 @@ lvgl:
   top_layer:
     widgets:
       - obj:
+          # Only as big as the spinner card and transparent: a full-screen dimmed
+          # layer made LVGL redraw the whole screen when it appeared and again
+          # when it disappeared, so every page change cost 3 full redraws.
           id: loading_overlay
           hidden: true
           clickable: false
           scrollable: false
-          x: 0
-          y: 0
-          width: 1024
-          height: 600
-          bg_color: 0x000000
-          bg_opa: 40%
+          align: center
+          width: 280
+          height: 170
+          bg_opa: 0%
           border_width: 0
+          pad_all: 0
           widgets:
             - obj:
                 id: loading_card
