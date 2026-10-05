@@ -126,6 +126,7 @@ If you made your own changes to the old YAML, these are the changes needed for c
 - `zoom:` on images is now `scale:`
 - The display driver `rpi_dpi_rgb` is deprecated; use `platform: mipi_rgb` with `model: RPI` (same pins and timings) and `setup_priority: 800`
 - Remove `reset_pin` from the `gt911` touchscreen. ESPHome's touch reset is too fast for this board and makes touch randomly fail to start (`touchscreen is marked FAILED: Calibration error`)
+- Optional, for smooth scrolling: the performance changes (little-endian `data_pins`, a 20-line draw buffer in internal RAM from `includes/lvgl_helpers.h`, larger LVGL caches) are explained in [HANDOVER.md](HANDOVER.md)
 
 ### Build Recommendation
 
