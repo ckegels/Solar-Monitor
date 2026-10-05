@@ -98,8 +98,7 @@ There are Home Assistant package files for both setups:
 
 ## ESPHome
 
-- **Minimum version:** `2026.7.0` (tested with `2026.9.1`)  
-  Older versions needed an unmerged pull request for the display's I/O expander; it is now built into ESPHome.
+- ✅ **Now works with the latest ESPHome!** The issues with the display are resolved, so you no longer need to stick to an old version.
 
 ### Upgrading from the old 2025.10.0 version
 
@@ -195,7 +194,7 @@ Before flashing the device, you’ll need a **decent computer**. Flashing from a
 
 I used the ESPHome **command-line tool on Windows**, as my Pi 5 (16GB) could not handle this build.
 
-Download and install ESPHome `2026.7.0` or newer:  
+Download and install the latest ESPHome:  
 [Installing ESPHome Manually](https://esphome.io/guides/installing_esphome/)
 
 For Windows, the command should be:
