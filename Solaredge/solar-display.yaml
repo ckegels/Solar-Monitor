@@ -45,6 +45,9 @@ esp32:
   cpu_frequency: 240MHz
   framework:
     type: esp-idf
+    advanced:
+      # Optimise for speed (LVGL software rendering) instead of size
+      compiler_optimization: PERF
     sdkconfig_options:
       CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: y
       CONFIG_ESP32S3_DATA_CACHE_64KB: y
@@ -61,7 +64,8 @@ psram:
   mode: octal
   speed: 80MHz
 
-logger: null
+logger:
+  level: INFO
 api:
   encryption:
     key: !secret api_encryption_key
@@ -1714,6 +1718,11 @@ text_sensor:
 
 lvgl:
   id: my_lvgl
+  theme:
+    # LVGL's default theme gives every button a grey drop shadow; shadows are
+    # slow to draw and made scrolling laggy. Buttons that want one set it.
+    button:
+      shadow_width: 0
 
   top_layer:
     widgets:
@@ -1833,6 +1842,21 @@ lvgl:
                       text_font: my_font_small
                       text_color: 0xFFFFFF
                       long_mode: WRAP
+
+  animations:
+    # Boot screen: the logo slowly "breathes" until Home Assistant is connected
+    - id: boot_logo_breathe
+      auto_start: true
+      loop: true
+      duration: 3s
+      timing:
+        - type: round_trip
+        - type: ease_in_out
+      widgets:
+        - id: boot_logo
+          image_opa:
+            from: 40%
+            to: 100%
 
   pages:
   - id: boot_page
@@ -3239,7 +3263,7 @@ lvgl:
               pad_top: 0
               pad_bottom: 0
               pad_left: 0
-              pad_right: 500
+              pad_right: 75
               shadow_width: 0
               border_opa: 0%
               outline_opa: 0%
@@ -3263,6 +3287,19 @@ lvgl:
                     id: hp2_lbl_selfuse_today_value
                     text: "--"
                     align: TOP_LEFT
+                    text_color: 0xFFFFFF
+                    text_font: my_font
+                - label:
+                    id: hp2_lbl_usage_today_caption
+                    text: "Total use today"
+                    align: top_mid
+                    x: 31
+                    text_color: 0xE0E0E0
+                    text_font: my_font
+                - label:
+                    id: hp2_lbl_usage_today_value
+                    text: "--"
+                    align: top_mid
                     text_color: 0xFFFFFF
                     text_font: my_font
                   
@@ -9149,6 +9186,7 @@ script:
   - lambda: lv_label_set_text(id(lbl_boot_status), "Connected. Loading entities…");
   - delay: !lambda |
       return id(boot_extra_delay_ms);
+  - lvgl.animation.stop: boot_logo_breathe
   - if:
       condition:
         switch.is_on: change_homepage 
@@ -10766,14 +10804,28 @@ interval:
               snprintf(buf, sizeof(buf), "%.1f h", id(solar_battery_time_remaining).state);
               lv_label_set_text(id(hp2_lbl_batt_time_remaining), buf);
             }
-            // -------- Self-use today (use house_consumption_daily sensor) --------
+            // -------- Total usage today / Self-use today --------
+            // Self-use = everything the house used that did not come from the grid
+            // (solar used directly + solar stored in the battery and used later).
+            auto fmt_kwh = [](char *buf, size_t len, float v) {
+              if (v >= 1000.0f) snprintf(buf, len, "%.2f MWh", v / 1000.0f);
+              else              snprintf(buf, len, "%.2f kWh", v);
+            };
             if (id(house_consumption_daily).has_state()) {
-              float v = id(house_consumption_daily).state;
+              float used = id(house_consumption_daily).state;
               char buf[24];
-              if (v >= 1000.0f) snprintf(buf, sizeof(buf), "%.2f MWh", v / 1000.0f);
-              else              snprintf(buf, sizeof(buf), "%.2f kWh", v);
-              lv_label_set_text(id(hp2_lbl_selfuse_today_value), buf);
+              fmt_kwh(buf, sizeof(buf), used);
+              lv_label_set_text(id(hp2_lbl_usage_today_value), buf);
+              if (id(imported_power_daily).has_state()) {
+                float self_use = used - id(imported_power_daily).state;
+                if (self_use < 0.0f) self_use = 0.0f;
+                fmt_kwh(buf, sizeof(buf), self_use);
+                lv_label_set_text(id(hp2_lbl_selfuse_today_value), buf);
+              } else {
+                lv_label_set_text(id(hp2_lbl_selfuse_today_value), "--");
+              }
             } else {
+              lv_label_set_text(id(hp2_lbl_usage_today_value), "--");
               lv_label_set_text(id(hp2_lbl_selfuse_today_value), "--");
             }
           }
