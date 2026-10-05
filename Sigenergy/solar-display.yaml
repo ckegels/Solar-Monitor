@@ -1,9 +1,21 @@
 esphome:
   name: ${device_name}
   friendly_name: ${friendly_name}
+  build_flags:
+    # LVGL caches: rounded-corner masks (default 4; this UI uses ~10 radii) and shadows
+    - -DLV_DRAW_SW_CIRCLE_CACHE_SIZE=16
+    - -DLV_DRAW_SW_SHADOW_CACHE_SIZE=32
   includes:
     - includes/ap_mode_helper.h
+    - includes/lvgl_helpers.h
   on_boot:
+  - priority: -150
+    then:
+    # Render in 20-line strips in fast internal RAM instead of a full-screen
+    # buffer in PSRAM: scrolling ~40% faster, page loads as fast or faster.
+    - lambda: lvx_use_internal_draw_buffer(20);
+    - delay: 30s
+    - lambda: lvx_log_draw_buffer();
   - priority: 500
     then:
     - delay: 3000ms
@@ -8911,26 +8923,11 @@ display:
   pclk_pin: 7
   hsync_pin: { number: 46, ignore_strapping_warning: true }
   vsync_pin: { number: 3,  ignore_strapping_warning: true }
-  data_pins:
-    red:
-    - 1
-    - 2
-    - 42
-    - 41
-    - 40
-    green:
-    - 39
-    - 0
-    - 45
-    - 48
-    - 47
-    - 21
-    blue:
-    - 14
-    - 38
-    - 18
-    - 17
-    - 10
+  # Little-endian pixels in natural pin order (D0..D15 = B3-B7, G2-G7, R3-R7).
+  # With red/green/blue lists mipi_rgb forces big-endian, which makes LVGL
+  # byte-swap every pixel of every frame before it is copied to the screen.
+  byte_order: little_endian
+  data_pins: [14, 38, 18, 17, 10, 39, 0, 45, 48, 47, 21, 1, 2, 42, 41, 40]
 
 font:
 - file: fonts/Roboto_SemiCondensed-SemiBold.ttf
@@ -10107,6 +10104,11 @@ interval:
             bool sim_backup = id(simulate_backup_switch).state;
             bool is_backup  = ha_backup || sim_backup;
 
+            // Last normal suggestion shown; restyling the box forces a redraw, so
+            // set_box() skips it when nothing changed. Overrides reset it.
+            static const char* sug_last_msg = nullptr;
+            static uint32_t sug_last_border = 0;
+
             // Helper for consistent box layout
             auto style_box_base = [&]() {
               const int padL = 20, padR = 16, padT = 12, padB = 12;
@@ -10125,6 +10127,7 @@ interval:
 
             // === OFF-GRID override: force-visible, flashing RED background ===
             if (is_backup) {
+              sug_last_msg = nullptr;
               static int blink = 0;   // 150 ms interval above -> ~0.15s per tick
               blink = (blink + 1) % 8; // ~1.2s cycle
               bool on = (blink < 4);  // 50% duty
@@ -10164,6 +10167,7 @@ interval:
                 if (flows[i] > EPS_W) { all_zero = false; break; }
               }
               if (all_zero) {
+                sug_last_msg = nullptr;
                 style_box_base();
                 lv_obj_set_style_bg_color(id(suggestion_box), lv_color_hex(0xFF9800), LV_PART_MAIN);
                 lv_obj_set_style_bg_opa  (id(suggestion_box), LV_OPA_COVER,          LV_PART_MAIN);
@@ -10178,6 +10182,7 @@ interval:
 
             // === Normal suggestions (respect toggle) ===
             if (id(suggestion_toggle).state == false) {
+              sug_last_msg = nullptr;
               lv_obj_add_flag(id(suggestion_box),   LV_OBJ_FLAG_HIDDEN);
               lv_obj_add_flag(id(suggestion_label), LV_OBJ_FLAG_HIDDEN);
             } else {
@@ -10191,6 +10196,9 @@ interval:
               float soc_pct = nz(id(solaredge_battery_soc).state);
 
               auto set_box = [&](const char* msg, uint32_t border_hex) {
+                if (msg == sug_last_msg && border_hex == sug_last_border) return;
+                sug_last_msg = msg;
+                sug_last_border = border_hex;
                 style_box_base();
                 lv_obj_set_style_bg_color(id(suggestion_box), lv_color_hex(0x424242), LV_PART_MAIN);
                 lv_obj_set_style_bg_opa  (id(suggestion_box), LV_OPA_COVER,          LV_PART_MAIN);
@@ -10237,15 +10245,21 @@ interval:
 
           // --- Daily totals labels (PV, Home, Grid, Battery) ---
           {
-            // Position the labels relative to their nodes (no scrolling)
-            lv_obj_align_to(id(lbl_home_total_info),  id(node_home),    LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
-            lv_obj_align_to(id(lbl_pv_total_info),    id(node_solar),   LV_ALIGN_OUT_LEFT_MID,  -12, 0);
-            lv_obj_align_to(id(lbl_batt_totals_info), id(node_battery), LV_ALIGN_OUT_LEFT_MID,  -12, 0);
-            lv_obj_align_to(id(lbl_grid_totals_info), id(node_grid),    LV_ALIGN_OUT_TOP_MID,     0,-8);
+            // lv_obj_align_to() makes LVGL recalculate the whole page layout, so only
+            // re-align while the solar info page is on screen (and every ~30 s otherwise).
+            static uint8_t info_tick = 0;
+            if (id(solar_info_page).is_showing() || (info_tick++ % 40) == 0) {
+              // Position the labels relative to their nodes (no scrolling)
+              lv_obj_align_to(id(lbl_home_total_info),  id(node_home),    LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
+              lv_obj_align_to(id(lbl_pv_total_info),    id(node_solar),   LV_ALIGN_OUT_LEFT_MID,  -12, 0);
+              lv_obj_align_to(id(lbl_batt_totals_info), id(node_battery), LV_ALIGN_OUT_LEFT_MID,  -12, 0);
+              lv_obj_align_to(id(lbl_grid_totals_info), id(node_grid),    LV_ALIGN_OUT_TOP_MID,     0,-8);
 
-            // Keep SoC circle glued to the battery icon
-            lv_obj_align_to(id(batt_soc_circle), id(node_battery), LV_ALIGN_OUT_RIGHT_MID, -12, 30);
-            lv_obj_align(id(batt_soc_circle_text), LV_ALIGN_CENTER, 0, 0);
+              // Keep SoC circle and arc glued to the battery icon
+              lv_obj_align_to(id(batt_soc_circle), id(node_battery), LV_ALIGN_OUT_RIGHT_MID, -12, 30);
+              lv_obj_align(id(batt_soc_circle_text), LV_ALIGN_CENTER, 0, 0);
+              lv_obj_align_to(id(batt_soc_arc),    id(node_battery), LV_ALIGN_OUT_RIGHT_MID, -12, 30);
+            }
             bool show = id(show_totals_toggle).state;
             if (!show) {
               lv_obj_add_flag(id(lbl_home_total_info),  LV_OBJ_FLAG_HIDDEN);
@@ -10291,6 +10305,10 @@ interval:
             492, 530, 568, 607, 645, 684,
             722, 760, 799, 837, 876, 914
           };
+          // The graph page is only on screen sometimes: refresh it every tick while it
+          // is visible and every ~30 s otherwise, so it is never far out of date.
+          static uint8_t graph_tick = 0;
+          if (id(graph_page).is_showing() || (graph_tick++ % 40) == 0)
           {
             auto nz = [](float v) { return (std::isnan(v) ? 0.0f : v); };
 
@@ -10526,62 +10544,8 @@ interval:
                 lv_obj_align_to(vlabels[i], bars[i], LV_ALIGN_OUT_TOP_MID, 0, -6);
               } else {
 
-          // === Daily totals labels: position, visibility, text updates ===
-          // Position relative to nodes
-          lv_obj_align_to(id(lbl_home_total_info),  id(node_home),    LV_ALIGN_OUT_BOTTOM_MID, 0, 8);
-          lv_obj_align_to(id(lbl_pv_total_info),    id(node_solar),   LV_ALIGN_OUT_LEFT_MID,  -12, 0);
-          lv_obj_align_to(id(lbl_batt_totals_info), id(node_battery), LV_ALIGN_OUT_LEFT_MID,  -12, 0);
-          lv_obj_align_to(id(lbl_grid_totals_info), id(node_grid),    LV_ALIGN_OUT_TOP_MID,     0, -8);
-          // Show/Hide
-          if (id(show_totals_toggle).state) {
-            lv_obj_clear_flag(id(lbl_home_total_info),  LV_OBJ_FLAG_HIDDEN);
-            lv_obj_clear_flag(id(lbl_pv_total_info),    LV_OBJ_FLAG_HIDDEN);
-            lv_obj_clear_flag(id(lbl_grid_totals_info), LV_OBJ_FLAG_HIDDEN);
-            lv_obj_clear_flag(id(lbl_batt_totals_info), LV_OBJ_FLAG_HIDDEN);
-          } else {
-            lv_obj_add_flag(id(lbl_home_total_info),  LV_OBJ_FLAG_HIDDEN);
-            lv_obj_add_flag(id(lbl_pv_total_info),    LV_OBJ_FLAG_HIDDEN);
-            lv_obj_add_flag(id(lbl_grid_totals_info), LV_OBJ_FLAG_HIDDEN);
-            lv_obj_add_flag(id(lbl_batt_totals_info), LV_OBJ_FLAG_HIDDEN);
-          }
-          // Text values (using existing sensors/labels only)
-          {
-            auto nz = [](float v)->float { return std::isnan(v) ? 0.0f : v; };
-            char buf[96];
-            // PV
-            snprintf(buf, sizeof(buf), "PV: %.2f kWh", nz(id(pv_daily).state));
-            lv_label_set_text(id(lbl_pv_total_info), buf);
-            // Home
-            snprintf(buf, sizeof(buf), "Home: %.2f kWh", nz(id(house_consumption_daily).state));
-            lv_label_set_text(id(lbl_home_total_info), buf);
-            // Grid (reuse existing Grid page daily labels to avoid calc)
-            const char* exp_txt = lv_label_get_text(id(lbl_export_daily));
-            const char* imp_txt = lv_label_get_text(id(lbl_import_daily));
-            char gb[128];
-            snprintf(gb, sizeof(gb), "Export: %s\nImport: %s",
-                     (exp_txt && exp_txt[0]) ? exp_txt : "--",
-                     (imp_txt && imp_txt[0]) ? imp_txt : "--");
-            lv_label_set_text(id(lbl_grid_totals_info), gb);
-            // Battery
-            snprintf(buf, sizeof(buf), "In: %.2f kWh\nOut: %.2f kWh",
-                     nz(id(battery_in_daily).state), nz(id(battery_out_daily).state));
-            lv_label_set_text(id(lbl_batt_totals_info), buf);
-          }
-
-          // === Keep SoC widgets glued to battery icon (~30px left & down) ===
-          lv_obj_align_to(id(batt_soc_circle), id(node_battery), LV_ALIGN_OUT_RIGHT_MID, -12, 30);
-          lv_obj_align(id(batt_soc_circle_text), LV_ALIGN_CENTER, 0, 0);
-          lv_obj_align_to(id(batt_soc_arc),     id(node_battery), LV_ALIGN_OUT_RIGHT_MID, -12, 30);
-
-          // === Settings/pills sync: add Daily Totals pill ===
-          {
-            bool on = id(show_totals_toggle).state;
-            lv_obj_set_style_bg_color(id(pill_daily_totals), lv_color_hex(on ? 0x2E7D32 : 0x424242), LV_PART_MAIN);
-            lv_label_set_text(id(lbl_daily_totals_state), on ? "ON" : "OFF");
-            lv_obj_align(id(lbl_daily_totals_state), LV_ALIGN_CENTER, 0, 0);
-          }
-          lv_obj_set_style_text_color(vlabels[i], inside_contrast(col), LV_PART_MAIN);
-          lv_obj_align_to(vlabels[i], bars[i], LV_ALIGN_TOP_MID, 0, 8);
+                lv_obj_set_style_text_color(vlabels[i], inside_contrast(col), LV_PART_MAIN);
+                lv_obj_align_to(vlabels[i], bars[i], LV_ALIGN_TOP_MID, 0, 8);
               }
 
               lv_obj_set_style_opa(vlabels[i], LV_OPA_COVER, LV_PART_MAIN);
@@ -10599,12 +10563,10 @@ interval:
 
           // === Settings & Wi-Fi pills sync ==========================================
           auto set_pill = [](lv_obj_t* pill, lv_obj_t* lbl, bool on) {
-            // background color
-            lv_obj_set_style_bg_color(
-              pill,
-              lv_color_hex(on ? 0x2E7D32 : 0x424242),
-              LV_PART_MAIN
-            );
+            // background color (only when it changes: every style change forces a redraw)
+            lv_color_t want = lv_color_hex(on ? 0x2E7D32 : 0x424242);
+            if (!lv_color_eq(lv_obj_get_style_bg_color(pill, LV_PART_MAIN), want))
+              lv_obj_set_style_bg_color(pill, want, LV_PART_MAIN);
 
             // choose text
             const char* text;
@@ -10616,9 +10578,11 @@ interval:
               text = on ? "ON" : "OFF";
             }
 
-            // apply text and keep centered
-            lv_label_set_text(lbl, text);
-            lv_obj_align(lbl, LV_ALIGN_CENTER, 0, 0);
+            // apply text and keep centered (only when it changes)
+            if (strcmp(lv_label_get_text(lbl), text) != 0) {
+              lv_label_set_text(lbl, text);
+              lv_obj_align(lbl, LV_ALIGN_CENTER, 0, 0);
+            }
           };
 
           // Backlight (uses a real GPIO switch)
