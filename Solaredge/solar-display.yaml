@@ -3,12 +3,6 @@ esphome:
   friendly_name: ${friendly_name}
   includes:
     - includes/ap_mode_helper.h
-  platformio_options:
-    build_flags: -DBOARD_HAS_PSRAM
-    board_build.esp-idf.memory_type: qio_opi
-    board_build.flash_mode: dio
-    board_upload.maximum_ram_size: 524288
-    board_build.flash_size: 16MB
   on_boot:
   - priority: 500
     then:
@@ -56,7 +50,6 @@ esp32:
       CONFIG_ESP32S3_DATA_CACHE_64KB: y
       CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
       CONFIG_SPIRAM_RODATA: y
-      CONFIG_ESPTOOLPY_FLASHSIZE_8MB: y
 psram:
   mode: octal
   speed: 80MHz
@@ -118,12 +111,6 @@ captive_portal:
 
 
 
-external_components:
-
-# CH32V003 I/O expander used on the 7B board (for reset/backlight)
-- source: github://pr#10071
-  components: [waveshare_io_ch32v003]
-  refresh: 1h
 
 i2c:
 - id: bus_a
@@ -9380,17 +9367,17 @@ interval:
           static int last_i1 = -1, last_i2 = -1, last_i3 = -1, last_i4 = -1, last_i5 = -1;
           auto icon_from_idx = [&](int idx) -> const void* {
             switch (idx) {
-              case 0: return id(hu_icon_homecog).get_lv_img_dsc();
-              case 1: return id(hu_icon_towel).get_lv_img_dsc();
-              case 2: return id(hu_icon_dehumidifier).get_lv_img_dsc();
-              case 3: return id(hu_icon_heater).get_lv_img_dsc();
-              case 4: return id(hu_icon_heating).get_lv_img_dsc();
-              case 5: return id(hu_icon_office).get_lv_img_dsc();
-              case 6: return id(hu_icon_pcdesk).get_lv_img_dsc();
-              case 7: return id(hu_icon_sauna).get_lv_img_dsc();
-              case 8: return id(hu_icon_sofa).get_lv_img_dsc();
-              case 9: return id(hu_icon_spa).get_lv_img_dsc();
-              default: return id(hu_icon_homecog).get_lv_img_dsc();
+              case 0: return id(hu_icon_homecog).get_lv_image_dsc();
+              case 1: return id(hu_icon_towel).get_lv_image_dsc();
+              case 2: return id(hu_icon_dehumidifier).get_lv_image_dsc();
+              case 3: return id(hu_icon_heater).get_lv_image_dsc();
+              case 4: return id(hu_icon_heating).get_lv_image_dsc();
+              case 5: return id(hu_icon_office).get_lv_image_dsc();
+              case 6: return id(hu_icon_pcdesk).get_lv_image_dsc();
+              case 7: return id(hu_icon_sauna).get_lv_image_dsc();
+              case 8: return id(hu_icon_sofa).get_lv_image_dsc();
+              case 9: return id(hu_icon_spa).get_lv_image_dsc();
+              default: return id(hu_icon_homecog).get_lv_image_dsc();
             }
           };
           auto apply_icon = [&](lv_obj_t* img, int &last, int idx) {
@@ -9464,11 +9451,11 @@ interval:
           update_row(id(hu_dev5_icon), id(hu_dev5_name), id(hu_dev5_value), id(hu_dev5_usage));
 
           // ---------- Persistent point buffers (LVGL keeps pointers) ----------
-          static lv_point_t hu_d1_pts[2];
-          static lv_point_t hu_d2_pts[2];
-          static lv_point_t hu_d3_pts[2];
-          static lv_point_t hu_d4_pts[2];
-          static lv_point_t hu_d5_pts[2];
+          static lv_point_precise_t hu_d1_pts[2];
+          static lv_point_precise_t hu_d2_pts[2];
+          static lv_point_precise_t hu_d3_pts[2];
+          static lv_point_precise_t hu_d4_pts[2];
+          static lv_point_precise_t hu_d5_pts[2];
 
           // Helper: get a point on left/right-middle of an icon, in parent_space coords
           auto side_point = [&](lv_obj_t* obj, lv_obj_t* parent_space, bool right_side) -> std::pair<int,int> {
@@ -9494,7 +9481,7 @@ interval:
                                     lv_obj_t* dev_icon,
                                     lvgl::LvLineType* line_comp,
                                     lv_obj_t* dots[6],
-                                    lv_point_t* pts) {
+                                    lv_point_precise_t* pts) {
             // If no line object, hide dots and bail
             if (!line_comp || !line_comp->obj) {
               for (int i = 0; i < 6; i++) lv_obj_add_flag(dots[i], LV_OBJ_FLAG_HIDDEN);
@@ -9591,8 +9578,8 @@ interval:
             float ey = dev_y  - uy * trim_end;
 
             // Update persistent points and line geometry
-            pts[0].x = (lv_coord_t)sx; pts[0].y = (lv_coord_t)sy;
-            pts[1].x = (lv_coord_t)ex; pts[1].y = (lv_coord_t)ey;
+            pts[0].x = (lv_value_precise_t)sx; pts[0].y = (lv_value_precise_t)sy;
+            pts[1].x = (lv_value_precise_t)ex; pts[1].y = (lv_value_precise_t)ey;
             lv_line_set_points(line_comp->obj, pts, 2);
 
             // Dot speed scales with usage (clamped to avoid aliasing / "reverse" illusion)
@@ -9659,8 +9646,8 @@ interval:
           set_hidden(id(hu_sp2_value), !show_sp2);
 
           // Animate Home -> Subpanel links
-          static lv_point_t hu_sp1_pts[2];
-          static lv_point_t hu_sp2_pts[2];
+          static lv_point_precise_t hu_sp1_pts[2];
+          static lv_point_precise_t hu_sp2_pts[2];
 
           auto animate_link_watts = [&](float watts,
                                        float &phase,
@@ -9668,7 +9655,7 @@ interval:
                                        lv_obj_t* end_icon,
                                        lvgl::LvLineType* line_comp,
                                        lv_obj_t* dots[6],
-                                       lv_point_t* pts,
+                                       lv_point_precise_t* pts,
                                        bool force_side_mid) {
             if (!line_comp || !line_comp->obj) {
               for (int i = 0; i < 6; i++) lv_obj_add_flag(dots[i], LV_OBJ_FLAG_HIDDEN);
@@ -9729,8 +9716,8 @@ interval:
               return;
             }
 
-            pts[0].x = (lv_coord_t)sx; pts[0].y = (lv_coord_t)sy;
-            pts[1].x = (lv_coord_t)ex; pts[1].y = (lv_coord_t)ey;
+            pts[0].x = (lv_value_precise_t)sx; pts[0].y = (lv_value_precise_t)sy;
+            pts[1].x = (lv_value_precise_t)ex; pts[1].y = (lv_value_precise_t)ey;
             lv_line_set_points(line_comp->obj, pts, 2);
 
             if (!std::isfinite(watts) || watts <= 0.0f) watts = 1.0f; // keep gentle animation

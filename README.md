@@ -95,8 +95,8 @@ I will try to redo the energy file so this setup will also work for **single inv
 
 ## ESPHome
 
-- **Recommended version:** `2025.10.0`  
-  I had issues with newer versions.
+- **Minimum version:** `2026.7.0` (tested with `2026.9.1`)  
+  Older versions needed an unmerged pull request for the display's I/O expander; it is now built into ESPHome.
 
 ### Build Recommendation
 
@@ -169,19 +169,17 @@ Before flashing the device, you’ll need a **decent computer**. Flashing from a
 
 I used the ESPHome **command-line tool on Windows**, as my Pi 5 (16GB) could not handle this build.
 
-Download and install ESPHome version `2025.10.0`:  
+Download and install ESPHome `2026.7.0` or newer:  
 [Installing ESPHome Manually](https://esphome.io/guides/installing_esphome/)
 
 For Windows, the command should be:
 
 ```
-python -m pip install --upgrade pip wheel "esphome==2025.10.0"
+python -m pip install --upgrade pip wheel esphome
 ```
 
-If you have a powerful PC running Home Assistant, you *can* install version `2025.10.0` from this add-on repository  
-(not advised for Raspberry Pi):
-
-[Esphome Legacy Addons](https://github.com/khenderick/esphome-legacy-addons)
+If you have a powerful PC running Home Assistant, you *can* also build it with the regular ESPHome add-on  
+(not advised for Raspberry Pi).
 
 ---
 
