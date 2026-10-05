@@ -79,7 +79,7 @@ This naming is required for the energy file to work correctly.
 
 ### SolarEdge Notes
 
-Because I have **two inverters**, I needed to use the *SolarEdge Modbus Multi* integration.
+Because I have **two inverters**, I needed to use the *SolarEdge Modbus Multi* integration (it also works with a single inverter).
 
 I also needed an energy file to handle many of the additional calculations.
 
@@ -89,7 +89,10 @@ Current naming convention (this is the standard provided by the integration — 
 - **I1 / I2** – Inverters
 - **M1** – Meter
 
-I will try to redo the energy file so this setup will also work for **single inverter systems**.
+There are Home Assistant package files for both setups:
+
+- `Homeassistant/solaredge/2 inverters/packages/`
+- `Homeassistant/solaredge/single inverter/packages/` (only uses I1)
 
 ---
 
@@ -97,6 +100,29 @@ I will try to redo the energy file so this setup will also work for **single inv
 
 - **Minimum version:** `2026.7.0` (tested with `2026.9.1`)  
   Older versions needed an unmerged pull request for the display's I/O expander; it is now built into ESPHome.
+
+### Upgrading from the old 2025.10.0 version
+
+If you are running the old firmware, just take the new `solar-display.yaml`, keep your own `secrets.yaml`, and update over Wi-Fi (see [Updating over Wi-Fi](#updating-over-wi-fi-ota)).
+
+If you made your own changes to the old YAML, these are the changes needed for current ESPHome:
+
+- Remove the `external_components:` block that points to `github://pr#10071` (`waveshare_io_ch32v003` is built in now)
+- Remove `platformio_options:` under `esphome:` (ignored by the new build system)
+- Remove `CONFIG_ESPTOOLPY_FLASHSIZE_8MB: y` from `sdkconfig_options` (conflicts with `flash_size: 16MB` and breaks the build)
+- Add these `sdkconfig_options` (without them the screen glitches around text and elements):
+  ```yaml
+  CONFIG_ESP32S3_DATA_CACHE_LINE_64B: y
+  CONFIG_ESP32S3_INSTRUCTION_CACHE_32KB: y
+  CONFIG_LCD_RGB_ISR_IRAM_SAFE: y
+  CONFIG_LCD_RGB_RESTART_IN_VSYNC: y
+  CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH: n
+  CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH: n
+  ```
+- ESPHome now uses LVGL 9 instead of LVGL 8. In lambdas:
+  - `get_lv_img_dsc()` → `get_lv_image_dsc()`
+  - `lv_point_t` → `lv_point_precise_t` (for `lv_line_set_points`)
+- LVGL 9 has slightly different default padding; containers whose children fill them can suddenly show a scrollbar. Add `scrollable: false` and `scrollbar_mode: 'off'` to those containers.
 
 ### Build Recommendation
 
@@ -116,7 +142,7 @@ Building on a Raspberry Pi is very demanding and **not recommended**.
   Optional touch function  
   32-bit LX7 dual-core processor (up to 240 MHz)  
   WiFi & Bluetooth support  
-  [Waveshhare Display Link](https://www.waveshare.com/esp32-s3-lcd-7b.htm?sku=31726)
+  [Waveshare Display Link](https://www.waveshare.com/esp32-s3-lcd-7b.htm?sku=31726)
 
 - **8× M3 heat-set inserts**
 - **12× M3 small screws**
@@ -188,7 +214,8 @@ If you have a powerful PC running Home Assistant, you *can* also build it with t
 1. Open the **Sigenergy** or **SolarEdge** folder
 2. Open PowerShell in that folder
 3. Open `solar-display.yaml`
-4. Fill in substitutions and the `secrets.yaml` file
+4. Fill in substitutions and the `secrets.yaml` file  
+   **Generate your own `api_encryption_key`** — the one in the example `secrets.yaml` is public. You can generate one on the [ESPHome API docs page](https://esphome.io/components/api/) or with `openssl rand -base64 32`.
 5. Plug the display into your computer
 
 Run:
@@ -196,6 +223,18 @@ Run:
 ```
 esphome run solar-display.yaml
 ```
+
+### Updating over Wi-Fi (OTA)
+
+After the first flash over USB, you never need to open the case again. Updates can be sent over Wi-Fi:
+
+```
+esphome run solar-display.yaml --device <display-ip>
+```
+
+- `api_encryption_key` and `ota_password` in `secrets.yaml` must match what is on the display, otherwise the upload is refused or Home Assistant cannot connect afterwards.
+- If an update crashes on boot, ESPHome falls back to a safe mode after 10 failed boots, so you can upload again over Wi-Fi.
+- Wi-Fi settings entered on the display itself are kept after an update.
 
 ---
 
@@ -237,6 +276,6 @@ These values are currently **hard-coded**, and I want to expose more numbers so 
 I would also like to:
 - Allow changing the suggestion messages
 - Add specific graphs to the interval page
-- Improve compatibility with newer ESPHome versions (currently buggy)
+- Move the remaining deprecated config: the old `image:` format (removed in ESPHome 2027.1), `zoom` → `scale`, and `rpi_dpi_rgb` → `mipi_rgb`
 
 Any suggestions would be really appreciated.

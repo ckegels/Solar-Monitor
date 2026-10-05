@@ -3166,7 +3166,7 @@ lvgl:
         pad_bottom: 4
         pad_left: 5
         pad_right: 5        
-        y: 400                   # sits under the cards; adjust if needed
+        y: 410                   # 16px below the cards, same as the gap between them
         radius: 19
         bg_color: 0x1C2229
         shadow_width: 0
