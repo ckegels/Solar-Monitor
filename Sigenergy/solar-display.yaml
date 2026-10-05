@@ -49,6 +49,13 @@ esp32:
       CONFIG_ESP32S3_DATA_CACHE_64KB: y
       CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
       CONFIG_SPIRAM_RODATA: y
+      # RGB panel + PSRAM framebuffer: keep pixel DMA fed under cache load
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: y
+      CONFIG_ESP32S3_INSTRUCTION_CACHE_32KB: y
+      CONFIG_LCD_RGB_ISR_IRAM_SAFE: y
+      CONFIG_LCD_RGB_RESTART_IN_VSYNC: y
+      CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH: n
+      CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH: n
 psram:
   mode: octal
   speed: 80MHz
@@ -2634,6 +2641,8 @@ lvgl:
     widgets:
     - obj:
         id: col_solar
+        scrollable: false
+        scrollbar_mode: 'off'
         x: 51
         y: 150
         width: 282
@@ -2677,6 +2686,8 @@ lvgl:
             y: -125
     - obj:
         id: col_battery
+        scrollable: false
+        scrollbar_mode: 'off'
         x: 307
         y: 150
         width: 410
@@ -2721,6 +2732,8 @@ lvgl:
             bg_opa: 100%
     - obj:
         id: col_home
+        scrollable: false
+        scrollbar_mode: 'off'
         x: 717
         y: 150
         width: 256
@@ -2789,6 +2802,8 @@ lvgl:
 
     - obj:
         id: suggestion_box
+        scrollable: false
+        scrollbar_mode: 'off'
         x: 0
         y: 125
         width: 1024
@@ -2821,6 +2836,8 @@ lvgl:
     widgets:
     - obj:
         id: hp2_row
+        scrollable: false
+        scrollbar_mode: 'off'
         width: 1024           # set near your screen width (e.g., 800 for 800px wide)
         height: 325
         align: top_mid        # center this container on the page
@@ -3793,6 +3810,8 @@ lvgl:
         text_color: 16777215
     - obj:
         id: card_batt_in
+        scrollable: false
+        scrollbar_mode: 'off'
         x: 77
         y: 100
         width: 384
@@ -3881,6 +3900,8 @@ lvgl:
             text_color: 16777215
     - obj:
         id: card_batt_out
+        scrollable: false
+        scrollbar_mode: 'off'
         x: 576
         y: 100
         width: 384
@@ -4020,6 +4041,8 @@ lvgl:
         text_color: 16777215
     - obj:
         id: card_pv_prod
+        scrollable: false
+        scrollbar_mode: 'off'
         x: 77
         y: 100
         width: 384
@@ -4122,6 +4145,8 @@ lvgl:
             text_color: 16777215
     - obj:
         id: card_pv_dist
+        scrollable: false
+        scrollbar_mode: 'off'
         x: 576
         y: 100
         width: 384
@@ -4280,6 +4305,8 @@ lvgl:
         text_color: 16777215
     - obj:
         id: card_import
+        scrollable: false
+        scrollbar_mode: 'off'
         x: 77
         y: 100
         width: 384
@@ -4368,6 +4395,8 @@ lvgl:
             text_color: 16777215
     - obj:
         id: card_export
+        scrollable: false
+        scrollbar_mode: 'off'
         x: 576
         y: 100
         width: 384
