@@ -162,6 +162,7 @@ How it was measured (throwaway code, not in the repo, easy to recreate): a heade
 - **Single-inverter fix:** "Solar Panel To House W" copied a two-inverter branch with `i2_ac_power` replaced by `i1_ac_power`, which counted I1's own consumption twice: while the battery charged from the grid it read about −6 kW, pulling house consumption and the daily totals down. It is now 0 in that state; the two-inverter package clamps the same branches at 0.
 - The new templates were render-tested with stand-in values (grid status values, both time-remaining paths, autarky clamps, Wh/kWh/MWh, missing I2, night-time grid charging).
 - `Solaredge/energy.yaml` is kept identical to the 2-inverter package (still a leftover copy).
+- **Nothing visible changes for existing Sigenergy users.** Checked against the original version: the display exposes the same 16 entities plus the new "Theme" select; in the Sigenergy package the `sensor`, `utility_meter` (incl. tariff selects), `automation`, `input_select` and `input_number` sections are byte-for-byte unchanged, and the `template` section only gained the 3 sensors above (no existing line removed or edited). Updating only the firmware without the package just shows "--" for Remaining Battery / Autarkie and leaves off-grid detection inactive.
 
 ### README
 ESPHome version requirement, an upgrade guide for people with modified YAMLs, OTA update instructions, a warning to generate your own API key, and the single-inverter SolarEdge package.
@@ -224,8 +225,27 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 | "Show Tips/Suggestions" switch name: remove the `/` | becomes an error in **2027.7.0** |
 | Confirm touch also starts reliably after a real power cut (only software restarts were tested) | the GT911 fix relies on the chip coming up by itself at power-on |
 | Test the Sigenergy firmware on real hardware | only compile-tested |
-| Share common YAML between the two firmwares (ESPHome `packages:`) | removes the "fix it twice" problem |
+| Load the updated packages in a real Home Assistant (SolarEdge on the owner's system; Sigenergy needs a Sigenergy owner) | new/changed templates were only render-tested offline |
 | Optional: shorten the 250 ms spinner delay in the navigation handlers (e.g. to 100 ms) | it is now most of a page change; the owner kept 250 ms for now |
 | Graph page: replace the 24 `lv_obj_align_to()` calls for the value labels with computed positions | a graph refresh still takes ~85 ms every 750 ms while the graph page is open |
 | Remove `Solaredge/energy.yaml` duplicate, `ch422g` leftovers, `old_icon_sun_100.png` | cleanup |
 | From the README: configurable suggestion texts/thresholds, interval page graphs | features |
+
+---
+
+## 8. Where we left off (2026-10-07)
+
+**Repo state**
+- Local commits on `main` that are **not pushed yet** (waiting for the owner's OK): setting-row centring + brightness slider, colour themes, firmware parity + energy packages, and this handover update. Check with `git status` / `git log origin/main..`.
+- The owner's display (SolarEdge firmware) runs the latest build. The owner still has to copy the updated `Homeassistant/solaredge/2 inverters/packages/energy.yaml` into Home Assistant; until then the display's lifetime value shows "--" (it now reads `sensor.solar_lifetime_energy`).
+
+**Agreed roadmap** (discussed, not started)
+1. **One firmware for all inverter brands.** Define a fixed list of Home Assistant sensor names the display reads (a "display contract"); every brand package provides exactly those names (Sigenergy gets extra sensors with the standard names next to its existing ones, so nothing breaks). Then there is a single `solar-display.yaml`, and a new brand only needs a new HA package. Do **not** select the brand on the device: ESPHome compiles HA entity names into the firmware, so that would mean subscribing to every brand's ~250 sensors and using scarce internal RAM. Device-side setup options (e.g. "Battery installed", optional brand name/logo) can be selects/switches like Theme.
+2. **SolarEdge 1 or 2 inverters in one package:** treat I2 as optional (missing entities already read as 0 with `float(0)`; fix the `is_state(..., 'unknown')` guards), keep the "Panel To House" clamps, and detect grid charging from I1's DC power going negative instead of "AC output <= 0" (more reliable with one hybrid inverter).
+3. **Systems without a battery:** package treats a missing B1 as 0 (today "Solar Panel Production W" is forced to 0 when B1 is unknown); firmware gets a "Battery installed" setting that hides the battery card on the home page (the flex row re-centres the other three), the battery node/flows on the info page, the battery page and its menu button, the battery graph datasets, the "Remaining Battery" line and the battery-related tips. Testable on the owner's own display by switching the setting off.
+
+**Open questions for the owner**
+- Which other inverter brands should the display contract cover?
+- Push the local commits to GitHub?
+- Private WiFi network names were removed from the files but are still in old git history; leave as is (low risk) or rewrite history (needs a force-push)?
+
