@@ -65,6 +65,12 @@ config/packages/
 
 ---
 
+### Themes
+
+The display has 8 colour themes (Graphite is the default look). Pick one under **Settings → Themes**, or use the **Theme** select entity in Home Assistant, for example in an automation that switches to *OLED* at night. The choice is saved on the display and survives a power cut.
+
+---
+
 ### Sigenergy Notes
 
 Once the integration is installed, make sure the entity naming is the **standard Sigenergy naming**:

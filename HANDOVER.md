@@ -16,6 +16,7 @@ The firmware is ESPHome + LVGL; all data comes from Home Assistant.
 | `Solaredge/solar-display.yaml` | Display firmware for SolarEdge systems (~10.8k lines) |
 | `*/secrets.yaml` | Example secrets (placeholders + a **public** example API key) |
 | `*/includes/ap_mode_helper.h` | Helper for the on-device "AP-only setup mode" |
+| `*/includes/themes.h` | Colour themes: palette table and the runtime theme switch (see §3 Themes) |
 | `*/includes/lvgl_helpers.h` | Performance helpers: skip unchanged label texts, internal-RAM draw buffer, draw-buffer log line (see §3 Performance) |
 | `*/fonts`, `*/icons` | Fonts and PNG icons used by the firmware (duplicated per folder) |
 | `Homeassistant/sigenergy/packages/` | HA packages (`energy.yaml`, `energydevices.yaml`) for Sigenergy |
@@ -84,6 +85,7 @@ To verify the options actually landed, check `<folder>/.esphome/build/solar-disp
 - **Scrollbar on the 4-box home page** (`home_page_2`, container `hp2_row`): LVGL 9's default padding made the 288 px cards overflow the 325 px row. Added `scrollable: false` + `scrollbar_mode: 'off'` to `hp2_row`, `col_solar`, `col_battery`, `col_home`, `suggestion_box`, `card_batt_in`, `card_batt_out`, `card_pv_prod`, `card_pv_dist`, `card_import`, `card_export`.
   Do **not** do this to `settings_scroll`; the settings page scrolls on purpose (`lv_obj_scroll_by`).
   About 100 other containers/buttons still have no `scrollable` setting. They looked fine, but if a scrollbar shows up elsewhere, this is the fix.
+- **Loading popup**: the spinner moved up 10 px (`y: 8`) and "Loading…" down 6 px (`y: 6`) so there is ~19 px between them (they overlapped by 4 px).
 - **Gap between the 4 boxes and the summary card** (exported today / remaining battery / self use today): `hp2_summary_card` moved from `y: 400` to `y: 410`, making the gap 16 px, the same as `pad_column` between the cards. Layout math: `hp2_row` y=88, h=325, cards h=288, vertically centred → cards end at ~y=394. Summary card is 119 px tall → ends at ~529; the tips label (`hp2_lbl_suggestion`, `my_font_medium` 38 px, `bottom_mid` y=-10) starts ~545. A tip that wraps to two lines would grow upward towards the card.
 
 ### Deprecations cleared and touch start-up fixed
@@ -141,6 +143,15 @@ Tried and **rejected**:
 
 How it was measured (throwaway code, not in the repo, easy to recreate): a header registering LVGL display events (`LV_EVENT_RENDER_START`/`RENDER_READY` for frame time, `FLUSH_START`/`FLUSH_FINISH` for copy time), ESPHome's `runtime_stats:` component (per-component loop time, found the 92 ms interval), and an `api: actions:` entry that opens the settings page and calls `lv_obj_scroll_by(id(settings_scroll), 0, ±170, LV_ANIM_ON)`, triggered from a PC with `aioesphomeapi`.
 
+### Themes
+- **Settings → Themes** shows 8 tiles (Graphite = the original look and the default, Midnight, Nord, Dracula, Forest, Ember, OLED, Plum). Each tile previews its own colours. Tapping one switches the whole UI instantly (~22 ms, measured).
+- The theme is a template `select` (`theme_select`, "Theme" in Home Assistant, entity category *config*): it can be changed from HA or automations, is saved in flash (`restore_value`) and written immediately (`global_preferences->sync()`), and is re-applied in `on_boot` before the first frame is drawn. Tested: set from the HA API → restart → restored.
+- How it works (`includes/themes.h`): the YAML stays written in theme 0's colours. Each colour of `THEMES[0]` is a *role* (page, card, button, borders, text shades, line, accent, control…). `lvx_theme::apply()` walks every LVGL screen plus the top layer (via `lvgl_private.h` → `lv_display_t::screens`) and replaces every local style colour that matches a role of the current theme with the same role of the new theme. The tile container `theme_grid` is skipped so previews keep their own colours.
+- Lambdas that set role colours at runtime wrap them in `lvx_theme::color(0x……)` (pills, icon-picker borders, flow lines, suggestion box, inactive graph buttons, white text on normal backgrounds). Caches of "last applied style" compare `lvx_theme::epoch()` so they re-apply after a switch.
+- Not themed on purpose: solar/grid/battery data colours, warning colours, graph dataset colours, black/white text on coloured buttons, and the PNG icons (which is also why there is no light theme yet: the white icons would disappear).
+- The brightness slider's indicator/knob are now written explicitly as LVGL's default blue `0x2196F3` (role CONTROL), so the slider follows the theme without changing the original look.
+- **Adding a theme:** add a row to `THEMES` in `includes/themes.h` (both firmwares), a tile to `theme_page` and the name to `theme_select`'s options. Rules: no colour twice within one theme, and no theme colour equal to a data/warning colour; otherwise the switch cannot tell roles apart.
+
 ### README
 ESPHome version requirement, an upgrade guide for people with modified YAMLs, OTA update instructions, a warning to generate your own API key, and the single-inverter SolarEdge package.
 
@@ -188,6 +199,7 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 - `Solaredge/energy.yaml` duplicates the HA package and can confuse people; the HA files live in `Homeassistant/`.
 - **Internal RAM is the scarce resource**, not PSRAM. The draw buffer takes 40 KB of it; keep ~35 KB free for Wi-Fi, the API and OTA. Don't raise the strip height above 20 lines without checking the `Draw buffer:` log line.
 - `lv_label_set_text()` in the YAML lambdas is a macro from `lvgl_helpers.h` that skips identical text (see §3 Performance).
+- **New UI colours:** write them in theme 0's colours. If a lambda sets a UI (role) colour at runtime, wrap it in `lvx_theme::color(...)`; data/warning colours stay plain `lv_color_hex(...)`.
 - Keep `loading_overlay` small and transparent. Making it full-screen again (e.g. to dim the page) brings back two extra full-screen redraws on every page change.
 
 ---

@@ -8,12 +8,16 @@ esphome:
   includes:
     - includes/ap_mode_helper.h
     - includes/lvgl_helpers.h
+    - includes/themes.h
   on_boot:
   - priority: -150
     then:
     # Render in 20-line strips in fast internal RAM instead of a full-screen
     # buffer in PSRAM: scrolling ~40% faster, page loads as fast or faster.
     - lambda: lvx_use_internal_draw_buffer(20);
+    # Apply the saved colour theme (the YAML itself is drawn in theme 0, Graphite)
+    - lambda: lvx_theme::apply(id(theme_select).active_index().value_or(0), id(theme_grid));
+    - script.execute: theme_mark_selected
     - delay: 30s
     - lambda: lvx_log_draw_buffer();
   - priority: 500
@@ -1767,7 +1771,7 @@ lvgl:
                   - arc:
                       id: loading_arc
                       align: top_mid
-                      y: 18
+                      y: 8
                       width: 80
                       height: 80
                       min_value: 0
@@ -1785,7 +1789,7 @@ lvgl:
                   - label:
                       id: loading_text
                       align: bottom_mid
-                      y: 0
+                      y: 6            # a little lower: ~19 px between the circle and the text
                       text: Loading…
                       text_font: my_font
                       text_color: 0xFFFFFF
@@ -5457,6 +5461,37 @@ lvgl:
                 text_font: my_font_small
                 text_color: 10395294
         - button:
+            id: card_setting_themes
+            width: 883
+            height: 100
+            radius: 15
+            bg_color: 0x1C2229
+            border_width: 1
+            border_color: 3355443
+            scrollable: false
+            scrollbar_mode: 'off'
+            on_click:
+            - lvgl.widget.show: loading_overlay
+            - delay: 20ms
+            - lvgl.page.show: theme_page
+            - delay: 250ms
+            - lvgl.widget.hide: loading_overlay
+            widgets:
+            - label:
+                x: 20
+                align: left_mid
+                y: -16
+                text: Themes
+                text_font: my_font
+                text_color: 16777215
+            - label:
+                x: 20
+                align: left_mid
+                y: 19
+                text: Colors & style
+                text_font: my_font_small
+                text_color: 10395294
+        - button:
             id: card_setting_usage
             width: 883
             height: 100
@@ -7581,6 +7616,10 @@ lvgl:
                 align: left_mid
                 x: 394
                 width: 250
+                indicator:
+                  bg_color: 0x2196F3    # LVGL default blue; theme role CONTROL
+                knob:
+                  bg_color: 0x2196F3
                 height: 35
                 min_value: 5
                 max_value: 100
@@ -7645,6 +7684,735 @@ lvgl:
                 align: center
                 bg_opa: 0
                 scale: 0.5  
+  - id: theme_page
+    bg_color: 0x141B21
+    widgets:
+      - label:
+          x: 51
+          y: 20
+          text: Themes
+          text_font: my_font_large
+          text_color: 16777215
+      - button:
+          id: btn_topright_themes
+          width: 102
+          height: 70
+          align: top_right
+          x: -38            # nudge from right edge
+          y: 15             # nudge from top
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          shadow_color: 0x23282F
+          on_click:
+            - lvgl.widget.show: loading_overlay
+            - delay: 20ms
+            - lvgl.page.show: settings_page
+            - delay: 250ms
+            - lvgl.widget.hide: loading_overlay
+          widgets:
+            - image:
+                src: img_menu_res
+                align: center
+                bg_opa: 0
+                scale: 0.5
+      # Theme tiles. They always show their own theme's colours: the theme switch
+      # skips this container (lvx_theme::apply(..., id(theme_grid))).
+      - obj:
+          id: theme_grid
+          x: 69
+          y: 100
+          width: 886
+          height: 470
+          bg_opa: 0%
+          border_width: 0
+          pad_all: 8          # room for the selection outline
+          scrollable: false
+          scrollbar_mode: 'off'
+          widgets:
+            - button:
+                id: theme_tile_0
+                x: 0
+                y: 0
+                width: 201
+                height: 215
+                radius: 18
+                bg_color: 0x141B21
+                border_width: 2
+                border_color: 0x333333
+                outline_width: 0
+                outline_color: 0xFFFFFF
+                outline_pad: 4
+                shadow_width: 0
+                pad_all: 0
+                scrollable: false
+                on_click:
+                  - select.set_index:
+                      id: theme_select
+                      index: 0
+                widgets:
+                  # Mini preview: a card with two text lines, an "off" and an "on" pill
+                  - obj:
+                      x: 14
+                      y: 14
+                      width: 173
+                      height: 104
+                      radius: 12
+                      bg_color: 0x1C2229
+                      border_width: 1
+                      border_color: 0x333333
+                      pad_all: 0
+                      clickable: false
+                      scrollable: false
+                      widgets:
+                        - obj:
+                            x: 14
+                            y: 20
+                            width: 78
+                            height: 12
+                            radius: 6
+                            bg_color: 0xFFFFFF
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 42
+                            width: 56
+                            height: 10
+                            radius: 5
+                            bg_color: 0x9E9E9E
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 68
+                            width: 44
+                            height: 20
+                            radius: 10
+                            bg_color: 0x424242
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            align: right_mid
+                            x: -14
+                            width: 54
+                            height: 28
+                            radius: 14
+                            bg_color: 0x2E7D32
+                            border_width: 0
+                            clickable: false
+                  - label:
+                      id: theme_name_0
+                      x: 16
+                      y: 128
+                      text: "Graphite"
+                      text_font: my_font
+                      text_color: 0xFFFFFF
+                  - label:
+                      id: theme_desc_0
+                      x: 16
+                      y: 166
+                      text: "Default"
+                      text_font: my_font_small
+                      text_color: 0x9E9E9E
+            - button:
+                id: theme_tile_1
+                x: 223
+                y: 0
+                width: 201
+                height: 215
+                radius: 18
+                bg_color: 0x0B1120
+                border_width: 2
+                border_color: 0x22304D
+                outline_width: 0
+                outline_color: 0xFFFFFF
+                outline_pad: 4
+                shadow_width: 0
+                pad_all: 0
+                scrollable: false
+                on_click:
+                  - select.set_index:
+                      id: theme_select
+                      index: 1
+                widgets:
+                  # Mini preview: a card with two text lines, an "off" and an "on" pill
+                  - obj:
+                      x: 14
+                      y: 14
+                      width: 173
+                      height: 104
+                      radius: 12
+                      bg_color: 0x111A2E
+                      border_width: 1
+                      border_color: 0x22304D
+                      pad_all: 0
+                      clickable: false
+                      scrollable: false
+                      widgets:
+                        - obj:
+                            x: 14
+                            y: 20
+                            width: 78
+                            height: 12
+                            radius: 6
+                            bg_color: 0xF1F5F9
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 42
+                            width: 56
+                            height: 10
+                            radius: 5
+                            bg_color: 0x94A3B8
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 68
+                            width: 44
+                            height: 20
+                            radius: 10
+                            bg_color: 0x2A3550
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            align: right_mid
+                            x: -14
+                            width: 54
+                            height: 28
+                            radius: 14
+                            bg_color: 0x3B82F6
+                            border_width: 0
+                            clickable: false
+                  - label:
+                      id: theme_name_1
+                      x: 16
+                      y: 128
+                      text: "Midnight"
+                      text_font: my_font
+                      text_color: 0xF1F5F9
+                  - label:
+                      id: theme_desc_1
+                      x: 16
+                      y: 166
+                      text: "Deep navy"
+                      text_font: my_font_small
+                      text_color: 0x94A3B8
+            - button:
+                id: theme_tile_2
+                x: 446
+                y: 0
+                width: 201
+                height: 215
+                radius: 18
+                bg_color: 0x2E3440
+                border_width: 2
+                border_color: 0x4E5870
+                outline_width: 0
+                outline_color: 0xFFFFFF
+                outline_pad: 4
+                shadow_width: 0
+                pad_all: 0
+                scrollable: false
+                on_click:
+                  - select.set_index:
+                      id: theme_select
+                      index: 2
+                widgets:
+                  # Mini preview: a card with two text lines, an "off" and an "on" pill
+                  - obj:
+                      x: 14
+                      y: 14
+                      width: 173
+                      height: 104
+                      radius: 12
+                      bg_color: 0x3B4252
+                      border_width: 1
+                      border_color: 0x4E5870
+                      pad_all: 0
+                      clickable: false
+                      scrollable: false
+                      widgets:
+                        - obj:
+                            x: 14
+                            y: 20
+                            width: 78
+                            height: 12
+                            radius: 6
+                            bg_color: 0xECEFF4
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 42
+                            width: 56
+                            height: 10
+                            radius: 5
+                            bg_color: 0xA3ABB9
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 68
+                            width: 44
+                            height: 20
+                            radius: 10
+                            bg_color: 0x4A5468
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            align: right_mid
+                            x: -14
+                            width: 54
+                            height: 28
+                            radius: 14
+                            bg_color: 0x88C0D0
+                            border_width: 0
+                            clickable: false
+                  - label:
+                      id: theme_name_2
+                      x: 16
+                      y: 128
+                      text: "Nord"
+                      text_font: my_font
+                      text_color: 0xECEFF4
+                  - label:
+                      id: theme_desc_2
+                      x: 16
+                      y: 166
+                      text: "Arctic frost"
+                      text_font: my_font_small
+                      text_color: 0xA3ABB9
+            - button:
+                id: theme_tile_3
+                x: 669
+                y: 0
+                width: 201
+                height: 215
+                radius: 18
+                bg_color: 0x1E1F29
+                border_width: 2
+                border_color: 0x44475A
+                outline_width: 0
+                outline_color: 0xFFFFFF
+                outline_pad: 4
+                shadow_width: 0
+                pad_all: 0
+                scrollable: false
+                on_click:
+                  - select.set_index:
+                      id: theme_select
+                      index: 3
+                widgets:
+                  # Mini preview: a card with two text lines, an "off" and an "on" pill
+                  - obj:
+                      x: 14
+                      y: 14
+                      width: 173
+                      height: 104
+                      radius: 12
+                      bg_color: 0x282A36
+                      border_width: 1
+                      border_color: 0x44475A
+                      pad_all: 0
+                      clickable: false
+                      scrollable: false
+                      widgets:
+                        - obj:
+                            x: 14
+                            y: 20
+                            width: 78
+                            height: 12
+                            radius: 6
+                            bg_color: 0xF8F8F2
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 42
+                            width: 56
+                            height: 10
+                            radius: 5
+                            bg_color: 0x9EA1BD
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 68
+                            width: 44
+                            height: 20
+                            radius: 10
+                            bg_color: 0x464A5E
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            align: right_mid
+                            x: -14
+                            width: 54
+                            height: 28
+                            radius: 14
+                            bg_color: 0xBD93F9
+                            border_width: 0
+                            clickable: false
+                  - label:
+                      id: theme_name_3
+                      x: 16
+                      y: 128
+                      text: "Dracula"
+                      text_font: my_font
+                      text_color: 0xF8F8F2
+                  - label:
+                      id: theme_desc_3
+                      x: 16
+                      y: 166
+                      text: "Purple night"
+                      text_font: my_font_small
+                      text_color: 0x9EA1BD
+            - button:
+                id: theme_tile_4
+                x: 0
+                y: 235
+                width: 201
+                height: 215
+                radius: 18
+                bg_color: 0x0D1712
+                border_width: 2
+                border_color: 0x284232
+                outline_width: 0
+                outline_color: 0xFFFFFF
+                outline_pad: 4
+                shadow_width: 0
+                pad_all: 0
+                scrollable: false
+                on_click:
+                  - select.set_index:
+                      id: theme_select
+                      index: 4
+                widgets:
+                  # Mini preview: a card with two text lines, an "off" and an "on" pill
+                  - obj:
+                      x: 14
+                      y: 14
+                      width: 173
+                      height: 104
+                      radius: 12
+                      bg_color: 0x14231B
+                      border_width: 1
+                      border_color: 0x284232
+                      pad_all: 0
+                      clickable: false
+                      scrollable: false
+                      widgets:
+                        - obj:
+                            x: 14
+                            y: 20
+                            width: 78
+                            height: 12
+                            radius: 6
+                            bg_color: 0xF0FDF4
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 42
+                            width: 56
+                            height: 10
+                            radius: 5
+                            bg_color: 0x9DB8A9
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 68
+                            width: 44
+                            height: 20
+                            radius: 10
+                            bg_color: 0x2A3D32
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            align: right_mid
+                            x: -14
+                            width: 54
+                            height: 28
+                            radius: 14
+                            bg_color: 0x22C55E
+                            border_width: 0
+                            clickable: false
+                  - label:
+                      id: theme_name_4
+                      x: 16
+                      y: 128
+                      text: "Forest"
+                      text_font: my_font
+                      text_color: 0xF0FDF4
+                  - label:
+                      id: theme_desc_4
+                      x: 16
+                      y: 166
+                      text: "Deep green"
+                      text_font: my_font_small
+                      text_color: 0x9DB8A9
+            - button:
+                id: theme_tile_5
+                x: 223
+                y: 235
+                width: 201
+                height: 215
+                radius: 18
+                bg_color: 0x17110D
+                border_width: 2
+                border_color: 0x3D2F25
+                outline_width: 0
+                outline_color: 0xFFFFFF
+                outline_pad: 4
+                shadow_width: 0
+                pad_all: 0
+                scrollable: false
+                on_click:
+                  - select.set_index:
+                      id: theme_select
+                      index: 5
+                widgets:
+                  # Mini preview: a card with two text lines, an "off" and an "on" pill
+                  - obj:
+                      x: 14
+                      y: 14
+                      width: 173
+                      height: 104
+                      radius: 12
+                      bg_color: 0x221913
+                      border_width: 1
+                      border_color: 0x3D2F25
+                      pad_all: 0
+                      clickable: false
+                      scrollable: false
+                      widgets:
+                        - obj:
+                            x: 14
+                            y: 20
+                            width: 78
+                            height: 12
+                            radius: 6
+                            bg_color: 0xFFF7ED
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 42
+                            width: 56
+                            height: 10
+                            radius: 5
+                            bg_color: 0xBBA898
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 68
+                            width: 44
+                            height: 20
+                            radius: 10
+                            bg_color: 0x3F3128
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            align: right_mid
+                            x: -14
+                            width: 54
+                            height: 28
+                            radius: 14
+                            bg_color: 0xF59E0B
+                            border_width: 0
+                            clickable: false
+                  - label:
+                      id: theme_name_5
+                      x: 16
+                      y: 128
+                      text: "Ember"
+                      text_font: my_font
+                      text_color: 0xFFF7ED
+                  - label:
+                      id: theme_desc_5
+                      x: 16
+                      y: 166
+                      text: "Warm amber"
+                      text_font: my_font_small
+                      text_color: 0xBBA898
+            - button:
+                id: theme_tile_6
+                x: 446
+                y: 235
+                width: 201
+                height: 215
+                radius: 18
+                bg_color: 0x020202
+                border_width: 2
+                border_color: 0x262626
+                outline_width: 0
+                outline_color: 0xFFFFFF
+                outline_pad: 4
+                shadow_width: 0
+                pad_all: 0
+                scrollable: false
+                on_click:
+                  - select.set_index:
+                      id: theme_select
+                      index: 6
+                widgets:
+                  # Mini preview: a card with two text lines, an "off" and an "on" pill
+                  - obj:
+                      x: 14
+                      y: 14
+                      width: 173
+                      height: 104
+                      radius: 12
+                      bg_color: 0x0D0D0D
+                      border_width: 1
+                      border_color: 0x262626
+                      pad_all: 0
+                      clickable: false
+                      scrollable: false
+                      widgets:
+                        - obj:
+                            x: 14
+                            y: 20
+                            width: 78
+                            height: 12
+                            radius: 6
+                            bg_color: 0xFAFAFA
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 42
+                            width: 56
+                            height: 10
+                            radius: 5
+                            bg_color: 0x8C8C8C
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 68
+                            width: 44
+                            height: 20
+                            radius: 10
+                            bg_color: 0x2A2A2A
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            align: right_mid
+                            x: -14
+                            width: 54
+                            height: 28
+                            radius: 14
+                            bg_color: 0x14B8A6
+                            border_width: 0
+                            clickable: false
+                  - label:
+                      id: theme_name_6
+                      x: 16
+                      y: 128
+                      text: "OLED"
+                      text_font: my_font
+                      text_color: 0xFAFAFA
+                  - label:
+                      id: theme_desc_6
+                      x: 16
+                      y: 166
+                      text: "True black"
+                      text_font: my_font_small
+                      text_color: 0x8C8C8C
+            - button:
+                id: theme_tile_7
+                x: 669
+                y: 235
+                width: 201
+                height: 215
+                radius: 18
+                bg_color: 0x1A1218
+                border_width: 2
+                border_color: 0x42303B
+                outline_width: 0
+                outline_color: 0xFFFFFF
+                outline_pad: 4
+                shadow_width: 0
+                pad_all: 0
+                scrollable: false
+                on_click:
+                  - select.set_index:
+                      id: theme_select
+                      index: 7
+                widgets:
+                  # Mini preview: a card with two text lines, an "off" and an "on" pill
+                  - obj:
+                      x: 14
+                      y: 14
+                      width: 173
+                      height: 104
+                      radius: 12
+                      bg_color: 0x251A22
+                      border_width: 1
+                      border_color: 0x42303B
+                      pad_all: 0
+                      clickable: false
+                      scrollable: false
+                      widgets:
+                        - obj:
+                            x: 14
+                            y: 20
+                            width: 78
+                            height: 12
+                            radius: 6
+                            bg_color: 0xFDF2F8
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 42
+                            width: 56
+                            height: 10
+                            radius: 5
+                            bg_color: 0xB89AAB
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            x: 14
+                            y: 68
+                            width: 44
+                            height: 20
+                            radius: 10
+                            bg_color: 0x45333E
+                            border_width: 0
+                            clickable: false
+                        - obj:
+                            align: right_mid
+                            x: -14
+                            width: 54
+                            height: 28
+                            radius: 14
+                            bg_color: 0xEC4899
+                            border_width: 0
+                            clickable: false
+                  - label:
+                      id: theme_name_7
+                      x: 16
+                      y: 128
+                      text: "Plum"
+                      text_font: my_font
+                      text_color: 0xFDF2F8
+                  - label:
+                      id: theme_desc_7
+                      x: 16
+                      y: 166
+                      text: "Rose & plum"
+                      text_font: my_font_small
+                      text_color: 0xB89AAB
   - id: wifi_page
     bg_color: 0x141B21
     widgets:
@@ -8959,6 +9727,34 @@ lvgl:
               align: center
               bg_opa: 0
               scale: 0.5  
+select:
+  # Colour theme (see includes/themes.h). Shown in Home Assistant, saved in flash,
+  # and kept in sync with the tiles on the Themes page.
+  - platform: template
+    id: theme_select
+    name: "Theme"
+    icon: mdi:palette
+    entity_category: config
+    options:
+      - Graphite
+      - Midnight
+      - Nord
+      - Dracula
+      - Forest
+      - Ember
+      - OLED
+      - Plum
+    initial_option: Graphite
+    optimistic: true
+    restore_value: true
+    on_value:
+      then:
+        # Before LVGL is up this does nothing; on_boot applies the restored theme then.
+        - lambda: lvx_theme::apply(i, id(theme_grid));
+        - script.execute: theme_mark_selected
+        # Save now instead of after flash_write_interval (5 min), so a power cut keeps it
+        - lambda: global_preferences->sync();
+
 button:
 - platform: restart
   id: restart_device
@@ -9202,6 +9998,20 @@ image:
   type: RGB565
   transparency: alpha_channel
 script:
+- id: theme_mark_selected
+  then:
+  - lambda: |-
+      // Outline the active theme's tile and label it "Active"
+      if (id(theme_tile_0) == nullptr) return;  // LVGL not set up yet
+      lv_obj_t *tiles[] = {id(theme_tile_0), id(theme_tile_1), id(theme_tile_2), id(theme_tile_3), id(theme_tile_4), id(theme_tile_5), id(theme_tile_6), id(theme_tile_7)};
+      lv_obj_t *descs[] = {id(theme_desc_0), id(theme_desc_1), id(theme_desc_2), id(theme_desc_3), id(theme_desc_4), id(theme_desc_5), id(theme_desc_6), id(theme_desc_7)};
+      for (int i = 0; i < lvx_theme::COUNT; i++) {
+        bool on = (i == lvx_theme::current());
+        const auto &t = lvx_theme::THEMES[i];
+        lv_obj_set_style_outline_width(tiles[i], on ? 4 : 0, LV_PART_MAIN);
+        lv_label_set_text(descs[i], on ? "Active" : t.desc);
+        lv_obj_set_style_text_color(descs[i], lv_color_hex(on ? t.c[lvx_theme::ACCENT] : t.c[lvx_theme::TEXT2]), LV_PART_MAIN);
+      }
 - id: boot_flow
   mode: queued
   then:
@@ -9288,7 +10098,7 @@ script:
           if (btn == nullptr) return;
           bool on = (id(interval_pages_mask) & (1 << bit)) != 0;
           lv_obj_set_style_border_width(btn, on ? 4 : 1, 0);
-          lv_obj_set_style_border_color(btn, lv_color_hex(on ? 0x2E7D32 : 0x333333), 0);
+          lv_obj_set_style_border_color(btn, lv_color_hex(lvx_theme::color(on ? 0x2E7D32 : 0x333333)), 0);
         };
 
         // Seconds label on settings page
@@ -9322,11 +10132,11 @@ script:
         auto set_tile = [&](lv_obj_t* btn, lv_obj_t* chk, int idx) {
           if (idx == sel) {
             lv_obj_set_style_border_width(btn, 4, LV_PART_MAIN);
-            lv_obj_set_style_border_color(btn, lv_color_hex(0x2E7D32), LV_PART_MAIN);
+            lv_obj_set_style_border_color(btn, lv_color_hex(lvx_theme::color(0x2E7D32)), LV_PART_MAIN);
             lv_obj_clear_flag(chk, LV_OBJ_FLAG_HIDDEN);
           } else {
             lv_obj_set_style_border_width(btn, 1, LV_PART_MAIN);
-            lv_obj_set_style_border_color(btn, lv_color_hex(0x333333), LV_PART_MAIN);
+            lv_obj_set_style_border_color(btn, lv_color_hex(lvx_theme::color(0x333333)), LV_PART_MAIN);
             lv_obj_add_flag(chk, LV_OBJ_FLAG_HIDDEN);
           }
         };
@@ -9353,7 +10163,7 @@ script:
           if (!btn) return;
           if (idx == sel) {
             lv_obj_set_style_outline_width(btn, 3, LV_PART_MAIN);
-            lv_obj_set_style_outline_color(btn, lv_color_hex(0x2E7D32), LV_PART_MAIN);
+            lv_obj_set_style_outline_color(btn, lv_color_hex(lvx_theme::color(0x2E7D32)), LV_PART_MAIN);
           } else {
             lv_obj_set_style_outline_width(btn, 0, LV_PART_MAIN);
           }
@@ -9386,7 +10196,7 @@ script:
           if (!btn) return;
           if (selected(route)) {
             lv_obj_set_style_outline_width(btn, 3, LV_PART_MAIN);
-            lv_obj_set_style_outline_color(btn, lv_color_hex(0x2E7D32), LV_PART_MAIN);
+            lv_obj_set_style_outline_color(btn, lv_color_hex(lvx_theme::color(0x2E7D32)), LV_PART_MAIN);
           } else {
             lv_obj_set_style_outline_width(btn, 0, LV_PART_MAIN);
           }
@@ -9627,7 +10437,7 @@ interval:
 
             // Make the line visible regardless of theme defaults
             lv_obj_set_style_line_width(line_comp->obj, 3, LV_PART_MAIN);
-            lv_obj_set_style_line_color(line_comp->obj, lv_color_hex(0x334455), LV_PART_MAIN);
+            lv_obj_set_style_line_color(line_comp->obj, lv_color_hex(lvx_theme::color(0x334455)), LV_PART_MAIN);
             lv_obj_set_style_line_opa(line_comp->obj, LV_OPA_COVER, LV_PART_MAIN);
             lv_obj_set_style_line_rounded(line_comp->obj, true, LV_PART_MAIN);
 
@@ -10174,6 +10984,7 @@ interval:
             // set_box() skips it when nothing changed. Overrides reset it.
             static const char* sug_last_msg = nullptr;
             static uint32_t sug_last_border = 0;
+            static uint32_t sug_last_epoch = 0;
 
             // Helper for consistent box layout
             auto style_box_base = [&]() {
@@ -10262,16 +11073,17 @@ interval:
               float soc_pct = nz(id(solaredge_battery_soc).state);
 
               auto set_box = [&](const char* msg, uint32_t border_hex) {
-                if (msg == sug_last_msg && border_hex == sug_last_border) return;
+                if (msg == sug_last_msg && border_hex == sug_last_border && sug_last_epoch == lvx_theme::epoch()) return;
                 sug_last_msg = msg;
                 sug_last_border = border_hex;
+                sug_last_epoch = lvx_theme::epoch();
                 style_box_base();
-                lv_obj_set_style_bg_color(id(suggestion_box), lv_color_hex(0x424242), LV_PART_MAIN);
+                lv_obj_set_style_bg_color(id(suggestion_box), lv_color_hex(lvx_theme::color(0x424242)), LV_PART_MAIN);
                 lv_obj_set_style_bg_opa  (id(suggestion_box), LV_OPA_COVER,          LV_PART_MAIN);
                 lv_obj_set_style_outline_width(id(suggestion_box), 6, LV_PART_MAIN);
                 lv_obj_set_style_border_color(id(suggestion_box), lv_color_hex(border_hex), LV_PART_MAIN);
                 lv_obj_set_style_radius(id(suggestion_box), 12, LV_PART_MAIN);
-                lv_obj_set_style_text_color(id(suggestion_label), lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+                lv_obj_set_style_text_color(id(suggestion_label), lv_color_hex(lvx_theme::color(0xFFFFFF)), LV_PART_MAIN);
                 lv_label_set_text(id(suggestion_label), msg);
               };
 
@@ -10496,7 +11308,7 @@ interval:
               int active = id(current_dataset);
               for (int i = 0; i < 8; ++i) {
                 bool is_active = (i == active);
-                uint32_t bg = is_active ? ds_colors[i] : 0x444444;
+                uint32_t bg = is_active ? ds_colors[i] : lvx_theme::color(0x444444);
                 lv_obj_t* btn = ds_btns[i];
 
                 lv_obj_set_style_bg_color(btn, lv_color_hex(bg), LV_PART_MAIN);
@@ -10606,7 +11418,7 @@ interval:
               // Place outside for short bars, inside for tall bars
               int bar_h = lv_obj_get_height(bars[i]);
               if (bar_h < (MAX_H / 2)) {
-                lv_obj_set_style_text_color(vlabels[i], lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+                lv_obj_set_style_text_color(vlabels[i], lv_color_hex(lvx_theme::color(0xFFFFFF)), LV_PART_MAIN);
                 lv_obj_align_to(vlabels[i], bars[i], LV_ALIGN_OUT_TOP_MID, 0, -6);
               } else {
 
@@ -10630,7 +11442,7 @@ interval:
           // === Settings & Wi-Fi pills sync ==========================================
           auto set_pill = [](lv_obj_t* pill, lv_obj_t* lbl, bool on) {
             // background color (only when it changes: every style change forces a redraw)
-            lv_color_t want = lv_color_hex(on ? 0x2E7D32 : 0x424242);
+            lv_color_t want = lv_color_hex(lvx_theme::color(on ? 0x2E7D32 : 0x424242));
             if (!lv_color_eq(lv_obj_get_style_bg_color(pill, LV_PART_MAIN), want))
               lv_obj_set_style_bg_color(pill, want, LV_PART_MAIN);
 
@@ -10675,7 +11487,7 @@ interval:
           // Wi-Fi status pill (connected/disconnected)
           {
             bool connected = (strcmp(lv_label_get_text(id(lbl_wifi_state)), "Connected") == 0);
-            lv_obj_set_style_bg_color(id(pill_wifi_state), lv_color_hex(connected ? 0x2E7D32 : 0x8E24AA), LV_PART_MAIN);
+            lv_obj_set_style_bg_color(id(pill_wifi_state), lv_color_hex(connected ? lvx_theme::color(0x2E7D32) : 0x8E24AA), LV_PART_MAIN);
             lv_obj_align(id(lbl_wifi_state), LV_ALIGN_CENTER, 0, 0);
           }
 
@@ -10849,7 +11661,7 @@ interval:
               bool on = (tick < 4);
               lv_obj_set_style_text_color(
                 id(hp2_lbl_suggestion),
-                on ? lv_color_hex(0xFF3B30) : lv_color_hex(0xFFFFFF),
+                on ? lv_color_hex(0xFF3B30) : lv_color_hex(lvx_theme::color(0xFFFFFF)),
                 LV_PART_MAIN
               );
               // Do NOT return early anywhere else; backup already handled
@@ -10860,7 +11672,7 @@ interval:
                 lv_label_set_text(id(hp2_lbl_suggestion), "");
               } else {
                 lv_label_set_text(id(hp2_lbl_suggestion), s);
-                lv_obj_set_style_text_color(id(hp2_lbl_suggestion), lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+                lv_obj_set_style_text_color(id(hp2_lbl_suggestion), lv_color_hex(lvx_theme::color(0xFFFFFF)), LV_PART_MAIN);
               }
             }
           }
