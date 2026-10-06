@@ -5444,13 +5444,15 @@ lvgl:
             widgets:
             - label:
                 x: 20
-                y: 18
+                align: left_mid
+                y: -16
                 text: Display
                 text_font: my_font
                 text_color: 16777215
             - label:
                 x: 20
-                y: 55
+                align: left_mid
+                y: 19
                 text: Backlight & auto sleep options
                 text_font: my_font_small
                 text_color: 10395294
@@ -5473,13 +5475,15 @@ lvgl:
             widgets:
               - label:
                   x: 20
-                  y: 18
+                  align: left_mid
+                  y: -16
                   text: Home Usage
                   text_font: my_font
                   text_color: 16777215
               - label:
                   x: 20
-                  y: 55
+                  align: left_mid
+                  y: 19
                   text: Device names & more
                   text_font: my_font_small
                   text_color: 10395294
@@ -5502,13 +5506,15 @@ lvgl:
             widgets:
             - label:
                 x: 20
-                y: 18
+                align: left_mid
+                y: -16
                 text: Interval
                 text_font: my_font
                 text_color: 16777215
             - label:
                 x: 20
-                y: 55
+                align: left_mid
+                y: 19
                 text: Auto-rotate between pages
                 text_font: my_font_small
                 text_color: 10395294
@@ -5528,13 +5534,15 @@ lvgl:
             widgets:
             - label:
                 x: 20
-                y: 18
+                align: left_mid
+                y: -16
                 text: Tips / Suggestions
                 text_font: my_font
                 text_color: 16777215
             - label:
                 x: 20
-                y: 55
+                align: left_mid
+                y: 19
                 text: Enable the suggestion box on the flow screen
                 text_font: my_font_small
                 text_color: 10395294
@@ -5575,13 +5583,15 @@ lvgl:
             widgets:
             - label:
                 x: 20
-                y: 18
+                align: left_mid
+                y: -16
                 text: Graph Values
                 text_font: my_font
                 text_color: 16777215
             - label:
                 x: 20
-                y: 55
+                align: left_mid
+                y: 19
                 text: Show value labels on the Graph page
                 text_font: my_font_small
                 text_color: 10395294
@@ -5622,13 +5632,15 @@ lvgl:
             widgets:
             - label:
                 x: 20
-                y: 18
+                align: left_mid
+                y: -16
                 text: Daily Totals
                 text_font: my_font
                 text_color: 16777215
             - label:
                 x: 20
-                y: 55
+                align: left_mid
+                y: 19
                 text: Show PV / Home / Grid / Battery totals on flow screen
                 text_font: my_font_small
                 text_color: 10395294
@@ -5673,13 +5685,15 @@ lvgl:
             widgets:
             - label:
                 x: 20
-                y: 18
+                align: left_mid
+                y: -16
                 text: Wi-Fi
                 text_font: my_font
                 text_color: 16777215
             - label:
                 x: 20
-                y: 55
+                align: left_mid
+                y: 19
                 text: View connection, SSID, IP & signal
                 text_font: my_font_small
                 text_color: 10395294
@@ -5721,13 +5735,15 @@ lvgl:
             widgets:
               - label:
                   x: 20
-                  y: 18
+                  align: left_mid
+                  y: -16
                   text: Reboot / Reconnect
                   text_font: my_font
                   text_color: 16777215
               - label:
                   x: 20
-                  y: 55
+                  align: left_mid
+                  y: 19
                   text: Restart the device (reconnects after boot)
                   text_font: my_font_small
                   text_color: 10395294
@@ -5766,13 +5782,15 @@ lvgl:
             widgets:
             - label:
                 x: 20
-                y: 18
+                align: left_mid
+                y: -16
                 text: Simulate Backup Mode
                 text_font: my_font
                 text_color: 16777215
             - label:
                 x: 20
-                y: 55
+                align: left_mid
+                y: 19
                 text: Force OFF-GRID alert to test flashing banner
                 text_font: my_font_small
                 text_color: 10395294
@@ -5813,13 +5831,15 @@ lvgl:
             widgets:
             - label:
                 x: 20
-                y: 18
+                align: left_mid
+                y: -16
                 text: Original Homepage
                 text_font: my_font
                 text_color: 16777215
             - label:
                 x: 20
-                y: 55
+                align: left_mid
+                y: 19
                 text: Change Back to the Old Basic Homepage
                 text_font: my_font_small
                 text_color: 10395294
@@ -7324,13 +7344,15 @@ lvgl:
           widgets:
             - label:
                 x: 20
-                y: 18
+                align: left_mid
+                y: -16
                 text: Backlight
                 text_font: my_font
                 text_color: 16777215
             - label:
                 x: 20
-                y: 55
+                align: left_mid
+                y: 19
                 text: Tap to toggle display backlight
                 text_font: my_font_small
                 text_color: 10395294
@@ -7375,13 +7397,15 @@ lvgl:
           widgets:
             - label:
                 x: 20
-                y: 18
+                align: left_mid
+                y: -16
                 text: Screen Sleep
                 text_font: my_font
                 text_color: 16777215
             - label:
                 x: 20
-                y: 55
+                align: left_mid
+                y: 19
                 text: Sensor + touch when ON, always on when OFF
                 text_font: my_font_small
                 text_color: 10395294
@@ -7440,13 +7464,15 @@ lvgl:
           widgets:
             - label:
                 x: 20
-                y: 18
+                align: left_mid
+                y: -16
                 text: Screen Timeout
                 text_font: my_font
                 text_color: 16777215
             - label:
                 x: 20
-                y: 55
+                align: left_mid
+                y: 19
                 text: Time screen stays on after last movement
                 text_font: my_font_small
                 text_color: 10395294
@@ -7535,22 +7561,26 @@ lvgl:
           widgets:
             - label:
                 x: 20
-                y: 18
+                align: left_mid
+                y: -16
                 text: Brightness
                 text_font: my_font
                 text_color: 16777215
             - label:
                 x: 20
-                y: 55
+                align: left_mid
+                y: 19
                 text: Slide to adjust screen brightness
                 text_font: my_font_small
                 text_color: 10395294
 
             - slider:
                 id: sld_brightness
-                x: 340
-                y: 25
-                width: 300
+                # Centred vertically, between the text (ends ~366 px) and the value
+                # pill (starts ~674 px); the knob reaches ~22 px past each end.
+                align: left_mid
+                x: 394
+                width: 250
                 height: 35
                 min_value: 5
                 max_value: 100
