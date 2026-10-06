@@ -236,7 +236,7 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 ## 8. Where we left off (2026-10-07)
 
 **Repo state**
-- Local commits on `main` that are **not pushed yet** (waiting for the owner's OK): setting-row centring + brightness slider, colour themes, firmware parity + energy packages, and this handover update. Check with `git status` / `git log origin/main..`.
+- Everything is committed and pushed to GitHub `main` (setting-row centring + brightness slider, colour themes, firmware parity + energy packages, this handover).
 - The owner's display (SolarEdge firmware) runs the latest build. The owner still has to copy the updated `Homeassistant/solaredge/2 inverters/packages/energy.yaml` into Home Assistant; until then the display's lifetime value shows "--" (it now reads `sensor.solar_lifetime_energy`).
 
 **Agreed roadmap** (discussed, not started)
@@ -246,6 +246,5 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 
 **Open questions for the owner**
 - Which other inverter brands should the display contract cover?
-- Push the local commits to GitHub?
 - Private WiFi network names were removed from the files but are still in old git history; leave as is (low risk) or rewrite history (needs a force-push)?
 
