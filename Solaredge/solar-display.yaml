@@ -88,7 +88,7 @@ api:
   on_client_connected:
     - script.execute: finish_boot
   on_client_disconnected:
-    - lambda: "if (!id(api_ready)) {\n  lv_label_set_text(id(lbl_boot_status), \"Disconnected.\\ Retrying…\");\n}"
+    - lambda: "if (!id(api_ready)) {\n  lv_label_set_text(id(lbl_boot_status), \"Disconnected. Retrying…\");\n}"
 ota:
   - platform: esphome
     password: !secret ota_password
@@ -1563,7 +1563,7 @@ sensor:
       lv_label_set_text(id(lbl_pv_now), b);'
 - platform: homeassistant
   id: solar_lifetime_raw
-  entity_id: sensor.solarhouse_lifetime_energy
+  entity_id: sensor.solar_lifetime_energy
   on_value:
   - lambda: '// --- OPTION A: lifetime is in kWh ---
 
@@ -8665,7 +8665,7 @@ lvgl:
                 text_color: 16777215
                 align: center
 
-      # RIGHT: Restore EW14
+      # RIGHT: Restore network 1
       - button:
           x: 670
           y: 265
@@ -8690,7 +8690,7 @@ lvgl:
                 text_color: 16777215
                 align: center
 
-      # RIGHT: Restore landc
+      # RIGHT: Restore network 2
       - button:
           x: 670
           y: 325
@@ -8715,7 +8715,7 @@ lvgl:
                 text_color: 16777215
                 align: center
 
-      # RIGHT: Restore BB59-Unifi
+      # RIGHT: Restore network 3
       - button:
           x: 670
           y: 385

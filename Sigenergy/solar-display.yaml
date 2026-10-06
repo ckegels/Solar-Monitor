@@ -35,21 +35,22 @@ esphome:
 
   - priority: -100
     then:
-      - script.execute: boot_flow
+    - script.execute: boot_flow
   - priority: 900
     then:
-      - lvgl.widget.hide: btn_boot_menu
-      - lvgl.page.show: boot_page
-      - script.execute: maybe_show_boot_menu
-
+    - lvgl.widget.hide: btn_boot_menu
+    - lvgl.page.show: boot_page
+    - script.execute: maybe_show_boot_menu
 substitutions:
+  device_name: "solar-display"
+  friendly_name: "Solar Display"
+  fallback_ap_ssid: "Solar Display Fallback Hotspot"
   wifi_preset_1_label: "network 1"
   wifi_preset_2_label: "network 2"
   wifi_preset_3_label: "network 3"
-  device_name: "solar-display"
-  friendly_name: "Solar Display"
   api_key_full: !secret api_encryption_key
   ota_key_full: !secret ota_password
+
 preferences:
   flash_write_interval: 5min
 
@@ -79,7 +80,7 @@ psram:
   mode: octal
   speed: 80MHz
 
-logger: 
+logger:
   level: INFO
 api:
   encryption:
@@ -87,7 +88,7 @@ api:
   on_client_connected:
     - script.execute: finish_boot
   on_client_disconnected:
-    - lambda: "if (!id(api_ready)) {\n  lv_label_set_text(id(lbl_boot_status), \"Disconnected.\ \ Retrying…\");\n}"
+    - lambda: "if (!id(api_ready)) {\n  lv_label_set_text(id(lbl_boot_status), \"Disconnected. Retrying…\");\n}"
 ota:
   - platform: esphome
     password: !secret ota_password
@@ -101,31 +102,32 @@ wifi:
       password: !secret wifi_password_3
   reboot_timeout: 0s
   ap:
-    ssid: "${friendly_name} Fallback Hotspot"
+    ssid: ${fallback_ap_ssid}
     ap_timeout: 15s
   on_connect:
     then:
-      - lambda: |-
-          // If the user forced AP-only setup mode, do not stay connected as STA.
-          if (id(force_ap_mode)) {
+    - lambda: |-
+        // If the user forced AP-only setup mode, do not stay connected as STA.
+        if (id(force_ap_mode)) {
           esp_wifi_disconnect();
           esp_wifi_set_mode(WIFI_MODE_AP);
-          }
-      - lambda: if (!id(api_ready)) lv_label_set_text(id(lbl_boot_status), "Wi-Fi OK. Waiting for API…");
-      - lambda: |-
-          lv_label_set_text(id(lbl_wifi_state), "Connected");
-          lv_label_set_text(id(lbl_addwifi_state), "Connected");
+        }
+    - lambda: if (!id(api_ready)) lv_label_set_text(id(lbl_boot_status), "Wi-Fi OK. Waiting
+        for API…");
+    - lambda: |-
+        lv_label_set_text(id(lbl_wifi_state), "Connected");
+        lv_label_set_text(id(lbl_addwifi_state), "Connected");
   on_disconnect:
     then:
-      - lambda: if (!id(api_ready)) lv_label_set_text(id(lbl_boot_status), "Wi-Fi lost. Reconnecting…");
-      - lambda: |-
-          if (id(force_ap_mode)) {
+    - lambda: if (!id(api_ready)) lv_label_set_text(id(lbl_boot_status), "Wi-Fi lost. Reconnecting…");
+    - lambda: |-
+        if (id(force_ap_mode)) {
           lv_label_set_text(id(lbl_wifi_state), "AP");
           lv_label_set_text(id(lbl_addwifi_state), "AP");
-          } else {
+        } else {
           lv_label_set_text(id(lbl_wifi_state), "Disconnected (AP if enabled)");
           lv_label_set_text(id(lbl_addwifi_state), "Disconnected");
-          }
+        }
 captive_portal: 
   id: cp
 
@@ -219,13 +221,13 @@ switch:
   restore_mode: RESTORE_DEFAULT_OFF
   on_turn_on:
     then:
-      - if:
-          condition:
-            switch.is_on: change_homepage 
-          then:
-            - lvgl.page.show: home_page         # old/original homepage
-          else:
-            - lvgl.page.show: home_page_2       # new homepage
+    - if:
+        condition:
+          switch.is_on: change_homepage 
+        then:
+          - lvgl.page.show: home_page         # old/original homepage
+        else:
+          - lvgl.page.show: home_page_2       # new homepage
 - platform: template
   id: change_homepage
   name: homepage toggle
@@ -233,22 +235,22 @@ switch:
   restore_mode: RESTORE_DEFAULT_OFF
   on_turn_on:
     then:
-      - if:
-          condition:
-              lambda: return id(api_ready);
-          then:
-            - lvgl.page.show: home_page
-            - lambda: |-
-                id(use_original_home) = true;
+    - if:
+        condition:
+            lambda: return id(api_ready);
+        then:
+        - lvgl.page.show: home_page
+        - lambda: |-
+            id(use_original_home) = true;
   on_turn_off:
     then:
-      - if:
-          condition:
-              lambda: return id(api_ready);
-          then:
-            - lvgl.page.show: home_page_2
-            - lambda: |-
-                id(use_original_home) = false;
+    - if:
+        condition:
+            lambda: return id(api_ready);
+        then:
+        - lvgl.page.show: home_page_2
+        - lambda: |-
+            id(use_original_home) = false;
 touchscreen:
 - platform: gt911
   id: my_touchscreen
@@ -262,7 +264,7 @@ touchscreen:
       condition:
         switch.is_off: backlight_switch
       then:
-        - switch.turn_on: backlight_switch
+      - switch.turn_on: backlight_switch
 
 number:
   - platform: template
@@ -279,12 +281,12 @@ number:
         - lvgl.label.update:
             id: lbl_display_timeout_state
             text: !lambda |-
-                float v = x;  // number value in seconds
-                if (v < 60.0f) {
+              float v = x;  // number value in seconds
+              if (v < 60.0f) {
                 return str_sprintf("%.0fs", v);
-                } else {
+              } else {
                 return str_sprintf("%.0fm", v / 60.0f);
-                }
+              }
 globals:
 - id: force_ap_mode
   type: bool
@@ -545,8 +547,8 @@ binary_sensor:
   name: "Presence"
   device_class: occupancy
   lambda: |-
-      // For now presence = HMMD only
-      return id(hmmd_presence).state;
+    // For now presence = HMMD only
+    return id(hmmd_presence).state;
 
   # Wake the screen immediately whenever presence becomes true
   on_press:
@@ -580,20 +582,20 @@ binary_sensor:
 
 - platform: homeassistant
   id: grid_backup_status_ha
-  entity_id: binary_sensor.solaredge_i1_grid_status
+  entity_id: binary_sensor.package_sigen_grid_connected
   on_state:
     then:
-      - if:
-          condition:
-              lambda: return id(api_ready) && (x == false);
-          then:
-            - if:
-                condition:
-                  switch.is_on: change_homepage 
-                then:
-                  - lvgl.page.show: home_page         # old/original homepage
-                else:
-                  - lvgl.page.show: home_page_2       # new homepage
+    - if:
+        condition:
+            lambda: return id(api_ready) && (x == false);
+        then:
+        - if:
+            condition:
+              switch.is_on: change_homepage 
+            then:
+              - lvgl.page.show: home_page         # old/original homepage
+            else:
+              - lvgl.page.show: home_page_2       # new homepage
 sensor:
 
 - platform: template
@@ -947,7 +949,17 @@ sensor:
 - platform: homeassistant
   id: house_consumption_yearly
   entity_id: sensor.package_sigen_house_consumption_yearly
+- platform: homeassistant
+  id: autarkie_ratio
+  entity_id: sensor.package_sigen_autarkie_ratio
+  on_value:
+  - lambda: 'if (std::isnan(x)) { lv_label_set_text(id(lbl_autarkie), "—"); return; }
 
+      char b[16];
+
+      snprintf(b, sizeof(b), "%.0f%%", x);
+
+      lv_label_set_text(id(lbl_autarkie), b);'
 - platform: wifi_signal
   name: WiFi Signal
   id: wifi_signal_sensor
@@ -1657,7 +1669,7 @@ sensor:
       snprintf(b, sizeof(b), "%.1f kWh", x); lv_label_set_text(id(lbl_pv2h_yearly), b); }
 - platform: homeassistant
   id: solar_battery_time_remaining
-  entity_id: sensor.solar_battery_time_remaining
+  entity_id: sensor.package_sigen_battery_time_remaining
 
 - platform: homeassistant
   id: hu_dev1_usage
@@ -1848,6 +1860,7 @@ lvgl:
                       text_font: my_font_small
                       text_color: 0xFFFFFF
                       long_mode: WRAP
+
   animations:
     # Boot screen: the logo slowly "breathes" until Home Assistant is connected
     - id: boot_logo_breathe
@@ -2918,7 +2931,7 @@ lvgl:
                 then:
                   - lvgl.widget.show: loading_overlay
                   - delay: 20ms
-                  - lvgl.page.show: solar_info_page
+                  - lvgl.page.show: solar_info_page     
                   - delay: 250ms
                   - lvgl.widget.hide: loading_overlay
               widgets:
@@ -2966,7 +2979,7 @@ lvgl:
                 then:
                   - lvgl.widget.show: loading_overlay
                   - delay: 20ms
-                  - lvgl.page.show: home_usage_page
+                  - lvgl.page.show: home_usage_page   
                   - delay: 250ms
                   - lvgl.widget.hide: loading_overlay
               widgets:
@@ -3014,7 +3027,7 @@ lvgl:
                 then:
                   - lvgl.widget.show: loading_overlay
                   - delay: 20ms
-                  - lvgl.page.show: grid_page
+                  - lvgl.page.show: grid_page     
                   - delay: 250ms
                   - lvgl.widget.hide: loading_overlay
               widgets:
@@ -3079,7 +3092,7 @@ lvgl:
                 then:
                   - lvgl.widget.show: loading_overlay
                   - delay: 20ms
-                  - lvgl.page.show: battery_page
+                  - lvgl.page.show: battery_page      # old/original homepage
                   - delay: 250ms
                   - lvgl.widget.hide: loading_overlay
               widgets:
@@ -3215,7 +3228,7 @@ lvgl:
               pad_top: 0
               pad_bottom: 1
               pad_left: 0
-              pad_right: 500
+              pad_right: 75
               shadow_width: 0
               border_opa: 0%
               outline_opa: 0%
@@ -3231,17 +3244,29 @@ lvgl:
                 - label:
                     id: hp2_lbl_exported_today_caption
                     text: "Exported today"
-                    align: TOP_LEFT
+                    align: top_mid
                     x: 31
                     text_color: 0xE0E0E0
                     text_font: my_font
                 - label:
                     id: hp2_lbl_exported_today_value
                     text: "--"
-                    align: TOP_LEFT
+                    align: top_mid
                     text_color: 0xFFFFFF
                     text_font: my_font
-
+                - label:
+                    id: hp2_lbl_remaining_battery_caption
+                    text: "Remaining Battery"
+                    align: top_mid
+                    x: 31
+                    text_color: 0xE0E0E0
+                    text_font: my_font
+                - label:
+                    id: hp2_lbl_batt_time_remaining
+                    text: "--"
+                    align: top_mid
+                    text_color: 0xFFFFFF
+                    text_font: my_font
           # thin divider
           - obj:
               width: 860
@@ -4537,7 +4562,20 @@ lvgl:
             text: --
             text_font: my_font
             text_color: 16777215
-
+    - label:
+        x: 410
+        y: 538
+        text: Autarkie
+        text_font: my_font
+        text_color: mdi_grey
+    - label:
+        id: lbl_autarkie
+        x: 589
+        y: 538
+        width: 154
+        text: --
+        text_font: my_font
+        text_color: 16777215
     - button:
         id: btn_topright_grid
         width: 102
@@ -4857,11 +4895,11 @@ lvgl:
         - lvgl.label.update:
             id: interval_prelude_lbl
             text: !lambda |-
-                return str_sprintf("Starting in: %ds", id(interval_prelude_remaining));
+              return str_sprintf("Starting in: %ds", id(interval_prelude_remaining));
         - lvgl.label.update:
             id: interval_every_lbl
             text: !lambda |-
-                return str_sprintf("Then every %ds", id(interval_seconds));
+              return str_sprintf("Then every %ds", id(interval_seconds));
 
     widgets:
       - label:
@@ -5347,7 +5385,7 @@ lvgl:
         on_click:
           - lambda: |-
               // Scroll up by one "step"
-              lv_obj_scroll_by(id(settings_scroll), 0, 170, LV_ANIM_OFF);
+              lv_obj_scroll_by(id(settings_scroll), 0, 170, LV_ANIM_ON);
         widgets:
           - label:
               align: center
@@ -5368,7 +5406,7 @@ lvgl:
         on_click:
           - lambda: |-
               // Scroll down by one "step"
-              lv_obj_scroll_by(id(settings_scroll), 0, -170, LV_ANIM_OFF);
+              lv_obj_scroll_by(id(settings_scroll), 0, -170, LV_ANIM_ON);
         widgets:
           - label:
               align: center
@@ -6134,19 +6172,19 @@ lvgl:
         - lvgl.label.update:
             id: lbl_usage_dev_title
             text: !lambda |-
-                int dev = id(hu_current_device);
-                if (dev < 1 || dev > 5) dev = 1;
-                return str_sprintf("Device %d", dev);
+              int dev = id(hu_current_device);
+              if (dev < 1 || dev > 5) dev = 1;
+              return str_sprintf("Device %d", dev);
         - lvgl.textarea.update:
             id: ta_hu_dev_name
             text: !lambda |-
-                int dev = id(hu_current_device);
-                if (dev == 1) return id(hu_dev1_name_str).c_str();
-                if (dev == 2) return id(hu_dev2_name_str).c_str();
-                if (dev == 3) return id(hu_dev3_name_str).c_str();
-                if (dev == 4) return id(hu_dev4_name_str).c_str();
-                if (dev == 5) return id(hu_dev5_name_str).c_str();
-                return id(hu_dev1_name_str).c_str();
+              int dev = id(hu_current_device);
+              if (dev == 1) return id(hu_dev1_name_str).c_str();
+              if (dev == 2) return id(hu_dev2_name_str).c_str();
+              if (dev == 3) return id(hu_dev3_name_str).c_str();
+              if (dev == 4) return id(hu_dev4_name_str).c_str();
+              if (dev == 5) return id(hu_dev5_name_str).c_str();
+              return id(hu_dev1_name_str).c_str();
         - lambda: |-
             int dev = id(hu_current_device);
             int idx = 0;
@@ -8470,7 +8508,6 @@ lvgl:
                 text_color: 16777215
 
 
-
             - label:
                 x: 20
                 y: 235
@@ -8547,7 +8584,6 @@ lvgl:
                       align: center
                       text_font: mdi_60
                       text_color: 0xFFFFFF
-
 
 
       - button:
@@ -8629,7 +8665,7 @@ lvgl:
                 text_color: 16777215
                 align: center
 
-      # RIGHT: Restore EW14
+      # RIGHT: Restore network 1
       - button:
           x: 670
           y: 265
@@ -8649,12 +8685,12 @@ lvgl:
             - wifi.enable
           widgets:
             - label:
-                text: Connect to EW14
+                text: "Connect to ${wifi_preset_1_label}"
                 text_font: my_font_small
                 text_color: 16777215
                 align: center
 
-      # RIGHT: Restore WIFI_2
+      # RIGHT: Restore network 2
       - button:
           x: 670
           y: 325
@@ -8674,12 +8710,12 @@ lvgl:
             - wifi.enable
           widgets:
             - label:
-                text: Connect to WIFI_2
+                text: "Connect to ${wifi_preset_2_label}"
                 text_font: my_font_small
                 text_color: 16777215
                 align: center
 
-      # RIGHT: Restore WIFI_3
+      # RIGHT: Restore network 3
       - button:
           x: 670
           y: 385
@@ -8699,7 +8735,7 @@ lvgl:
             - wifi.enable
           widgets:
             - label:
-                text: Connect to WIFI_3
+                text: "Connect to ${wifi_preset_3_label}"
                 text_font: my_font_small
                 text_color: 16777215
                 align: center
@@ -9778,8 +9814,6 @@ font:
     - "\U000F0140" # mdi-chevron-down
     - "\U000F0156" # mdi-return
     - "\U000F0208" # mdi-eye
-
-
 color:
 - id: mdi_blue
   hex: 2196F3
@@ -9800,167 +9834,167 @@ color:
 image:
 - platform: file
   id: img_device1
-  file: "icons/device1.png"
+  file: icons/device1.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: img_close_res
-  file: "icons/close.png"
+  file: icons/close.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: img_menu_res
-  file: "icons/menu.png"
+  file: icons/menu.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: arrow_down_res
-  file: "icons/arrowdownred.png"
+  file: icons/arrowdownred.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: arrow_up_res
-  file: "icons/arrowupblue.png"
+  file: icons/arrowupblue.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: node_solar_img
-  file: "icons/icon_sun_100.png"
+  file: icons/icon_sun_100.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: node_home_100
-  file: "icons/icon_home_100.png"
+  file: icons/icon_home_100.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: node_battery_100
-  file: "icons/icon_battery_100.png"
+  file: icons/icon_battery_100.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: node_grid_100
-  file: "icons/icon_grid_100.png"
+  file: icons/icon_grid_100.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: esphome_logo
-  file: "icons/esphome.png"
+  file: icons/esphome.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_img_solar
-  file: "icons/solar.png"
+  file: icons/solar.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_img_grid
-  file: "icons/grid.png"
+  file: icons/grid.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_img_home
-  file: "icons/home.png"
+  file: icons/home.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_batt_0010
-  file: "icons/battery10.png"
+  file: icons/battery10.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_batt_1020
-  file: "icons/battery1020.png"
+  file: icons/battery1020.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_batt_2030
-  file: "icons/battery2030.png"
+  file: icons/battery2030.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_batt_3040
-  file: "icons/battery3040.png"
+  file: icons/battery3040.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_batt_4050
-  file: "icons/battery4050.png"
+  file: icons/battery4050.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_batt_5060
-  file: "icons/battery5060.png"
+  file: icons/battery5060.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_batt_6070
-  file: "icons/battery6070.png"
+  file: icons/battery6070.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_batt_7080
-  file: "icons/battery7080.png"
+  file: icons/battery7080.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_batt_8090
-  file: "icons/battery8090.png"
+  file: icons/battery8090.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hp2_batt_90100
-  file: "icons/battery90100.png"
+  file: icons/battery90100.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hu_icon_homecog
-  file: "icons/homecog.png"
+  file: icons/homecog.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hu_icon_towel
-  file: "icons/towel.png"
+  file: icons/towel.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hu_icon_dehumidifier
-  file: "icons/dehumidifier.png"
+  file: icons/dehumidifier.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hu_icon_heater
-  file: "icons/heater.png"
+  file: icons/heater.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hu_icon_heating
-  file: "icons/heating.png"
+  file: icons/heating.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hu_icon_office
-  file: "icons/office.png"
+  file: icons/office.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hu_icon_pcdesk
-  file: "icons/pcdesk.png"
+  file: icons/pcdesk.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hu_icon_sauna
-  file: "icons/sauna.png"
+  file: icons/sauna.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hu_icon_sofa
-  file: "icons/sofa.png"
+  file: icons/sofa.png
   type: RGB565
   transparency: alpha_channel
 - platform: file
   id: hu_icon_spa
-  file: "icons/spa.png"
+  file: icons/spa.png
   type: RGB565
   transparency: alpha_channel
 script:
@@ -9981,36 +10015,36 @@ script:
 - id: boot_flow
   mode: queued
   then:
-    - lvgl.page.show: boot_page
-    - lvgl.widget.hide: btn_boot_menu
-    - lambda: lv_label_set_text(id(lbl_boot_status), "Connecting to Home Assistant…");
+  - lvgl.page.show: boot_page
+  - lvgl.widget.hide: btn_boot_menu
+  - lambda: lv_label_set_text(id(lbl_boot_status), "Connecting to Home Assistant…");
 - id: finish_boot
   mode: restart
   then:
-    - lambda: id(api_ready) = true;
-    - lambda: lv_label_set_text(id(lbl_boot_status), "Connected. Loading entities…");
-    - delay: !lambda |
-        return id(boot_extra_delay_ms);
-    - lvgl.animation.stop: boot_logo_breathe
-    - if:
-        condition:
-          switch.is_on: change_homepage 
-        then:
-          - lvgl.page.show: home_page         # old/original homepage
-        else:
-          - lvgl.page.show: home_page_2       # new homepage
+  - lambda: id(api_ready) = true;
+  - lambda: lv_label_set_text(id(lbl_boot_status), "Connected. Loading entities…");
+  - delay: !lambda |
+      return id(boot_extra_delay_ms);
+  - lvgl.animation.stop: boot_logo_breathe
+  - if:
+      condition:
+        switch.is_on: change_homepage 
+      then:
+        - lvgl.page.show: home_page         # old/original homepage
+      else:
+        - lvgl.page.show: home_page_2       # new homepage
 - id: maybe_show_boot_menu
   mode: restart
   then:
-    - delay: 30s
-    - if:
-        condition:
-          api.connected: null
-        then:
-          - logger.log: API connected; keeping boot menu hidden
-        else:
-        - lvgl.widget.show: btn_boot_menu
-        - lambda: lv_label_set_text(id(lbl_boot_status), "No API connection yet. Open Menu.");
+  - delay: 30s
+  - if:
+      condition:
+        api.connected: null
+      then:
+      - logger.log: API connected; keeping boot menu hidden
+      else:
+      - lvgl.widget.show: btn_boot_menu
+      - lambda: lv_label_set_text(id(lbl_boot_status), "No API connection yet. Open Menu.");
 
 - id: interval_show_target_page
   mode: restart
@@ -10221,7 +10255,7 @@ interval:
               id(backlight_switch).turn_off();
             }
           }
-  - interval: 100ms
+  - interval: 300ms
     then:
       - lambda: |-
           // Only run when the Home Usage page is active
@@ -11568,7 +11602,15 @@ interval:
               lv_label_set_text(id(hp2_lbl_exported_today_value), exp_txt);
             } else {
               lv_label_set_text(id(hp2_lbl_exported_today_value), "--");
-            
+            }
+            if (std::isnan(id(solar_battery_time_remaining).state)) {
+              lv_label_set_text(id(hp2_lbl_batt_time_remaining), "--");
+            } else {
+              char buf[32];
+              // Example formatting, adjust units as you like:
+              // if the sensor is in hours:
+              snprintf(buf, sizeof(buf), "%.1f h", id(solar_battery_time_remaining).state);
+              lv_label_set_text(id(hp2_lbl_batt_time_remaining), buf);
             }
             // -------- Total usage today / Self-use today --------
             // Self-use = everything the house used that did not come from the grid
@@ -11702,3 +11744,4 @@ interval:
                 // Force AP-only mode (ESP-IDF)
                 // Keep the captive portal reachable even if STA could reconnect.
                 esp_wifi_set_mode(WIFI_MODE_AP);
+

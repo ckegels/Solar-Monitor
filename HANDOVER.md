@@ -24,15 +24,16 @@ The firmware is ESPHome + LVGL; all data comes from Home Assistant.
 | `Homeassistant/solaredge/single inverter/packages/` | HA packages for SolarEdge with I1 only |
 | `Solaredge/energy.yaml` | Exact duplicate of the 2-inverter HA `energy.yaml` (left over; can be removed) |
 | `3Dfiles/Solar-Case.3mf` | Case model |
+| `tools/sync_firmwares.py` | Regenerates the Sigenergy firmware from the SolarEdge one (`--check` to verify) |
 
-**There is one screen, two firmwares.** Both YAML files target the same 7B display; they differ only in which inverter entities they read. The two files are ~95% identical, so **every firmware fix has to be applied to both files**. Check with:
+**There is one screen, two firmwares, and they are identical except for the Home Assistant entities they read** (SolarEdge reads `sensor.solar_*`, Sigenergy `sensor.package_sigen_*`, each created by its own HA package). Make firmware changes in `Solaredge/solar-display.yaml` only, then regenerate the Sigenergy file:
 
 ```bash
-diff <(git diff main -- Sigenergy/solar-display.yaml | grep '^[-+][^-+]') \
-     <(git diff main -- Solaredge/solar-display.yaml | grep '^[-+][^-+]')
+python3 tools/sync_firmwares.py           # rewrite Sigenergy/solar-display.yaml
+python3 tools/sync_firmwares.py --check   # verify (exit 1 if out of sync)
 ```
 
-(empty output = both files got the same changes). The commented-out `ch422g` lines are left over from a config for the older 800×480 Waveshare 7" board; that board is not supported.
+New Home Assistant sensors need their Sigenergy entity added to `SIGENERGY_NEW` in the script first. The commented-out `ch422g` lines are left over from a config for the older 800×480 Waveshare 7" board; that board is not supported.
 
 ---
 
@@ -152,6 +153,16 @@ How it was measured (throwaway code, not in the repo, easy to recreate): a heade
 - The brightness slider's indicator/knob are now written explicitly as LVGL's default blue `0x2196F3` (role CONTROL), so the slider follows the theme without changing the original look.
 - **Adding a theme:** add a row to `THEMES` in `includes/themes.h` (both firmwares), a tile to `theme_page` and the name to `theme_select`'s options. Rules: no colour twice within one theme, and no theme colour equal to a data/warning colour; otherwise the switch cannot tell roles apart.
 
+### Firmware parity and energy packages
+- The firmwares had drifted. Sigenergy was missing "Remaining Battery" (home summary card) and "Autarkie" (grid page), scrolled the settings list without animation, had WiFi preset buttons hard-coded to network names, ran the home-usage flow animation at 100 ms (now 300 ms like SolarEdge), and read two SolarEdge entities by mistake (`binary_sensor.solaredge_i1_grid_status` for off-grid detection and `sensor.solar_battery_time_remaining`). SolarEdge showed a stray `\` in "Disconnected. Retrying…". All fixed; the Sigenergy file is now generated from the SolarEdge file (see §1). Verified with `esphome config`: zero differences besides `entity_id`.
+- Private WiFi network names were removed from comments/labels (they remain in old git history).
+- **What each package must provide** = every `entity_id` in its firmware. Checked for all three packages; integration entities (`solaredge_i1_grid_status`, `solaredge_b1_state_of_energy`, `sigen_plant_total_pv_generation`) come from the inverter integrations. The hourly graph sensors (`…_by_hour_h00`…`_h23`) come from `utility_meter` **tariffs** (`H00`–`H23`) plus the `automation:` that rotates the tariff every hour; they were always there.
+- Added to the **Sigenergy** package: `binary_sensor.package_sigen_grid_connected` (from the integration's "Grid Connection Status": 0 = on grid, 1/2 = off grid), `sensor.package_sigen_battery_time_remaining` (from "Available Max Discharging Capacity" if enabled — it is disabled by default — otherwise SoC × "Rated Energy Capacity" minus "Discharge Cut-Off SOC"; divided by battery discharge power) and `sensor.package_sigen_autarkie_ratio` (1 − imported/house consumption today).
+- Added to both **SolarEdge** packages: `sensor.solar_lifetime_energy` (kWh) = "AC Energy" of `solaredge_i1` (+ `i2` when present), unit-aware. The display used `sensor.solarhouse_lifetime_energy`, which only exists with the SolarEdge cloud integration and a site named "solarhouse". "Solar Lifetime Production" (MWh) now uses it too; it read `sensor.solaredge_ac_energy_kwh`, which SolarEdge Modbus Multi does not create. Note: the inverters' AC energy counter can differ slightly from the cloud's lifetime PV figure.
+- **Single-inverter fix:** "Solar Panel To House W" copied a two-inverter branch with `i2_ac_power` replaced by `i1_ac_power`, which counted I1's own consumption twice: while the battery charged from the grid it read about −6 kW, pulling house consumption and the daily totals down. It is now 0 in that state; the two-inverter package clamps the same branches at 0.
+- The new templates were render-tested with stand-in values (grid status values, both time-remaining paths, autarky clamps, Wh/kWh/MWh, missing I2, night-time grid charging).
+- `Solaredge/energy.yaml` is kept identical to the 2-inverter package (still a leftover copy).
+
 ### README
 ESPHome version requirement, an upgrade guide for people with modified YAMLs, OTA update instructions, a warning to generate your own API key, and the single-inverter SolarEdge package.
 
@@ -162,7 +173,7 @@ ESPHome version requirement, an upgrade guide for people with modified YAMLs, OT
 | Firmware | Compiles on 2026.9.1 | Tested on hardware |
 |---|---|---|
 | SolarEdge | yes | **yes**: boots, Wi-Fi, HA API, PSRAM, touch, layout; glitching and scrollbar confirmed fixed by the owner; `mipi_rgb` + no touch reset: 10/10 software restarts with working touch; performance changes confirmed by the owner (stable picture, correct colours, no flicker, much smoother) |
-| Sigenergy | yes | **no**: identical changes, but nobody has run it on a display yet |
+| Sigenergy | yes | **no**: identical to SolarEdge apart from HA entities, but nobody has run it on a display yet; the new Sigenergy package sensors are untested on a real Sigenergy system |
 
 Build sizes: RAM ~56%, flash ~48% of the 8 MB app partition. Internal RAM free at runtime: ~50 KB (lowest seen ~37 KB).
 
@@ -199,6 +210,7 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 - `Solaredge/energy.yaml` duplicates the HA package and can confuse people; the HA files live in `Homeassistant/`.
 - **Internal RAM is the scarce resource**, not PSRAM. The draw buffer takes 40 KB of it; keep ~35 KB free for Wi-Fi, the API and OTA. Don't raise the strip height above 20 lines without checking the `Draw buffer:` log line.
 - `lv_label_set_text()` in the YAML lambdas is a macro from `lvgl_helpers.h` that skips identical text (see §3 Performance).
+- **Firmware changes go into `Solaredge/solar-display.yaml`**, then run `python3 tools/sync_firmwares.py`. Never hand-edit the Sigenergy firmware (except to add the Sigenergy entity of a new sensor).
 - **New UI colours:** write them in theme 0's colours. If a lambda sets a UI (role) colour at runtime, wrap it in `lvx_theme::color(...)`; data/warning colours stay plain `lv_color_hex(...)`.
 - Keep `loading_overlay` small and transparent. Making it full-screen again (e.g. to dim the page) brings back two extra full-screen redraws on every page change.
 

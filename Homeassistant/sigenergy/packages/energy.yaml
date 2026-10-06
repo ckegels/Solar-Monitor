@@ -1955,6 +1955,57 @@ template:
           {% set kwh = states('sensor.sigen_plant_total_pv_generation') | float(0) %}
           {{ (kwh / 1000.0) | round(2) }}
 
+  # --- Used by the display: grid status, battery time remaining, autarky ---
+  - binary_sensor:
+      - name: "package_sigen_grid_connected"
+        unique_id: package_sigen_grid_connected
+        device_class: connectivity
+        # Sigenergy "Grid Connection Status": 0 = on grid, 1 = off grid (auto), 2 = off grid (manual)
+        state: >
+          {% set e = 'sensor.sigen_plant_grid_connection_status' %}
+          {% set n = states(e) | float(-1) %}
+          {{ not (n in [1, 2] or 'off' in (states(e) | lower)) }}
+        availability: >
+          {{ states('sensor.sigen_plant_grid_connection_status') not in ['unknown', 'unavailable'] }}
+
+  - sensor:
+      - name: "package_sigen_battery_time_remaining"
+        unique_id: package_sigen_battery_time_remaining
+        icon: mdi:battery-clock
+        unit_of_measurement: "h"
+        # Uses "Available Max Discharging Capacity" when it is enabled (it is disabled by
+        # default in the integration), otherwise SoC x rated capacity minus the cut-off.
+        state: >
+          {% set avail = states('sensor.sigen_plant_available_max_discharging_capacity') | float(-1) %}
+          {% if avail >= 0 %}
+            {% set remaining_kwh = avail %}
+          {% else %}
+            {% set soc = states('sensor.sigen_plant_battery_state_of_charge') | float(0) %}
+            {% set cutoff = states('sensor.sigen_plant_discharge_cut_off_soc') | float(0) %}
+            {% set capacity = states('sensor.sigen_plant_rated_energy_capacity') | float(0) %}
+            {% set remaining_kwh = ([soc - cutoff, 0] | max) / 100 * capacity %}
+          {% endif %}
+          {% set discharge_w = states('sensor.package_sigen_battery_out_w') | float(0) %}
+          {% if remaining_kwh <= 0 or discharge_w <= 0 %}
+            0
+          {% else %}
+            {{ (remaining_kwh * 1000 / discharge_w) | round(2) }}
+          {% endif %}
+
+      - name: "package_sigen_autarkie_ratio"
+        unique_id: package_sigen_autarkie_ratio
+        icon: mdi:percent-outline
+        unit_of_measurement: "%"
+        # Share of today's house consumption that did not come from the grid
+        state: >
+          {% set house = states('sensor.package_sigen_house_consumption_daily') | float(0) %}
+          {% set imported = states('sensor.package_sigen_imported_power_daily') | float(0) %}
+          {% if house <= 0 %}
+            0
+          {% else %}
+            {{ ([1 - imported / house, 0] | max * 100) | round(1) }}
+          {% endif %}
+
 sensor:
 
   - platform: integration

@@ -518,15 +518,15 @@ template:
 
           {% if (b1_dc_power >= 0 and m1_ac_power > 0) %}
             {% if (i1_dc_power < 0 and i1_ac_power <= 0) %}
-              {{ (i1_dc_power + i2_ac_power - m1_ac_power) }}
+              {{ [i1_dc_power + i2_ac_power - m1_ac_power, 0] | max }}
             {% else %}
-              {{ (i1_ac_power + i2_ac_power - m1_ac_power) }}
+              {{ [i1_ac_power + i2_ac_power - m1_ac_power, 0] | max }}
             {% endif %}
           {% elif (b1_dc_power >= 0 and m1_ac_power <= 0) %}
             {% if (i1_dc_power < 0 and i1_ac_power <= 0) %}
-              {{ (i1_dc_power + i2_ac_power) }}
+              {{ [i1_dc_power + i2_ac_power, 0] | max }}
             {% else %}
-              {{ (i1_ac_power + i2_ac_power) }}
+              {{ [i1_ac_power + i2_ac_power, 0] | max }}
             {% endif %}
           {% elif (b1_dc_power < 0) %}
             {% if (i1_dc_power + i2_dc_power + b1_dc_power < 0) %}
@@ -714,9 +714,9 @@ template:
         unit_of_measurement: "MWh"
         icon: mdi:solar-power
         state: >
-          {% set ac_energy_kwh = states('sensor.solaredge_ac_energy_kwh') | float(0) %}
+          {% set lifetime_kwh = states('sensor.solar_lifetime_energy') | float(0) %}
 
-          {{ ((ac_energy_kwh / 1000) | round (2)) }}
+          {{ ((lifetime_kwh / 1000) | round (2)) }}
 
       - name: "Solar Battery Time Remaining"
         unique_id: solar_battery_time_remaining
@@ -760,6 +760,28 @@ template:
             {% endif %}
           {% endif %}
 
+
+  # --- Used by the display: lifetime energy from the inverters' own counters ---
+  - sensor:
+      - name: "Solar Lifetime Energy"
+        unique_id: solar_lifetime_energy
+        icon: mdi:solar-power
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        # "AC Energy" of each SolarEdge Modbus Multi inverter (I2 is skipped when absent)
+        state: >
+          {% set ns = namespace(total=0) %}
+          {% for e in ['sensor.solaredge_i1_ac_energy', 'sensor.solaredge_i2_ac_energy'] %}
+            {% set v = states(e) | float(-1) %}
+            {% if v >= 0 %}
+              {% set unit = state_attr(e, 'unit_of_measurement') %}
+              {% set ns.total = ns.total + (v / 1000 if unit == 'Wh' else (v * 1000 if unit == 'MWh' else v)) %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.total | round(2) }}
+        availability: >
+          {{ states('sensor.solaredge_i1_ac_energy') | is_number }}
 
 sensor:
   - platform: integration

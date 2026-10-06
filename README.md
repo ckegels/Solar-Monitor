@@ -100,6 +100,8 @@ There are Home Assistant package files for both setups:
 - `Homeassistant/solaredge/2 inverters/packages/`
 - `Homeassistant/solaredge/single inverter/packages/` (only uses I1)
 
+Lifetime production is calculated from the inverters' own *AC Energy* counters, so the SolarEdge cloud integration is not needed.
+
 ---
 
 ## ESPHome
