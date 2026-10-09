@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Keep Sigenergy/solar-display.yaml identical to Solaredge/solar-display.yaml.
 
+Also copies Solaredge/includes/ (the C++ headers the firmware uses) to Sigenergy/includes/.
+
 The two firmwares are the same except for the Home Assistant entities they read.
 Make changes in Solaredge/solar-display.yaml, then run from the repo root:
 
@@ -19,6 +21,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SOLAREDGE = ROOT / "Solaredge" / "solar-display.yaml"
 SIGENERGY = ROOT / "Sigenergy" / "solar-display.yaml"
+INCLUDES_SRC = ROOT / "Solaredge" / "includes"
+INCLUDES_DST = ROOT / "Sigenergy" / "includes"
 
 # ESPHome id -> Sigenergy entity, for sensors that do not exist in the Sigenergy file yet
 SIGENERGY_NEW: dict[str, str] = {}
@@ -54,18 +58,29 @@ def build_sigenergy(solaredge: str, sigenergy: str) -> str:
     return "".join(out)
 
 
+def stale_includes() -> list[Path]:
+    """Headers in Solaredge/includes/ that are missing or different in Sigenergy/includes/."""
+    return [src for src in sorted(INCLUDES_SRC.iterdir())
+            if src.is_file() and (not (INCLUDES_DST / src.name).exists()
+                                  or (INCLUDES_DST / src.name).read_bytes() != src.read_bytes())]
+
+
 def main() -> None:
     solaredge = SOLAREDGE.read_text()
     sigenergy = SIGENERGY.read_text()
     wanted = build_sigenergy(solaredge, sigenergy)
+    includes = stale_includes()
     if "--check" in sys.argv:
-        if wanted == sigenergy:
-            print("In sync: the firmwares differ only in Home Assistant entities.")
+        if wanted == sigenergy and not includes:
+            print("In sync: the firmwares differ only in Home Assistant entities, includes/ are identical.")
             return
         print("Out of sync: run python3 tools/sync_firmwares.py")
         sys.exit(1)
+    for src in includes:
+        (INCLUDES_DST / src.name).write_bytes(src.read_bytes())
+        print(f"Copied {src.relative_to(ROOT)} to {INCLUDES_DST.relative_to(ROOT)}/.")
     if wanted == sigenergy:
-        print("Already in sync.")
+        print("Firmware already in sync.")
         return
     SIGENERGY.write_text(wanted)
     print(f"Rewrote {SIGENERGY.relative_to(ROOT)} from {SOLAREDGE.relative_to(ROOT)}.")

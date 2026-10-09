@@ -9,6 +9,7 @@ esphome:
     - includes/ap_mode_helper.h
     - includes/lvgl_helpers.h
     - includes/themes.h
+    - includes/edge_swipe.h
   on_boot:
   - priority: -150
     then:
@@ -265,6 +266,37 @@ touchscreen:
         switch.is_off: backlight_switch
       then:
       - switch.turn_on: backlight_switch
+  # Edge swipe (includes/edge_swipe.h): from the right edge inwards = next page, from the
+  # left edge inwards = previous page, through the pages below (same order as the menu).
+  # Runs before on_touch, so a touch that wakes the screen does not switch pages.
+  on_update:
+  - lambda: |-
+      if (touches.empty()) return;
+      lvgl::LvPageType *home = id(change_homepage).state ? id(home_page) : id(home_page_2);
+      lvgl::LvPageType *pages[] = { home, id(solar_info_page), id(solar_page), id(battery_page),
+                                    id(grid_page), id(graph_page), id(home_usage_page) };
+      const int count = sizeof(pages) / sizeof(pages[0]);
+      int pos = -1;
+      for (int i = 0; i < count; i++) {
+        if (pages[i]->is_showing()) { pos = i; break; }
+      }
+      const auto &t = touches[0];
+      int dir = edge_swipe::detector.update(t.x_org, t.y_org, t.x, t.y, id(my_display).get_width(),
+                                            pos >= 0 && id(backlight_switch).state);
+      if (dir == 0 || pos < 0) return;
+
+      // Cancel LVGL's press, so a swipe that started on a button does not click it
+      for (lv_indev_t *indev = lv_indev_get_next(nullptr); indev != nullptr; indev = lv_indev_get_next(indev)) {
+        if (lv_indev_get_type(indev) == LV_INDEV_TYPE_POINTER) lv_indev_wait_release(indev);
+      }
+      // Interval mode: give the page the user swiped to a full interval
+      if (id(interval_running)) id(interval_countdown) = id(interval_seconds);
+
+      int target = (pos + dir + count) % count;
+      ESP_LOGI("edge_swipe", "Swipe %s: page %d -> %d", dir > 0 ? "next" : "previous", pos, target);
+      id(edge_swipe_show_page).execute((int) pages[target]->index);
+  on_release:
+  - lambda: edge_swipe::detector.release();
 
 number:
   - platform: template
@@ -9998,6 +10030,17 @@ image:
   type: RGB565
   transparency: alpha_channel
 script:
+# Page change after an edge swipe; same spinner as the navigation buttons
+- id: edge_swipe_show_page
+  mode: restart
+  parameters:
+    page_index: int
+  then:
+  - lvgl.widget.show: loading_overlay
+  - delay: 20ms
+  - lambda: id(my_lvgl).show_page(page_index, LV_SCREEN_LOAD_ANIM_NONE, 50);
+  - delay: 250ms
+  - lvgl.widget.hide: loading_overlay
 - id: theme_mark_selected
   then:
   - lambda: |-
@@ -10724,12 +10767,12 @@ interval:
             return;
           }
 
-          // Node positions (center points)
-          const int sx = 512, sy = 75;     // Solar (top)      was 60
-          const int hx = 845, hy = 300;    // Home  (right)    was 240
-          const int bx = 512, by = 500;    // Battery (bottom) was 400
-          const int gx = 179, gy = 300;    // Grid  (left)     was 240
-          const int cx = 512, cy = 300;    // Center (hub)     was 240
+          // Node positions (center points): the node images' x/y + 50 (icons are 100x100)
+          const int sx = 498, sy = 62;     // Solar (top)      node_solar   448, 12
+          const int hx = 831, hy = 288;    // Home  (right)    node_home    781, 238
+          const int bx = 498, by = 488;    // Battery (bottom) node_battery 448, 438
+          const int gx = 165, gy = 288;    // Grid  (left)     node_grid    115, 238
+          const int cx = 498, cy = 288;    // Center (hub)
 
           auto clampf = [](float v, float lo, float hi) { return v < lo ? lo : (v > hi ? hi : v); };
           // Build a cubic Bézier path that curves inside and trims near endpoints
@@ -10811,7 +10854,7 @@ interval:
 
               int x = int(xs[seg] + ux * local);
               int y = int(ys[seg] + uy * local);
-              lv_obj_set_pos(dots[i], x - 4, y - 4);
+              lv_obj_set_pos(dots[i], x - 5, y - 5);   // dots are 10x10
             }
           };
 

@@ -65,6 +65,17 @@ config/packages/
 
 ---
 
+### Swiping between pages
+
+Swipe in from the edge of the screen to move between the main pages, in the same order as the menu: **Home → Power Flow → Solar → Battery → Grid → Graph → Home Usage** (and around again).
+
+- Start at the **right** edge and swipe left for the next page.
+- Start at the **left** edge and swipe right for the previous page.
+
+Start the swipe within about 1 cm of the edge and move at least about 2 cm inwards. A tap near the edge still presses whatever button is there. Swiping does nothing on the menu and settings pages, or while the screen is off (the first touch only wakes it).
+
+---
+
 ### Themes
 
 The display has 8 colour themes (Graphite is the default look). Pick one under **Settings → Themes**, or use the **Theme** select entity in Home Assistant, for example in an automation that switches to *OLED* at night. The choice is saved on the display and survives a power cut.

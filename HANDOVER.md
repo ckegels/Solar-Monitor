@@ -17,6 +17,7 @@ The firmware is ESPHome + LVGL; all data comes from Home Assistant.
 | `*/secrets.yaml` | Example secrets (placeholders + a **public** example API key) |
 | `*/includes/ap_mode_helper.h` | Helper for the on-device "AP-only setup mode" |
 | `*/includes/themes.h` | Colour themes: palette table and the runtime theme switch (see §3 Themes) |
+| `*/includes/edge_swipe.h` | Edge-swipe gesture detection for switching pages (see §3 Edge swipe) |
 | `*/includes/lvgl_helpers.h` | Performance helpers: skip unchanged label texts, internal-RAM draw buffer, draw-buffer log line (see §3 Performance) |
 | `*/fonts`, `*/icons` | Fonts and PNG icons used by the firmware (duplicated per folder) |
 | `Homeassistant/sigenergy/packages/` | HA packages (`energy.yaml`, `energydevices.yaml`) for Sigenergy |
@@ -24,7 +25,7 @@ The firmware is ESPHome + LVGL; all data comes from Home Assistant.
 | `Homeassistant/solaredge/single inverter/packages/` | HA packages for SolarEdge with I1 only |
 | `Solaredge/energy.yaml` | Exact duplicate of the 2-inverter HA `energy.yaml` (left over; can be removed) |
 | `3Dfiles/Solar-Case.3mf` | Case model |
-| `tools/sync_firmwares.py` | Regenerates the Sigenergy firmware from the SolarEdge one (`--check` to verify) |
+| `tools/sync_firmwares.py` | Regenerates the Sigenergy firmware from the SolarEdge one and copies `includes/` (`--check` to verify) |
 
 **There is one screen, two firmwares, and they are identical except for the Home Assistant entities they read** (SolarEdge reads `sensor.solar_*`, Sigenergy `sensor.package_sigen_*`, each created by its own HA package). Make firmware changes in `Solaredge/solar-display.yaml` only, then regenerate the Sigenergy file:
 
@@ -88,6 +89,7 @@ To verify the options actually landed, check `<folder>/.esphome/build/solar-disp
   About 100 other containers/buttons still have no `scrollable` setting. They looked fine, but if a scrollbar shows up elsewhere, this is the fix.
 - **Loading popup**: the spinner moved up 10 px (`y: 8`) and "Loading…" down 6 px (`y: 6`) so there is ~19 px between them (they overlapped by 4 px).
 - **Gap between the 4 boxes and the summary card** (exported today / remaining battery / self use today): `hp2_summary_card` moved from `y: 400` to `y: 410`, making the gap 16 px, the same as `pad_column` between the cards. Layout math: `hp2_row` y=88, h=325, cards h=288, vertically centred → cards end at ~y=394. Summary card is 119 px tall → ends at ~529; the tips label (`hp2_lbl_suggestion`, `my_font_medium` 38 px, `bottom_mid` y=-10) starts ~545. A tip that wraps to two lines would grow upward towards the card.
+- **Power Flow page dots off-centre** (`solar_info_page`): the animation lambda builds the dot paths from hard-coded node centres (`sx/sy`, `hx/hy`, `bx/by`, `gx/gy`, hub `cx/cy`) that were 14 px right and 12 px below the real icon centres, so every path ran visibly right of the solar and battery icons. They are now the node images' `x`/`y` + 50 (the icons are 100×100): solar (498, 62), home (831, 288), battery (498, 488), grid (165, 288), hub (498, 288). The dots (10×10) are placed at `x − 5, y − 5` so they sit centred on the path (was `− 4`). The flow labels use the same hub, so they moved with the paths. Confirmed on the owner's display.
 
 ### Deprecations cleared and touch start-up fixed
 - `image:` block converted to the new format (`- platform: file` per image, 33 images).
@@ -153,6 +155,15 @@ How it was measured (throwaway code, not in the repo, easy to recreate): a heade
 - The brightness slider's indicator/knob are now written explicitly as LVGL's default blue `0x2196F3` (role CONTROL), so the slider follows the theme without changing the original look.
 - **Adding a theme:** add a row to `THEMES` in `includes/themes.h` (both firmwares), a tile to `theme_page` and the name to `theme_select`'s options. Rules: no colour twice within one theme, and no theme colour equal to a data/warning colour; otherwise the switch cannot tell roles apart.
 
+### Edge swipe between pages
+- Swiping in from the right edge shows the next page, from the left edge the previous one. Order (same as the menu, wraps around): Home (`home_page` or `home_page_2`, whichever `change_homepage` selects) → `solar_info_page` → `solar_page` → `battery_page` → `grid_page` → `graph_page` → `home_usage_page`. Menu, settings, setup pages, the interval page and the boot page ignore swipes.
+- `includes/edge_swipe.h` is the gesture logic only (no ESPHome/LVGL types): a touch must start within `EDGE_PX` (60 px) of the left/right edge and move `MIN_TRAVEL_PX` (110 px) inwards; it is dropped as soon as it moves more than 40 px vertically and more than 0.6 px vertically per px inwards (a vertical drag stays a scroll). Fires once per touch.
+- The touchscreen's `on_update` feeds it `x_org/y_org` (touch start) and `x/y`, finds the current page in the list, and on a swipe calls `lv_indev_wait_release()` on LVGL's pointer input. LVGL then sends PRESS_LOST instead of CLICKED, so a swipe that starts on a button does not press it; taps at the edge still work. The page change is the `edge_swipe_show_page` script: the same spinner + `show_page` as the navigation buttons. `on_release` resets the detector.
+- `on_update` runs before `on_touch` in ESPHome, so the touch that wakes a dark screen (backlight off) never switches pages.
+- Interval mode: a swipe restarts the countdown, so the page you swiped to stays for a full interval.
+- None of the swipe pages can scroll sideways (all scroll extents ≤ 0, measured on the display), so an edge drag cannot move a page before the swipe fires. If a page ever gets content past its edges, check this again.
+- Tested: 18 gesture cases on the PC (g++ against the header); on the display, swipes replayed through the real `on_update`/`on_release` triggers via a temporary API action (all 7 pages forward and back incl. wrap-around; no page change for mid-screen swipes, vertical edge drags, short moves, starts 70 px from the edge, screen off, boot page). Real finger swipes on the display were logged as recognised during the test. Not tested automatically: that a swipe starting on a button does not click it (needs a real finger).
+
 ### Firmware parity and energy packages
 - The firmwares had drifted. Sigenergy was missing "Remaining Battery" (home summary card) and "Autarkie" (grid page), scrolled the settings list without animation, had WiFi preset buttons hard-coded to network names, ran the home-usage flow animation at 100 ms (now 300 ms like SolarEdge), and read two SolarEdge entities by mistake (`binary_sensor.solaredge_i1_grid_status` for off-grid detection and `sensor.solar_battery_time_remaining`). SolarEdge showed a stray `\` in "Disconnected. Retrying…". All fixed; the Sigenergy file is now generated from the SolarEdge file (see §1). Verified with `esphome config`: zero differences besides `entity_id`.
 - Private WiFi network names were removed from comments/labels (they remain in old git history).
@@ -211,8 +222,10 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 - `Solaredge/energy.yaml` duplicates the HA package and can confuse people; the HA files live in `Homeassistant/`.
 - **Internal RAM is the scarce resource**, not PSRAM. The draw buffer takes 40 KB of it; keep ~35 KB free for Wi-Fi, the API and OTA. Don't raise the strip height above 20 lines without checking the `Draw buffer:` log line.
 - `lv_label_set_text()` in the YAML lambdas is a macro from `lvgl_helpers.h` that skips identical text (see §3 Performance).
-- **Firmware changes go into `Solaredge/solar-display.yaml`**, then run `python3 tools/sync_firmwares.py`. Never hand-edit the Sigenergy firmware (except to add the Sigenergy entity of a new sensor).
+- **Firmware changes go into `Solaredge/solar-display.yaml`** (and `Solaredge/includes/`), then run `python3 tools/sync_firmwares.py`; it also copies the headers to `Sigenergy/includes/`. Never hand-edit the Sigenergy firmware (except to add the Sigenergy entity of a new sensor).
 - **New UI colours:** write them in theme 0's colours. If a lambda sets a UI (role) colour at runtime, wrap it in `lvx_theme::color(...)`; data/warning colours stay plain `lv_color_hex(...)`.
+- **Adding a main page:** add it to the `pages[]` list in the touchscreen's `on_update` (edge swipe) as well as to the menu.
+- **Moving a node icon on the Power Flow page** (`node_solar`, `node_home`, `node_battery`, `node_grid`): also update the node centres at the top of the `solar_info_page` animation lambda (image `x`/`y` + 50), or the dots no longer line up with the icons.
 - Keep `loading_overlay` small and transparent. Making it full-screen again (e.g. to dim the page) brings back two extra full-screen redraws on every page change.
 
 ---
