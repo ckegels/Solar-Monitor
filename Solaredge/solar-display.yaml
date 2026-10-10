@@ -46,9 +46,9 @@ substitutions:
   device_name: "solar-display"
   friendly_name: "Solar Display"
   fallback_ap_ssid: "Solar Display Fallback Hotspot"
-  wifi_preset_1_label: "network 1"
-  wifi_preset_2_label: "network 2"
-  wifi_preset_3_label: "network 3"
+  wifi_preset_1_label: !secret wifi_ssid_1
+  wifi_preset_2_label: !secret wifi_ssid_2
+  wifi_preset_3_label: !secret wifi_ssid_3
   api_key_full: !secret api_encryption_key
   ota_key_full: !secret ota_password
 
