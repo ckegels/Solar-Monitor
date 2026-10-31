@@ -598,11 +598,11 @@ template:
         icon: mdi:battery-negative
         state: >
           {% set b1_dc_power = states('sensor.solaredge_b1_dc_power') | float(0) %}
-          {% set battery_effectiveness = states('sensor.solar_battery_effectiveness') | float(0) %}
           {% set inverter_effectiveness = states('sensor.solar_inverter_effectiveness') | float(0) %}
 
+          {# B1 DC power is measured at the inverter's DC input, after the battery's own losses #}
           {% if (b1_dc_power < 0) %}
-            {{ (b1_dc_power * -1 * battery_effectiveness * inverter_effectiveness) }}
+            {{ (b1_dc_power * -1 * inverter_effectiveness) }}
           {% else %}
             0
           {% endif %}
@@ -671,11 +671,11 @@ template:
         unit_of_measurement: "W"
         icon: mdi:home
         state: >
-          {% set panel_to_house_w = states('sensor.solar_panel_to_house_w') | float(0) %}
-          {% set battery_to_house_w = states('sensor.solar_battery_to_house_w') | float(0) %}
-          {% set grid_to_house_w = states('sensor.solar_grid_to_house_w') | float(0) %}
+          {% set i1_ac_power = states('sensor.solaredge_i1_ac_power') | float(0) %}
+          {% set m1_ac_power = states('sensor.solaredge_m1_ac_power') | float(0) %}
 
-          {{ (panel_to_house_w + battery_to_house_w + grid_to_house_w) }}
+          {# AC balance: inverter output plus grid import minus export (M1 > 0 = export) #}
+          {{ [i1_ac_power - m1_ac_power, 0] | max }}
 
       - name: "Solar Imported Power W"
         unique_id: solar_imported_power_w
