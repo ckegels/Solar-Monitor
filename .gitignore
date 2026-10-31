@@ -1,0 +1,6 @@
+# Never commit real secrets; use Firmware/secrets.example.yaml as the template
+secrets.yaml
+*.bak-phase-*
+
+# ESPHome build output
+.esphome/

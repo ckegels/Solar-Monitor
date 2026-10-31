@@ -790,6 +790,23 @@ template:
         availability: >
           {{ states('sensor.solaredge_i1_ac_energy') | is_number }}
 
+  # --- Used by the display: shared names for grid status and battery SoC (same ids as the Sigenergy package) ---
+  - binary_sensor:
+      - name: "Solar Grid Connected"
+        unique_id: solar_grid_connected
+        device_class: connectivity
+        state: "{{ is_state('binary_sensor.solaredge_i1_grid_status', 'on') }}"
+        availability: "{{ states('binary_sensor.solaredge_i1_grid_status') in ['on', 'off'] }}"
+
+  - sensor:
+      - name: "Solar Battery SoC"
+        unique_id: solar_battery_soc
+        unit_of_measurement: "%"
+        device_class: battery
+        state_class: measurement
+        state: "{{ states('sensor.solaredge_b1_state_of_energy') | float(0) | round(1) }}"
+        availability: "{{ states('sensor.solaredge_b1_state_of_energy') | is_number }}"
+
 sensor:
   - platform: integration
     source: sensor.solar_panel_production_w

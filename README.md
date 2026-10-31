@@ -26,14 +26,16 @@ Example images of the Solar Display can be found in the `ReadmeImages` folder:
 
 ## Inverter Compatibility
 
+There is **one display firmware** (`Firmware/`) for all supported inverters. What differs is the Home Assistant package: each inverter has its own package, and every package creates the same sensor names, which the display reads.
+
 ### Sigenergy
-- Currently there is a version that works with the **Sigenergy inverter**
+- Package for the **Sigenergy inverter**
 - This version is made for systems **with a battery**
 - Home Assistant Integration (HACS):
   - **Sigenergy ESS**
 
 ### SolarEdge
-- There is also a version for **SolarEdge**
+- Package for **SolarEdge**
 - Home Assistant Integration (HACS):
   - **SolarEdge Modbus Multi**
 
@@ -121,7 +123,11 @@ Lifetime production is calculated from the inverters' own *AC Energy* counters, 
 
 ### Upgrading from the old 2025.10.0 version
 
-If you are running the old firmware, just take the new `solar-display.yaml`, keep your own `secrets.yaml`, and update over Wi-Fi (see [Updating over Wi-Fi](#updating-over-wi-fi-ota)).
+If you are running the old firmware, just take the new `Firmware/solar-display.yaml`, keep your own `secrets.yaml`, and update over Wi-Fi (see [Updating over Wi-Fi](#updating-over-wi-fi-ota)).
+
+**Update the Home Assistant package first.** The firmware now reads the same sensor names for every inverter:
+- **SolarEdge:** take the current package. It only adds `binary_sensor.solar_grid_connected` and `sensor.solar_battery_soc`.
+- **Sigenergy:** the package's `package_sigen_…` sensors were renamed to the shared `solar_…` names. Follow [`Homeassistant/migration/HANDOVER-sigenergy-ha.md`](Homeassistant/migration/HANDOVER-sigenergy-ha.md). It renames the entities in Home Assistant so their history is kept, and updates your dashboards. Then flash the display.
 
 If you made your own changes to the old YAML, these are the changes needed for current ESPHome:
 
@@ -234,11 +240,12 @@ If you have a powerful PC running Home Assistant, you *can* also build it with t
 
 ### Flashing the Display
 
-1. Open the **Sigenergy** or **SolarEdge** folder
+1. Open the **Firmware** folder (the same firmware for every inverter)
 2. Open PowerShell in that folder
 3. Open `solar-display.yaml`
-4. Fill in substitutions and the `secrets.yaml` file  
-   **Generate your own `api_encryption_key`** — the one in the example `secrets.yaml` is public. You can generate one on the [ESPHome API docs page](https://esphome.io/components/api/) or with `openssl rand -base64 32`.
+4. Copy `secrets.example.yaml` to `secrets.yaml` and fill it in, then fill in the substitutions  
+   **Generate your own `api_encryption_key`.** You can generate one on the [ESPHome API docs page](https://esphome.io/components/api/) or with `openssl rand -base64 32`.  
+   `secrets.yaml` is ignored by git, so your keys and Wi-Fi passwords stay on your PC.
 5. Plug the display into your computer
 
 Run:

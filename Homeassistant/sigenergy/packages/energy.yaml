@@ -926,12 +926,12 @@ template:
         unique_id: package_sigen_battery_soc_hours
         icon: mdi:battery-clock
         unit_of_measurement: "%"
-        state: "{{ states('sensor.package_sigen_battery_soc') | float(0) | round(1) }}"
+        state: "{{ states('sensor.solar_battery_soc') | float(0) | round(1) }}"
         attributes:
           date: "{{ now().date().isoformat() }}"
           h00: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 0 and now().minute >= 59 %}
@@ -941,7 +941,7 @@ template:
             {% endif %}
           h01: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 1 and now().minute >= 59 %}
@@ -951,7 +951,7 @@ template:
             {% endif %}
           h02: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 2 and now().minute >= 59 %}
@@ -961,7 +961,7 @@ template:
             {% endif %}
           h03: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 3 and now().minute >= 59 %}
@@ -971,7 +971,7 @@ template:
             {% endif %}
           h04: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 4 and now().minute >= 59 %}
@@ -981,7 +981,7 @@ template:
             {% endif %}
           h05: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 5 and now().minute >= 59 %}
@@ -991,7 +991,7 @@ template:
             {% endif %}
           h06: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 6 and now().minute >= 59 %}
@@ -1001,7 +1001,7 @@ template:
             {% endif %}
           h07: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 7 and now().minute >= 59 %}
@@ -1011,7 +1011,7 @@ template:
             {% endif %}
           h08: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 8 and now().minute >= 59 %}
@@ -1021,7 +1021,7 @@ template:
             {% endif %}
           h09: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 9 and now().minute >= 59 %}
@@ -1031,7 +1031,7 @@ template:
             {% endif %}
           h10: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 10 and now().minute >= 59 %}
@@ -1041,7 +1041,7 @@ template:
             {% endif %}
           h11: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 11 and now().minute >= 59 %}
@@ -1051,7 +1051,7 @@ template:
             {% endif %}
           h12: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 12 and now().minute >= 59 %}
@@ -1061,7 +1061,7 @@ template:
             {% endif %}
           h13: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 13 and now().minute >= 59 %}
@@ -1071,7 +1071,7 @@ template:
             {% endif %}
           h14: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 14 and now().minute >= 59 %}
@@ -1081,7 +1081,7 @@ template:
             {% endif %}
           h15: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 15 and now().minute >= 59 %}
@@ -1091,7 +1091,7 @@ template:
             {% endif %}
           h16: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 16 and now().minute >= 59 %}
@@ -1101,7 +1101,7 @@ template:
             {% endif %}
           h17: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 17 and now().minute >= 59 %}
@@ -1111,7 +1111,7 @@ template:
             {% endif %}
           h18: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 18 and now().minute >= 59 %}
@@ -1121,7 +1121,7 @@ template:
             {% endif %}
           h19: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 19 and now().minute >= 59 %}
@@ -1131,7 +1131,7 @@ template:
             {% endif %}
           h20: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 20 and now().minute >= 59 %}
@@ -1141,7 +1141,7 @@ template:
             {% endif %}
           h21: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 21 and now().minute >= 59 %}
@@ -1151,7 +1151,7 @@ template:
             {% endif %}
           h22: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 22 and now().minute >= 59 %}
@@ -1161,7 +1161,7 @@ template:
             {% endif %}
           h23: >
             {% set ent = 'sensor.package_sigen_battery_soc_hours' %}
-            {% set soc = states('sensor.package_sigen_battery_soc') | float(0) | round(1) %}
+            {% set soc = states('sensor.solar_battery_soc') | float(0) | round(1) %}
             {% if now().hour == 0 and now().minute == 0 %}
               0
             {% elif now().hour == 23 and now().minute >= 59 %}
@@ -1471,7 +1471,7 @@ template:
   # --- 3) NON-TRIGGERED template sensors (instant powers, flows, lifetime, etc.) ---
   - sensor:
       # --- Instant powers (unit-switch controlled) ---
-      - name: "package_sigen_pv_power"
+      - name: "solar_panel_production_w"
         unique_id: package_sigen_pv_power
         unit_of_measurement: "W"
         device_class: power
@@ -1490,7 +1490,7 @@ template:
           {% set P_pv = (_raw * mult) %}
           {{ P_pv | round(2) }}
 
-      - name: "package_sigen_house_consumption_w"
+      - name: "solar_house_consumption_w"
         unique_id: package_sigen_house_consumption_w
         unit_of_measurement: "W"
         device_class: power
@@ -1509,7 +1509,7 @@ template:
           {% set P_load = (_raw * mult) %}
           {{ P_load | round(2) }}
 
-      - name: "package_sigen_imported_power_w"
+      - name: "solar_imported_power_w"
         unique_id: package_sigen_imported_power_w
         unit_of_measurement: "W"
         device_class: power
@@ -1549,33 +1549,33 @@ template:
 
       # --- Flow sensors (built from the unit-switched W values) ---
       # --- Aggregated battery flow sensors (built from flow sensors above) ---
-      - name: "package_sigen_battery_in_w"
+      - name: "solar_battery_in_w"
         unique_id: package_sigen_battery_in_w
         unit_of_measurement: "W"
         device_class: power
         icon: mdi:battery-arrow-down
         availability: >-
-          {{ states('sensor.package_sigen_pv_to_battery_w') not in ['unknown','unavailable']
-             and states('sensor.package_sigen_grid_to_battery_w') not in ['unknown','unavailable'] }}
+          {{ states('sensor.solar_panel_to_battery_w') not in ['unknown','unavailable']
+             and states('sensor.solar_grid_to_battery_w') not in ['unknown','unavailable'] }}
         state: >-
-          {% set pv2b = states('sensor.package_sigen_pv_to_battery_w') | float(0) %}
-          {% set g2b  = states('sensor.package_sigen_grid_to_battery_w') | float(0) %}
+          {% set pv2b = states('sensor.solar_panel_to_battery_w') | float(0) %}
+          {% set g2b  = states('sensor.solar_grid_to_battery_w') | float(0) %}
           {{ (pv2b + g2b) | round(2) }}
 
-      - name: "package_sigen_battery_out_w"
+      - name: "solar_battery_out_w"
         unique_id: package_sigen_battery_out_w
         unit_of_measurement: "W"
         device_class: power
         icon: mdi:battery-arrow-up
         availability: >-
-          {{ states('sensor.package_sigen_battery_to_house_w') not in ['unknown','unavailable']
-             and states('sensor.package_sigen_battery_to_grid_w') not in ['unknown','unavailable'] }}
+          {{ states('sensor.solar_battery_to_house_w') not in ['unknown','unavailable']
+             and states('sensor.solar_battery_to_grid_w') not in ['unknown','unavailable'] }}
         state: >-
-          {% set b2h = states('sensor.package_sigen_battery_to_house_w') | float(0) %}
-          {% set b2g = states('sensor.package_sigen_battery_to_grid_w') | float(0) %}
+          {% set b2h = states('sensor.solar_battery_to_house_w') | float(0) %}
+          {% set b2g = states('sensor.solar_battery_to_grid_w') | float(0) %}
           {{ (b2h + b2g) | round(2) }}
 
-      - name: "package_sigen_pv_to_house_w"
+      - name: "solar_panel_to_house_w"
         unique_id: package_sigen_pv_to_house_w
         unit_of_measurement: "W"
         device_class: power
@@ -1612,7 +1612,7 @@ template:
             {{ P_load | round(2) }}
           {% endif %}
 
-      - name: "package_sigen_pv_to_battery_w"
+      - name: "solar_panel_to_battery_w"
         unique_id: package_sigen_pv_to_battery_w
         unit_of_measurement: "W"
         device_class: power
@@ -1661,7 +1661,7 @@ template:
             {{ pv_to_batt | round(2) }}
           {% endif %}
 
-      - name: "package_sigen_pv_to_grid_w"
+      - name: "solar_panel_to_grid_w"
         unique_id: package_sigen_pv_to_grid_w
         unit_of_measurement: "W"
         device_class: power
@@ -1715,7 +1715,7 @@ template:
             {{ (0 if pv_to_grid < 0 else pv_to_grid) | round(2) }}
           {% endif %}
 
-      - name: "package_sigen_grid_to_house_w"
+      - name: "solar_grid_to_house_w"
         unique_id: package_sigen_grid_to_house_w
         unit_of_measurement: "W"
         device_class: power
@@ -1769,7 +1769,7 @@ template:
             {{ (0 if grid_to_house < 0 else grid_to_house) | round(2) }}
           {% endif %}
 
-      - name: "package_sigen_grid_to_battery_w"
+      - name: "solar_grid_to_battery_w"
         unique_id: package_sigen_grid_to_battery_w
         unit_of_measurement: "W"
         device_class: power
@@ -1822,7 +1822,7 @@ template:
             {{ (0 if grid_to_batt < 0 else grid_to_batt) | round(2) }}
           {% endif %}
 
-      - name: "package_sigen_battery_to_house_w"
+      - name: "solar_battery_to_house_w"
         unique_id: package_sigen_battery_to_house_w
         unit_of_measurement: "W"
         device_class: power
@@ -1875,7 +1875,7 @@ template:
             {% endif %}
           {% endif %}
 
-      - name: "package_sigen_battery_to_grid_w"
+      - name: "solar_battery_to_grid_w"
         unique_id: package_sigen_battery_to_grid_w
         unit_of_measurement: "W"
         device_class: power
@@ -1929,7 +1929,7 @@ template:
             {% endif %}
           {% endif %}
 
-      - name: "package_sigen_battery_soc"
+      - name: "solar_battery_soc"
         unique_id: package_sigen_battery_soc
         unit_of_measurement: "%"
         device_class: battery
@@ -1944,7 +1944,7 @@ template:
         icon: mdi:battery-clock
         state: >-
           {% set cap = states('input_number.package_sigen_battery_capacity_kwh') | float(0) %}
-          {% set soc = states('sensor.package_sigen_battery_soc') | float(0) %}
+          {% set soc = states('sensor.solar_battery_soc') | float(0) %}
           {{ (cap * soc / 100.0) | round(3) }}
 
       - name: "package_sigen_lifetime_pv_mwh"
@@ -1957,7 +1957,7 @@ template:
 
   # --- Used by the display: grid status, battery time remaining, autarky ---
   - binary_sensor:
-      - name: "package_sigen_grid_connected"
+      - name: "solar_grid_connected"
         unique_id: package_sigen_grid_connected
         device_class: connectivity
         # Sigenergy "Grid Connection Status": 0 = on grid, 1 = off grid (auto), 2 = off grid (manual)
@@ -1969,7 +1969,7 @@ template:
           {{ states('sensor.sigen_plant_grid_connection_status') not in ['unknown', 'unavailable'] }}
 
   - sensor:
-      - name: "package_sigen_battery_time_remaining"
+      - name: "solar_battery_time_remaining"
         unique_id: package_sigen_battery_time_remaining
         icon: mdi:battery-clock
         unit_of_measurement: "h"
@@ -1985,183 +1985,241 @@ template:
             {% set capacity = states('sensor.sigen_plant_rated_energy_capacity') | float(0) %}
             {% set remaining_kwh = ([soc - cutoff, 0] | max) / 100 * capacity %}
           {% endif %}
-          {% set discharge_w = states('sensor.package_sigen_battery_out_w') | float(0) %}
+          {% set discharge_w = states('sensor.solar_battery_out_w') | float(0) %}
           {% if remaining_kwh <= 0 or discharge_w <= 0 %}
             0
           {% else %}
             {{ (remaining_kwh * 1000 / discharge_w) | round(2) }}
           {% endif %}
 
-      - name: "package_sigen_autarkie_ratio"
+      - name: "solar_autarkie_ratio"
         unique_id: package_sigen_autarkie_ratio
         icon: mdi:percent-outline
         unit_of_measurement: "%"
         # Share of today's house consumption that did not come from the grid
         state: >
-          {% set house = states('sensor.package_sigen_house_consumption_daily') | float(0) %}
-          {% set imported = states('sensor.package_sigen_imported_power_daily') | float(0) %}
+          {% set house = states('sensor.solar_house_consumption_daily') | float(0) %}
+          {% set imported = states('sensor.solar_imported_power_daily') | float(0) %}
           {% if house <= 0 %}
             0
           {% else %}
             {{ ([1 - imported / house, 0] | max * 100) | round(1) }}
           {% endif %}
 
+  # --- Used by the display: lifetime PV energy in kWh (shared name with the SolarEdge package) ---
+  - sensor:
+      - name: "solar_lifetime_energy"
+        unique_id: solar_lifetime_energy
+        icon: mdi:solar-power
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        state: >
+          {% set e = 'sensor.sigen_plant_total_pv_generation' %}
+          {% set v = states(e) | float(0) %}
+          {% set unit = state_attr(e, 'unit_of_measurement') %}
+          {{ (v / 1000 if unit == 'Wh' else (v * 1000 if unit == 'MWh' else v)) | round(2) }}
+        availability: >
+          {{ states('sensor.sigen_plant_total_pv_generation') | is_number }}
+
 sensor:
 
   - platform: integration
-    source: sensor.package_sigen_pv_power
+    source: sensor.solar_panel_production_w
     method: left
     unit_prefix: k
     name: package_sigen_pv_kwh
+    unique_id: energy_int_package_sigen_pv_kwh
 
   - platform: integration
-    source: sensor.package_sigen_battery_in_w
+    source: sensor.solar_battery_in_w
     method: left
     unit_prefix: k
     name: package_sigen_battery_in_kwh
+    unique_id: energy_int_package_sigen_battery_in_kwh
 
   - platform: integration
-    source: sensor.package_sigen_battery_out_w
+    source: sensor.solar_battery_out_w
     method: left
     unit_prefix: k
     name: package_sigen_battery_out_kwh
+    unique_id: energy_int_package_sigen_battery_out_kwh
 
   - platform: integration
-    source: sensor.package_sigen_house_consumption_w
+    source: sensor.solar_house_consumption_w
     method: left
     unit_prefix: k
     name: package_sigen_house_consumption_kwh
+    unique_id: energy_int_package_sigen_house_consumption_kwh
 
   - platform: integration
-    source: sensor.package_sigen_imported_power_w
+    source: sensor.solar_imported_power_w
     method: left
     unit_prefix: k
     name: package_sigen_imported_power_kwh
+    unique_id: energy_int_package_sigen_imported_power_kwh
 
   - platform: integration
     source: sensor.package_sigen_exported_power_w
     method: left
     unit_prefix: k
     name: package_sigen_exported_power_kwh
+    unique_id: energy_int_package_sigen_exported_power_kwh
 
   - platform: integration
-    source: sensor.package_sigen_pv_to_house_w
+    source: sensor.solar_panel_to_house_w
     method: left
     unit_prefix: k
     name: package_sigen_pv_to_house_kwh
+    unique_id: energy_int_package_sigen_pv_to_house_kwh
 
 utility_meter:
-  package_sigen_battery_in_weekly:
+  solar_battery_in_weekly:
+    unique_id: energy_um_solar_battery_in_weekly
     source: sensor.package_sigen_battery_in_kwh
     cycle: weekly
 
-  package_sigen_battery_out_weekly:
+  solar_battery_out_weekly:
+    unique_id: energy_um_solar_battery_out_weekly
     source: sensor.package_sigen_battery_out_kwh
     cycle: weekly
 
-  package_sigen_pv_daily:
+  solar_panel_production_daily:
+    unique_id: energy_um_solar_panel_production_daily
     source: sensor.package_sigen_pv_kwh
     cycle: daily
-  package_sigen_battery_in_daily:
+  solar_battery_in_daily:
+    unique_id: energy_um_solar_battery_in_daily
     source: sensor.package_sigen_battery_in_kwh
     cycle: daily
-  package_sigen_battery_out_daily:
+  solar_battery_out_daily:
+    unique_id: energy_um_solar_battery_out_daily
     source: sensor.package_sigen_battery_out_kwh
     cycle: daily
-  package_sigen_house_consumption_daily:
+  solar_house_consumption_daily:
+    unique_id: energy_um_solar_house_consumption_daily
     source: sensor.package_sigen_house_consumption_kwh
     cycle: daily
-  package_sigen_imported_power_daily:
+  solar_imported_power_daily:
+    unique_id: energy_um_solar_imported_power_daily
     source: sensor.package_sigen_imported_power_kwh
     cycle: daily
-  package_sigen_exported_power_daily:
+  solar_exported_power_daily:
+    unique_id: energy_um_solar_exported_power_daily
     source: sensor.package_sigen_exported_power_kwh
     cycle: daily
-  package_sigen_pv_to_house_daily:
+  solar_panel_to_house_daily:
+    unique_id: energy_um_solar_panel_to_house_daily
     source: sensor.package_sigen_pv_to_house_kwh
     cycle: daily
-  package_sigen_pv_weekly:
+  solar_panel_production_weekly:
+    unique_id: energy_um_solar_panel_production_weekly
     source: sensor.package_sigen_pv_kwh
     cycle: weekly
-  package_sigen_exported_power_weekly:
+  solar_exported_power_weekly:
+    unique_id: energy_um_solar_exported_power_weekly
     source: sensor.package_sigen_exported_power_kwh
     cycle: weekly
-  package_sigen_imported_power_weekly:
+  solar_imported_power_weekly:
+    unique_id: energy_um_solar_imported_power_weekly
     source: sensor.package_sigen_imported_power_kwh
     cycle: weekly
-  package_sigen_house_consumption_weekly:
+  solar_house_consumption_weekly:
+    unique_id: energy_um_solar_house_consumption_weekly
     source: sensor.package_sigen_house_consumption_kwh
     cycle: weekly
-  package_sigen_pv_to_house_weekly:
+  solar_panel_to_house_weekly:
+    unique_id: energy_um_solar_panel_to_house_weekly
     source: sensor.package_sigen_pv_to_house_kwh
     cycle: weekly
-  package_sigen_pv_monthly:
+  solar_panel_production_monthly:
+    unique_id: energy_um_solar_panel_production_monthly
     source: sensor.package_sigen_pv_kwh
     cycle: monthly
-  package_sigen_battery_in_monthly:
+  solar_battery_in_monthly:
+    unique_id: energy_um_solar_battery_in_monthly
     source: sensor.package_sigen_battery_in_kwh
     cycle: monthly
-  package_sigen_battery_out_monthly:
+  solar_battery_out_monthly:
+    unique_id: energy_um_solar_battery_out_monthly
     source: sensor.package_sigen_battery_out_kwh
     cycle: monthly
-  package_sigen_exported_power_monthly:
+  solar_exported_power_monthly:
+    unique_id: energy_um_solar_exported_power_monthly
     source: sensor.package_sigen_exported_power_kwh
     cycle: monthly
-  package_sigen_imported_power_monthly:
+  solar_imported_power_monthly:
+    unique_id: energy_um_solar_imported_power_monthly
     source: sensor.package_sigen_imported_power_kwh
     cycle: monthly
-  package_sigen_house_consumption_monthly:
+  solar_house_consumption_monthly:
+    unique_id: energy_um_solar_house_consumption_monthly
     source: sensor.package_sigen_house_consumption_kwh
     cycle: monthly
-  package_sigen_pv_to_house_monthly:
+  solar_panel_to_house_monthly:
+    unique_id: energy_um_solar_panel_to_house_monthly
     source: sensor.package_sigen_pv_to_house_kwh
     cycle: monthly
-  package_sigen_pv_yearly:
+  solar_panel_production_yearly:
+    unique_id: energy_um_solar_panel_production_yearly
     source: sensor.package_sigen_pv_kwh
     cycle: yearly
-  package_sigen_battery_in_yearly:
+  solar_battery_in_yearly:
+    unique_id: energy_um_solar_battery_in_yearly
     source: sensor.package_sigen_battery_in_kwh
     cycle: yearly
-  package_sigen_battery_out_yearly:
+  solar_battery_out_yearly:
+    unique_id: energy_um_solar_battery_out_yearly
     source: sensor.package_sigen_battery_out_kwh
     cycle: yearly
-  package_sigen_exported_power_yearly:
+  solar_exported_power_yearly:
+    unique_id: energy_um_solar_exported_power_yearly
     source: sensor.package_sigen_exported_power_kwh
     cycle: yearly
-  package_sigen_imported_power_yearly:
+  solar_imported_power_yearly:
+    unique_id: energy_um_solar_imported_power_yearly
     source: sensor.package_sigen_imported_power_kwh
     cycle: yearly
-  package_sigen_house_consumption_yearly:
+  solar_house_consumption_yearly:
+    unique_id: energy_um_solar_house_consumption_yearly
     source: sensor.package_sigen_house_consumption_kwh
     cycle: yearly
-  package_sigen_pv_to_house_yearly:
+  solar_panel_to_house_yearly:
+    unique_id: energy_um_solar_panel_to_house_yearly
     source: sensor.package_sigen_pv_to_house_kwh
     cycle: yearly
-  package_sigen_pv_by_hour:
+  solar_panel_production_by_hour:
+    unique_id: energy_um_solar_panel_production_by_hour
     source: sensor.package_sigen_pv_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
-  package_sigen_pv_to_house_by_hour:
+  solar_panel_to_house_by_hour:
+    unique_id: energy_um_solar_panel_to_house_by_hour
     source: sensor.package_sigen_pv_to_house_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
-  package_sigen_house_consumption_by_hour:
+  solar_house_consumption_by_hour:
+    unique_id: energy_um_solar_house_consumption_by_hour
     source: sensor.package_sigen_house_consumption_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
-  package_sigen_imported_power_by_hour:
+  solar_imported_power_by_hour:
+    unique_id: energy_um_solar_imported_power_by_hour
     source: sensor.package_sigen_imported_power_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
-  package_sigen_exported_power_by_hour:
+  solar_exported_power_by_hour:
+    unique_id: energy_um_solar_exported_power_by_hour
     source: sensor.package_sigen_exported_power_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
-  package_sigen_battery_in_by_hour:
+  solar_battery_in_by_hour:
+    unique_id: energy_um_solar_battery_in_by_hour
     source: sensor.package_sigen_battery_in_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
-  package_sigen_battery_out_by_hour:
+  solar_battery_out_by_hour:
+    unique_id: energy_um_solar_battery_out_by_hour
     source: sensor.package_sigen_battery_out_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
@@ -2175,13 +2233,13 @@ automation:
       - service: select.select_option
         target:
           entity_id:
-            - select.package_sigen_pv_by_hour
-            - select.package_sigen_pv_to_house_by_hour
-            - select.package_sigen_house_consumption_by_hour
-            - select.package_sigen_imported_power_by_hour
-            - select.package_sigen_exported_power_by_hour
-            - select.package_sigen_battery_in_by_hour
-            - select.package_sigen_battery_out_by_hour
+            - select.solar_panel_production_by_hour
+            - select.solar_panel_to_house_by_hour
+            - select.solar_house_consumption_by_hour
+            - select.solar_imported_power_by_hour
+            - select.solar_exported_power_by_hour
+            - select.solar_battery_in_by_hour
+            - select.solar_battery_out_by_hour
         data:
           option: "{{ 'H%02d' | format(now().hour) }}"
 
@@ -2195,13 +2253,13 @@ automation:
       - service: select.select_option
         target:
           entity_id:
-            - select.package_sigen_pv_by_hour
-            - select.package_sigen_pv_to_house_by_hour
-            - select.package_sigen_house_consumption_by_hour
-            - select.package_sigen_imported_power_by_hour
-            - select.package_sigen_exported_power_by_hour
-            - select.package_sigen_battery_in_by_hour
-            - select.package_sigen_battery_out_by_hour
+            - select.solar_panel_production_by_hour
+            - select.solar_panel_to_house_by_hour
+            - select.solar_house_consumption_by_hour
+            - select.solar_imported_power_by_hour
+            - select.solar_exported_power_by_hour
+            - select.solar_battery_in_by_hour
+            - select.solar_battery_out_by_hour
         data:
           option: "{{ 'H%02d' | format(now().hour) }}"
 

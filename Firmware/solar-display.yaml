@@ -614,7 +614,7 @@ binary_sensor:
 
 - platform: homeassistant
   id: grid_backup_status_ha
-  entity_id: binary_sensor.solaredge_i1_grid_status
+  entity_id: binary_sensor.solar_grid_connected
   on_state:
     then:
     - if:
@@ -711,9 +711,9 @@ sensor:
       lv_obj_set_style_text_color(id(home_usage_value_label), lv_color_white(), LV_PART_MAIN);
       lv_obj_set_style_text_color(id(hu_home_usage_value_label), lv_color_white(), LV_PART_MAIN);'
 - platform: homeassistant
-  name: SolarEdge Battery State of Charge
-  entity_id: sensor.solaredge_b1_state_of_energy
-  id: solaredge_battery_soc
+  name: Battery State of Charge
+  entity_id: sensor.solar_battery_soc
+  id: battery_soc
   on_value:
     - lambda: |-
         lv_bar_set_value(id(battery_bar), x, LV_ANIM_ON);
@@ -11113,7 +11113,7 @@ interval:
               float g2g_w   = nz(id(generation_to_grid).state);
               float b_in_w  = nz(id(battery_in_w).state);
               float house_w = nz(id(solar_house_consumption_sensor).state);
-              float soc_pct = nz(id(solaredge_battery_soc).state);
+              float soc_pct = nz(id(battery_soc).state);
 
               auto set_box = [&](const char* msg, uint32_t border_hex) {
                 if (msg == sug_last_msg && border_hex == sug_last_border && sug_last_epoch == lvx_theme::epoch()) return;
@@ -11566,7 +11566,7 @@ interval:
           // home_page_2 – Battery SoC % (unchanged)
           // ========================
           {
-            float soc = id(solaredge_battery_soc).state;
+            float soc = id(battery_soc).state;
             if (std::isnan(soc)) soc = 0.0f;
             char pct[12];
             snprintf(pct, sizeof(pct), "%.0f%%", soc);

@@ -12,29 +12,22 @@ The firmware is ESPHome + LVGL; all data comes from Home Assistant.
 
 | Path | What it is |
 |---|---|
-| `Sigenergy/solar-display.yaml` | Display firmware for Sigenergy systems (~10.8k lines) |
-| `Solaredge/solar-display.yaml` | Display firmware for SolarEdge systems (~10.8k lines) |
-| `*/secrets.yaml` | Example secrets (placeholders + a **public** example API key) |
-| `*/includes/ap_mode_helper.h` | Helper for the on-device "AP-only setup mode" |
-| `*/includes/themes.h` | Colour themes: palette table and the runtime theme switch (see §3 Themes) |
-| `*/includes/edge_swipe.h` | Edge-swipe gesture detection for switching pages (see §3 Edge swipe) |
-| `*/includes/lvgl_helpers.h` | Performance helpers: skip unchanged label texts, internal-RAM draw buffer, draw-buffer log line (see §3 Performance) |
-| `*/fonts`, `*/icons` | Fonts and PNG icons used by the firmware (duplicated per folder) |
+| `Firmware/solar-display.yaml` | The display firmware, the same for every inverter brand (~10.8k lines) |
+| `Firmware/secrets.example.yaml` | Template for `Firmware/secrets.yaml` (API key, OTA password, Wi-Fi). The real `secrets.yaml` is git-ignored |
+| `Firmware/includes/ap_mode_helper.h` | Helper for the on-device "AP-only setup mode" |
+| `Firmware/includes/themes.h` | Colour themes: palette table and the runtime theme switch (see §3 Themes) |
+| `Firmware/includes/edge_swipe.h` | Edge-swipe gesture detection for switching pages (see §3 Edge swipe) |
+| `Firmware/includes/lvgl_helpers.h` | Performance helpers: skip unchanged label texts, internal-RAM draw buffer, draw-buffer log line (see §3 Performance) |
+| `Firmware/fonts`, `Firmware/icons` | Fonts and PNG icons used by the firmware |
 | `Homeassistant/sigenergy/packages/` | HA packages (`energy.yaml`, `energydevices.yaml`) for Sigenergy |
 | `Homeassistant/solaredge/2 inverters/packages/` | HA packages for SolarEdge with I1 + I2 |
 | `Homeassistant/solaredge/single inverter/packages/` | HA packages for SolarEdge with I1 only |
-| `Solaredge/energy.yaml` | Exact duplicate of the 2-inverter HA `energy.yaml` (left over; can be removed) |
+| `Homeassistant/migration/` | Display entity list, Sigenergy rename list + script, handovers for the HA instances (see §3 One firmware) |
 | `3Dfiles/Solar-Case.3mf` | Case model |
-| `tools/sync_firmwares.py` | Regenerates the Sigenergy firmware from the SolarEdge one and copies `includes/` (`--check` to verify) |
 
-**There is one screen, two firmwares, and they are identical except for the Home Assistant entities they read** (SolarEdge reads `sensor.solar_*`, Sigenergy `sensor.package_sigen_*`, each created by its own HA package). Make firmware changes in `Solaredge/solar-display.yaml` only, then regenerate the Sigenergy file:
+**There is one firmware.** It reads a fixed set of 244 Home Assistant entities (`Homeassistant/migration/display-entities.txt`), and every brand package provides exactly those entity ids. A new brand only needs a new package. When the firmware starts reading a new entity, add it to **every** package and to `display-entities.txt`.
 
-```bash
-python3 tools/sync_firmwares.py           # rewrite Sigenergy/solar-display.yaml
-python3 tools/sync_firmwares.py --check   # verify (exit 1 if out of sync)
-```
-
-New Home Assistant sensors need their Sigenergy entity added to `SIGENERGY_NEW` in the script first. The commented-out `ch422g` lines are left over from a config for the older 800×480 Waveshare 7" board; that board is not supported.
+The commented-out `ch422g` lines are left over from a config for the older 800×480 Waveshare 7" board; that board is not supported.
 
 ---
 
@@ -174,8 +167,18 @@ How it was measured (throwaway code, not in the repo, easy to recreate): a heade
 - **House consumption fix (both SolarEdge packages):** "Solar House Consumption W" is now the AC balance `i1_ac + i2_ac − m1` (clamped at 0) instead of panel + battery + grid → house. Measured against the main panel meter while the battery discharged: 447.7 W vs 441.5 W, where the old sum gave 423.1 W. Two causes: "Solar Battery To House W" also multiplied by `solar_battery_effectiveness` (≈ 0.93), but B1 DC power is already measured at the inverter's DC input, so the battery's losses were counted twice (≈ 7 % of battery discharge missing from house kWh); and the sum mixed three template sensors that update one after another, which could briefly show a wrong total. Battery To House W no longer uses battery effectiveness. The sensor itself stays (its average sensor uses it).
 - **Brought back from the live HA install (2026-10-31)** into both SolarEdge packages: unique_ids for all `integration` sensors (`energy_int_<name>`), all `utility_meter`s (`energy_um_<key>`) and "Solar Battery SOC Rolling", so they can be managed in the UI; keep these IDs exactly as they are or HA creates `…_2` duplicates. Also the night rule: "Solar Panel Production W" is 0 while `sun.sun` is below the horizon, because B1 lags I1 by one Modbus poll and a load step at night showed up as fake PV for ~34 s. "Solar Panel To House W" got the same rule (it has the same lag in the other direction). The live install in turn was missing the 10-06 changes (Panel To House clamps, "Solar Lifetime Energy").
 - The new templates were render-tested with stand-in values (grid status values, both time-remaining paths, autarky clamps, Wh/kWh/MWh, missing I2, night-time grid charging).
-- `Solaredge/energy.yaml` is kept identical to the 2-inverter package (still a leftover copy).
 - **Nothing visible changes for existing Sigenergy users.** Checked against the original version: the display exposes the same 16 entities plus the new "Theme" select; in the Sigenergy package the `sensor`, `utility_meter` (incl. tariff selects), `automation`, `input_select` and `input_number` sections are byte-for-byte unchanged, and the `template` section only gained the 3 sensors above (no existing line removed or edited). Updating only the firmware without the package just shows "--" for Remaining Battery / Autarkie and leaves off-grid detection inactive.
+
+### One firmware, shared entity names (2026-10-31)
+- `Solaredge/` and `Sigenergy/` are replaced by **`Firmware/`**. `tools/sync_firmwares.py` and the leftover `Solaredge/energy.yaml` are gone. The firmware is the former SolarEdge one, with two entities changed: `binary_sensor.solar_grid_connected` (was `binary_sensor.solaredge_i1_grid_status`) and `sensor.solar_battery_soc` (was `sensor.solaredge_b1_state_of_energy`; firmware id `battery_soc`).
+- **The SolarEdge names are the standard.** Both SolarEdge packages gained only `Solar Grid Connected` and `Solar Battery SoC`, which wrap the two integration entities. Nothing was renamed.
+- **The Sigenergy package was migrated** with `Homeassistant/migration/rewrite_sigenergy_package.py`:
+  - **phase A:** unique_ids `energy_um_<new key>` / `energy_int_<name>` for the 35 utility meters and 7 integration sensors
+  - **phase B:** the 219 renames in `sigenergy-entity-renames.csv` (`package_sigen_…` → `solar_…`, "pv" → "panel"), plus a new `solar_lifetime_energy` (kWh, from `sensor.sigen_plant_total_pv_generation`)
+  - Template unique_ids were kept. The `package_sigen_*_kwh` integration sensors, `package_sigen_battery_soc_hours` and the input helpers keep their names.
+- **Live installs** follow `Homeassistant/migration/HANDOVER-solaredge-ha.md` (small) and `HANDOVER-sigenergy-ha.md`. The Sigenergy one renames the entities in the registry, so history and statistics move with them, and updates dashboards etc. **Order:** packages first, then flash the displays right after (displays on the old firmware read the old names).
+- Checked: each of the three packages defines all 244 display entities; the firmware compiles.
+- **Secrets:** `secrets.yaml` is untracked and ignored (root `.gitignore`); `Firmware/secrets.example.yaml` is the template, without the previously committed key. The example `energydevices.yaml` files now use neutral sensor names (they held the owner's device and place names).
 
 ### README
 ESPHome version requirement, an upgrade guide for people with modified YAMLs, OTA update instructions, a warning to generate your own API key, and the single-inverter SolarEdge package.
@@ -214,17 +217,11 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 
 ## 6. Gotchas
 
-- **`secrets.yaml` is tracked in git** even though `.gitignore` lists it (it was committed as a template). Putting real keys in it means they show up in `git status`. On the maintainer's PC this is handled with:
-  ```bash
-  git update-index --skip-worktree Sigenergy/secrets.yaml Solaredge/secrets.yaml
-  ```
-  (undo with `--no-skip-worktree`). Cleaner long-term fix: rename to `secrets.example.yaml` and untrack `secrets.yaml`.
-- **The example `api_encryption_key` is public.** Devices flashed with it unchanged all share the same key. Changing it on an existing device means updating the key in Home Assistant too.
+- **`secrets.yaml` is never committed.** Copy `Firmware/secrets.example.yaml` to `Firmware/secrets.yaml`; the root `.gitignore` ignores every `secrets.yaml`. Until 2026-10-31 the secrets files were tracked, and the API key committed then (2026-02-07) is still in the public git history. Devices that use that key should get a new one; changing it on an existing device means updating the key in Home Assistant too.
 - **`ota_password` vs encryption:** ESPHome 2026 warns that an OTA password wastes flash/RAM and recommends `ota: encryption:` instead. The plaintext OTA fallback is removed in **2027.3.0**, so switch before then (and update every display once with the new config).
-- `Solaredge/energy.yaml` duplicates the HA package and can confuse people; the HA files live in `Homeassistant/`.
 - **Internal RAM is the scarce resource**, not PSRAM. The draw buffer takes 40 KB of it; keep ~35 KB free for Wi-Fi, the API and OTA. Don't raise the strip height above 20 lines without checking the `Draw buffer:` log line.
 - `lv_label_set_text()` in the YAML lambdas is a macro from `lvgl_helpers.h` that skips identical text (see §3 Performance).
-- **Firmware changes go into `Solaredge/solar-display.yaml`** (and `Solaredge/includes/`), then run `python3 tools/sync_firmwares.py`; it also copies the headers to `Sigenergy/includes/`. Never hand-edit the Sigenergy firmware (except to add the Sigenergy entity of a new sensor).
+- **The firmware may only read entities from `display-entities.txt`.** Reading an integration entity directly (e.g. `solaredge_…`, `sigen_plant_…`) ties the firmware to one brand again. Wrap it in a package sensor with a shared name instead.
 - **New UI colours:** write them in theme 0's colours. If a lambda sets a UI (role) colour at runtime, wrap it in `lvx_theme::color(...)`; data/warning colours stay plain `lv_color_hex(...)`.
 - **Adding a main page:** add it to the `pages[]` list in the touchscreen's `on_update` (edge swipe) as well as to the menu.
 - **Moving a node icon on the Power Flow page** (`node_solar`, `node_home`, `node_battery`, `node_grid`): also update the node centres at the top of the `solar_info_page` animation lambda (image `x`/`y` + 50), or the dots no longer line up with the icons.
@@ -239,11 +236,10 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 | Move OTA from `password` to `encryption` | plaintext OTA fallback removed in **2027.3.0** |
 | "Show Tips/Suggestions" switch name: remove the `/` | becomes an error in **2027.7.0** |
 | Confirm touch also starts reliably after a real power cut (only software restarts were tested) | the GT911 fix relies on the chip coming up by itself at power-on |
-| Test the Sigenergy firmware on real hardware | only compile-tested |
-| Load the updated packages in a real Home Assistant (SolarEdge on the owner's system; Sigenergy needs a Sigenergy owner) | new/changed templates were only render-tested offline |
+| Run the HA migrations (`Homeassistant/migration/HANDOVER-*.md`), then flash the one firmware to every display | displays on the old firmware read the old names |
 | Optional: shorten the 250 ms spinner delay in the navigation handlers (e.g. to 100 ms) | it is now most of a page change; the owner kept 250 ms for now |
 | Graph page: replace the 24 `lv_obj_align_to()` calls for the value labels with computed positions | a graph refresh still takes ~85 ms every 750 ms while the graph page is open |
-| Remove `Solaredge/energy.yaml` duplicate, `ch422g` leftovers, `old_icon_sun_100.png` | cleanup |
+| Remove `ch422g` leftovers, `old_icon_sun_100.png` | cleanup |
 | From the README: configurable suggestion texts/thresholds, interval page graphs | features |
 
 ---
@@ -255,7 +251,7 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 - The owner's display (SolarEdge firmware) runs the latest build. The owner still has to copy the updated `Homeassistant/solaredge/2 inverters/packages/energy.yaml` into Home Assistant; until then the display's lifetime value shows "--" (it now reads `sensor.solar_lifetime_energy`).
 
 **Agreed roadmap** (discussed, not started)
-1. **One firmware for all inverter brands.** Define a fixed list of Home Assistant sensor names the display reads (a "display contract"); every brand package provides exactly those names (Sigenergy gets extra sensors with the standard names next to its existing ones, so nothing breaks). Then there is a single `solar-display.yaml`, and a new brand only needs a new HA package. Do **not** select the brand on the device: ESPHome compiles HA entity names into the firmware, so that would mean subscribing to every brand's ~250 sensors and using scarce internal RAM. Device-side setup options (e.g. "Battery installed", optional brand name/logo) can be selects/switches like Theme.
+1. **Done 2026-10-31 (see §3 One firmware); the original plan follows.** **One firmware for all inverter brands.** Define a fixed list of Home Assistant sensor names the display reads (a "display contract"); every brand package provides exactly those names (Sigenergy gets extra sensors with the standard names next to its existing ones, so nothing breaks). Then there is a single `solar-display.yaml`, and a new brand only needs a new HA package. Do **not** select the brand on the device: ESPHome compiles HA entity names into the firmware, so that would mean subscribing to every brand's ~250 sensors and using scarce internal RAM. Device-side setup options (e.g. "Battery installed", optional brand name/logo) can be selects/switches like Theme.
 2. **SolarEdge 1 or 2 inverters in one package:** treat I2 as optional (missing entities already read as 0 with `float(0)`; fix the `is_state(..., 'unknown')` guards), keep the "Panel To House" clamps, and detect grid charging from I1's DC power going negative instead of "AC output <= 0" (more reliable with one hybrid inverter).
 3. **Systems without a battery:** package treats a missing B1 as 0 (today "Solar Panel Production W" is forced to 0 when B1 is unknown); firmware gets a "Battery installed" setting that hides the battery card on the home page (the flex row re-centres the other three), the battery node/flows on the info page, the battery page and its menu button, the battery graph datasets, the "Remaining Battery" line and the battery-related tips. Testable on the owner's own display by switching the setting off.
 

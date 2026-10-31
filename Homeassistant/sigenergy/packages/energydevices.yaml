@@ -4,13 +4,12 @@
 #device 3 will create a home assistant entitie called hu_device_3_usage
 #device 4 will create a home assistant entitie called hu_device_4_usage
 #device 5 will create a home assistant entitie called hu_device_5_usage
+#Replace the examples below with the power sensors (W) of your own devices; use "" for unused slots.
 
-device1: "sensor.heatpump_power_total"
-device2: "sensor.zwembad_ontvochtiger_power"
-#hoeveke warm water:
-device3: "sensor.shellyplug_eb9c47_power"
-#network rack:
-device4: "sensor.shellyplugsg3_e4b063dbd1d0_power"
-device5: "sensor.heating_hoeveke_salon_power"
-subpanel1: "sensor.db_pool_power_total_2"
-subpanel2: ""
+device1: "sensor.heat_pump_power"
+device2: "sensor.dehumidifier_power"
+device3: "sensor.water_heater_power"
+device4: "sensor.network_rack_power"
+device5: "sensor.heating_power"
+subpanel1: "sensor.subpanel_1_power"
+subpanel2: "sensor.subpanel_2_power"
