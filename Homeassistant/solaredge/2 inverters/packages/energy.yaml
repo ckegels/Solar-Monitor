@@ -495,7 +495,10 @@ template:
           {% set i2_dc_power = states('sensor.solaredge_i2_dc_power') | float(0) %}
           {% set b1_dc_power = states('sensor.solaredge_b1_dc_power') | float(0) %}
 
-          {% if (is_state('sensor.solaredge_i1_dc_power', 'unknown') or is_state('sensor.solaredge_i2_dc_power', 'unknown') or is_state('sensor.solaredge_b1_dc_power', 'unknown')) %}
+          {# B1 lags I1 by one Modbus poll, so a load step at night shows up as fake PV for ~34 s #}
+          {% if is_state('sun.sun', 'below_horizon') %}
+            0
+          {% elif (is_state('sensor.solaredge_i1_dc_power', 'unknown') or is_state('sensor.solaredge_i2_dc_power', 'unknown') or is_state('sensor.solaredge_b1_dc_power', 'unknown')) %}
             0
           {% elif (i1_dc_power + i2_dc_power + b1_dc_power <= 0) %}
             0
@@ -516,7 +519,10 @@ template:
           {% set m1_ac_power = states('sensor.solaredge_m1_ac_power') | float(0) %}
           {% set inverter_effectiveness = states('sensor.solar_inverter_effectiveness') | float(0) %}
 
-          {% if (b1_dc_power >= 0 and m1_ac_power > 0) %}
+          {# No solar after sunset; also hides the same one-poll B1 lag as in Panel Production W #}
+          {% if is_state('sun.sun', 'below_horizon') %}
+            0
+          {% elif (b1_dc_power >= 0 and m1_ac_power > 0) %}
             {% if (i1_dc_power < 0 and i1_ac_power <= 0) %}
               {{ [i1_dc_power + i2_ac_power - m1_ac_power, 0] | max }}
             {% else %}
@@ -790,36 +796,43 @@ sensor:
     method: left
     unit_prefix: k
     name: solar_panel_production_kwh
+    unique_id: energy_int_solar_panel_production_kwh
   - platform: integration
     source: sensor.solar_battery_to_house_w
     method: left
     unit_prefix: k
     name: solar_battery_out_kwh
+    unique_id: energy_int_solar_battery_out_kwh
   - platform: integration
     source: sensor.solar_battery_in_w
     method: left
     unit_prefix: k
     name: solar_battery_in_kwh
+    unique_id: energy_int_solar_battery_in_kwh
   - platform: integration
     source: sensor.solar_house_consumption_w
     method: left
     unit_prefix: k
     name: solar_house_consumption_kwh
+    unique_id: energy_int_solar_house_consumption_kwh
   - platform: integration
     source: sensor.solar_imported_power_w
     method: left
     unit_prefix: k
     name: solar_imported_power_kwh
+    unique_id: energy_int_solar_imported_power_kwh
   - platform: integration
     source: sensor.solar_exported_power_w
     method: left
     unit_prefix: k
     name: solar_exported_power_kwh
+    unique_id: energy_int_solar_exported_power_kwh
   - platform: integration
     source: sensor.solar_panel_to_house_w
     method: left
     unit_prefix: k
     name: solar_panel_to_house_kwh
+    unique_id: energy_int_solar_panel_to_house_kwh
 
   - platform: statistics
     name: "Solar Battery Effectiveness Average"
@@ -841,6 +854,7 @@ sensor:
     
   - platform: statistics
     name: "Solar Battery SOC Rolling"
+    unique_id: solar_battery_soc_rolling
     entity_id: sensor.solaredge_b1_state_of_energy
     state_characteristic: mean
     sampling_size: 1200
@@ -849,121 +863,150 @@ sensor:
       
 utility_meter:
   solar_panel_production_daily:
+    unique_id: energy_um_solar_panel_production_daily
     source: sensor.solar_panel_production_kwh
     name: Solar Panel Production Daily
     cycle: daily
   solar_battery_in_daily:
+    unique_id: energy_um_solar_battery_in_daily
     source: sensor.solar_battery_in_kwh
     name: Solar Battery In Daily
     cycle: daily
   solar_battery_out_daily:
+    unique_id: energy_um_solar_battery_out_daily
     source: sensor.solar_battery_out_kwh
     name: Solar Battery Out Daily
     cycle: daily
   solar_house_consumption_daily:
+    unique_id: energy_um_solar_house_consumption_daily
     source: sensor.solar_house_consumption_kwh
     name: Solar House Consumption Daily
     cycle: daily
   solar_imported_power_daily:
+    unique_id: energy_um_solar_imported_power_daily
     source: sensor.solar_imported_power_kwh
     name: Solar Imported Power Daily
     cycle: daily
   solar_imported_power_daily_solaredge:
+    unique_id: energy_um_solar_imported_power_daily_solaredge
     source: sensor.solaredge_m1_imported_kwh
     name: Solar Imported Power Daily Solar Edge
     cycle: daily
   solar_exported_power_daily:
+    unique_id: energy_um_solar_exported_power_daily
     source: sensor.solar_exported_power_kwh
     name: Solar Exported Power Daily
     cycle: daily
   solar_panel_to_house_daily:
+    unique_id: energy_um_solar_panel_to_house_daily
     source: sensor.solar_panel_to_house_kwh
     name: Solar Panel To House Daily
     cycle: daily
 
   solar_panel_to_house_weekly:
+    unique_id: energy_um_solar_panel_to_house_weekly
     source: sensor.solar_panel_to_house_kwh
     name: Solar Panel To House Weekly
     cycle: weekly
   solar_imported_power_weekly:
+    unique_id: energy_um_solar_imported_power_weekly
     source: sensor.solar_imported_power_kwh
     name: Solar Imported Power Weekly
     cycle: weekly
   solar_house_consumption_weekly:
+    unique_id: energy_um_solar_house_consumption_weekly
     source: sensor.solar_house_consumption_kwh
     name: Solar House Consumption Weekly
     cycle: weekly
   solar_panel_production_weekly:
+    unique_id: energy_um_solar_panel_production_weekly
     source: sensor.solar_panel_production_kwh
     name: Solar Panel Production Weekly
     cycle: weekly
   solar_battery_in_weekly:
+    unique_id: energy_um_solar_battery_in_weekly
     source: sensor.solar_battery_in_kwh
     name: Solar Battery In Weekly
     cycle: weekly
   solar_battery_out_weekly:
+    unique_id: energy_um_solar_battery_out_weekly
     source: sensor.solar_battery_out_kwh
     name: Solar Battery Out Weekly
     cycle: weekly
   solar_exported_power_weekly:
+    unique_id: energy_um_solar_exported_power_weekly
     source: sensor.solar_exported_power_kwh
     name: Solar Exported Power Weekly
     cycle: weekly
 
   solar_panel_to_house_monthly:
+    unique_id: energy_um_solar_panel_to_house_monthly
     source: sensor.solar_panel_to_house_kwh
     name: Solar Panel To House Monthly
     cycle: monthly
   solar_imported_power_monthly:
+    unique_id: energy_um_solar_imported_power_monthly
     source: sensor.solar_imported_power_kwh
     name: Solar Imported Power Monthly
     cycle: monthly
   solar_house_consumption_monthly:
+    unique_id: energy_um_solar_house_consumption_monthly
     source: sensor.solar_house_consumption_kwh
     name: Solar House Consumption Monthly
     cycle: monthly
   solar_panel_production_monthly:
+    unique_id: energy_um_solar_panel_production_monthly
     source: sensor.solar_panel_production_kwh
     name: Solar Panel Production Monthly
     cycle: monthly
   solar_battery_in_monthly:
+    unique_id: energy_um_solar_battery_in_monthly
     source: sensor.solar_battery_in_kwh
     name: Solar Battery In Monthly
     cycle: monthly
   solar_battery_out_monthly:
+    unique_id: energy_um_solar_battery_out_monthly
     source: sensor.solar_battery_out_kwh
     name: Solar Battery Out Monthly
     cycle: monthly
   solar_exported_power_monthly:
+    unique_id: energy_um_solar_exported_power_monthly
     source: sensor.solar_exported_power_kwh
     name: Solar Exported Power Monthly
     cycle: monthly
 
   solar_panel_to_house_yearly:
+    unique_id: energy_um_solar_panel_to_house_yearly
     source: sensor.solar_panel_to_house_kwh
     name: Solar Panel To House Yearly
     cycle: yearly
   solar_imported_power_yearly:
+    unique_id: energy_um_solar_imported_power_yearly
     source: sensor.solar_imported_power_kwh
     name: Solar Imported Power Yearly
     cycle: yearly
   solar_house_consumption_yearly:
+    unique_id: energy_um_solar_house_consumption_yearly
     source: sensor.solar_house_consumption_kwh
     name: Solar House Consumption Yearly
     cycle: yearly
   solar_panel_production_yearly:
+    unique_id: energy_um_solar_panel_production_yearly
     source: sensor.solar_panel_production_kwh
     name: Solar Panel Production Yearly
     cycle: yearly
   solar_battery_in_yearly:
+    unique_id: energy_um_solar_battery_in_yearly
     source: sensor.solar_battery_in_kwh
     name: Solar Battery In Yearly
     cycle: yearly
   solar_battery_out_yearly:
+    unique_id: energy_um_solar_battery_out_yearly
     source: sensor.solar_battery_out_kwh
     name: Solar Battery Out Yearly
     cycle: yearly
   solar_exported_power_yearly:
+    unique_id: energy_um_solar_exported_power_yearly
     source: sensor.solar_exported_power_kwh
     name: Solar Exported Power Yearly
     cycle: yearly
@@ -974,30 +1017,37 @@ utility_meter:
   #Hourly utility meters  
     
   solar_panel_production_by_hour:
+    unique_id: energy_um_solar_panel_production_by_hour
     source: sensor.solar_panel_production_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
   solar_panel_to_house_by_hour:
+    unique_id: energy_um_solar_panel_to_house_by_hour
     source: sensor.solar_panel_to_house_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
   solar_house_consumption_by_hour:
+    unique_id: energy_um_solar_house_consumption_by_hour
     source: sensor.solar_house_consumption_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
   solar_imported_power_by_hour:
+    unique_id: energy_um_solar_imported_power_by_hour
     source: sensor.solar_imported_power_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
   solar_exported_power_by_hour:
+    unique_id: energy_um_solar_exported_power_by_hour
     source: sensor.solar_exported_power_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
   solar_battery_in_by_hour:
+    unique_id: energy_um_solar_battery_in_by_hour
     source: sensor.solar_battery_in_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
   solar_battery_out_by_hour:
+    unique_id: energy_um_solar_battery_out_by_hour
     source: sensor.solar_battery_out_kwh
     cycle: daily
     tariffs: [H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,H20,H21,H22,H23]
