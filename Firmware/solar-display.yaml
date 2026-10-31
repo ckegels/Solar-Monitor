@@ -35,19 +35,28 @@ esphome:
           id(force_ap_mode) = false;
       - wifi.enable
 
+  - priority: 225
+    then:
+    - lambda: |-
+        // Site 2: choose its port before the API opens its socket (AFTER_WIFI = 200)
+        if (id(site_select).active_index().value_or(0) != 1) return;
+        uint8_t psk[32];
+        const std::string key = "${api_key_site_2}";
+        if (key.empty() || base64_decode(key, psk, sizeof(psk)) != sizeof(psk)) {
+          ESP_LOGE("site", "No valid api_encryption_key_site_2; using ${site_1_name}");
+          return;
+        }
+        id(site2_active) = true;
+        api::global_api_server->set_port(${api_port_site_2});
   - priority: 150
     then:
     - lambda: |-
-        // Site 2 uses its own API key, so only that site's Home Assistant can connect
+        // Site 2 also uses its own API key (applied after the API setup)
         static uint8_t site2_psk[32];  // set_noise_psk keeps the pointer
-        if (id(site_select).active_index().value_or(0) != 1) return;
-        const std::string key = "${api_key_site_2}";
-        if (key.empty() || base64_decode(key, site2_psk, sizeof(site2_psk)) != sizeof(site2_psk)) {
-          ESP_LOGE("site", "No valid api_encryption_key_site_2; using the key of ${site_1_name}");
-          return;
-        }
+        if (!id(site2_active)) return;
+        base64_decode("${api_key_site_2}", site2_psk, sizeof(site2_psk));
         api::global_api_server->set_noise_psk(site2_psk);
-        ESP_LOGI("site", "Using the API key of ${site_2_name}");
+        ESP_LOGI("site", "Using ${site_2_name}: API port ${api_port_site_2} with its own key");
   - priority: -100
     then:
     - script.execute: boot_flow
@@ -64,11 +73,14 @@ substitutions:
   wifi_preset_2_label: !secret wifi_ssid_2
   wifi_preset_3_label: !secret wifi_ssid_3
   api_key_full: !secret api_encryption_key
-  # Home Assistant sites (Settings → Home Assistant). Site 2 has its own API key, so only the
-  # selected site's Home Assistant can connect. Leave api_encryption_key_site_2 empty for one site.
+  # Home Assistant sites (Settings → Home Assistant). Site 2 has its own API key and port, so only
+  # the selected site's Home Assistant can connect; the other one just sees the port closed and keeps
+  # retrying (a wrong key would make Home Assistant stop and ask for re-authentication).
+  # Leave api_encryption_key_site_2 empty for one site.
   site_1_name: !secret site_1_name
   site_2_name: !secret site_2_name
   api_key_site_2: !secret api_encryption_key_site_2
+  api_port_site_2: "6055"
   ota_key_full: !secret ota_password
 
 preferences:
@@ -339,6 +351,10 @@ number:
                 return str_sprintf("%.0fm", v / 60.0f);
               }
 globals:
+- id: site2_active          # site 2 selected and its key is valid (set at boot)
+  type: bool
+  restore_value: false
+  initial_value: "false"
 - id: force_ap_mode
   type: bool
   restore_value: false
@@ -8651,7 +8667,7 @@ lvgl:
                 on_click:
                   - lambda: |-
                       lv_label_set_text(id(secret_title), "API encryption key");
-                      bool site2 = id(site_select).active_index().value_or(0) == 1 && !std::string("${api_key_site_2}").empty();
+                      bool site2 = id(site2_active);
                       lv_label_set_text(id(secret_value), site2 ? "${api_key_site_2}" : "${api_key_full}");
                   - lvgl.widget.show: secret_overlay
                 widgets:
@@ -10131,7 +10147,7 @@ script:
   - lambda: |-
       if (id(lbl_site_sub) == nullptr) return;  // LVGL not set up yet
       bool two_sites = !std::string("${api_key_site_2}").empty();
-      int cur = (two_sites && id(site_select).active_index().value_or(0) == 1) ? 1 : 0;
+      int cur = id(site2_active) ? 1 : 0;
       lv_label_set_text(id(lbl_site_sub), two_sites ? "Switching restarts the display" : "One site configured");
       lv_obj_t *btns[2] = {id(btn_site_1), id(btn_site_2)};
       for (int i = 0; i < 2; i++) {
@@ -10184,7 +10200,7 @@ script:
   - lvgl.page.show: boot_page
   - lvgl.widget.hide: btn_boot_menu
   - lambda: |-
-      bool site2 = id(site_select).active_index().value_or(0) == 1 && !std::string("${api_key_site_2}").empty();
+      bool site2 = id(site2_active);
       char b[96];
       snprintf(b, sizeof(b), "Connecting to Home Assistant (%s)…", site2 ? "${site_2_name}" : "${site_1_name}");
       lv_label_set_text(id(lbl_boot_status), b);

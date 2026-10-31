@@ -258,8 +258,9 @@ esphome run solar-display.yaml
 
 One display can be used with two Home Assistant installations, for example your own and a family member's. Choose the site at the top of **Settings → Home Assistant**; the display then restarts.
 
-- Each site has its own API key: `api_encryption_key` (site 1) and `api_encryption_key_site_2` in `secrets.yaml`, plus the button labels `site_1_name` / `site_2_name`. Leave the site 2 key empty (`""`) if you only use one Home Assistant.
-- Add the display in **each** Home Assistant (ESPHome integration) with **that site's** key. Only the Home Assistant of the selected site can connect; the other one shows the display as unavailable.
+- **Site 1** is the display's own Home Assistant: `api_encryption_key` on the normal API port **6053**. **Site 2** uses `api_encryption_key_site_2` on port **6055**. The button labels come from `site_1_name` / `site_2_name` in `secrets.yaml`. Leave the site 2 key empty (`""`) if you only use one Home Assistant.
+- Add the display in **each** Home Assistant (ESPHome integration) with **that site's** port and key. For site 2, use Reconfigure (or add it) with port `6055` and the site 2 key.
+- Only the selected site's port is open. The other Home Assistant just sees "connection refused", shows the display as unavailable and keeps retrying, so it reconnects by itself when you switch back. Separate keys alone are not enough: on a wrong key Home Assistant stops retrying and asks for re-authentication.
 - Switching is only possible on the display itself, not from Home Assistant, so a Home Assistant cannot lock itself out.
 
 ### Updating over Wi-Fi (OTA)
