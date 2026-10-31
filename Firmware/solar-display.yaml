@@ -19,6 +19,7 @@ esphome:
     # Apply the saved colour theme (the YAML itself is drawn in theme 0, Graphite)
     - lambda: lvx_theme::apply(id(theme_select).active_index().value_or(0), id(theme_grid));
     - script.execute: theme_mark_selected
+    - script.execute: site_update_label
     - delay: 30s
     - lambda: lvx_log_draw_buffer();
   - priority: 500
@@ -34,6 +35,19 @@ esphome:
           id(force_ap_mode) = false;
       - wifi.enable
 
+  - priority: 150
+    then:
+    - lambda: |-
+        // Site 2 uses its own API key, so only that site's Home Assistant can connect
+        static uint8_t site2_psk[32];  // set_noise_psk keeps the pointer
+        if (id(site_select).active_index().value_or(0) != 1) return;
+        const std::string key = "${api_key_site_2}";
+        if (key.empty() || base64_decode(key, site2_psk, sizeof(site2_psk)) != sizeof(site2_psk)) {
+          ESP_LOGE("site", "No valid api_encryption_key_site_2; using the key of ${site_1_name}");
+          return;
+        }
+        api::global_api_server->set_noise_psk(site2_psk);
+        ESP_LOGI("site", "Using the API key of ${site_2_name}");
   - priority: -100
     then:
     - script.execute: boot_flow
@@ -50,6 +64,11 @@ substitutions:
   wifi_preset_2_label: !secret wifi_ssid_2
   wifi_preset_3_label: !secret wifi_ssid_3
   api_key_full: !secret api_encryption_key
+  # Home Assistant sites (Settings → Home Assistant). Site 2 has its own API key, so only the
+  # selected site's Home Assistant can connect. Leave api_encryption_key_site_2 empty for one site.
+  site_1_name: !secret site_1_name
+  site_2_name: !secret site_2_name
+  api_key_site_2: !secret api_encryption_key_site_2
   ota_key_full: !secret ota_password
 
 preferences:
@@ -5461,6 +5480,69 @@ lvgl:
           flex_flow: column
           pad_row: 12
         widgets:
+        - obj:
+            id: card_setting_site
+            width: 883
+            height: 100
+            radius: 15
+            bg_color: 0x1C2229
+            border_width: 1
+            border_color: 3355443
+            scrollable: false
+            scrollbar_mode: 'off'
+            pad_all: 0
+            widgets:
+            - label:
+                x: 20
+                align: left_mid
+                y: -16
+                text: Home Assistant
+                text_font: my_font
+                text_color: 16777215
+            - label:
+                id: lbl_site_sub
+                x: 20
+                align: left_mid
+                y: 19
+                text: " "
+                text_font: my_font_small
+                text_color: 10395294
+            - button:
+                id: btn_site_1
+                width: 200
+                height: 64
+                radius: 12
+                align: right_mid
+                x: -235
+                bg_color: 0x2E3A46
+                border_width: 0
+                shadow_width: 0
+                on_click:
+                - lambda: if (id(site_select).active_index().value_or(0) != 0) id(site_switch).execute(0);
+                widgets:
+                - label:
+                    align: center
+                    text: "${site_1_name}"
+                    text_font: my_font
+                    text_color: 16777215
+            - button:
+                id: btn_site_2
+                width: 200
+                height: 64
+                radius: 12
+                align: right_mid
+                x: -20
+                bg_color: 0x2E3A46
+                border_width: 0
+                shadow_width: 0
+                on_click:
+                - lambda: if (id(site_select).active_index().value_or(0) != 1) id(site_switch).execute(1);
+                widgets:
+                - label:
+                    align: center
+                    text: "${site_2_name}"
+                    text_font: my_font
+                    text_color: 16777215
         - button:
             id: card_setting_display
             width: 883
@@ -8569,7 +8651,8 @@ lvgl:
                 on_click:
                   - lambda: |-
                       lv_label_set_text(id(secret_title), "API encryption key");
-                      lv_label_set_text(id(secret_value), "${api_key_full}");
+                      bool site2 = id(site_select).active_index().value_or(0) == 1 && !std::string("${api_key_site_2}").empty();
+                      lv_label_set_text(id(secret_value), site2 ? "${api_key_site_2}" : "${api_key_full}");
                   - lvgl.widget.show: secret_overlay
                 widgets:
                   - label:
@@ -9760,6 +9843,18 @@ lvgl:
               bg_opa: 0
               scale: 0.5  
 select:
+  # Home Assistant site (Settings → Home Assistant). Internal: switching from Home Assistant
+  # would lock that Home Assistant out. Applied at boot (on_boot priority 150).
+  - platform: template
+    id: site_select
+    name: "Home Assistant Site"
+    internal: true
+    options:
+      - "${site_1_name}"
+      - "${site_2_name}"
+    initial_option: "${site_1_name}"
+    optimistic: true
+    restore_value: true
   # Colour theme (see includes/themes.h). Shown in Home Assistant, saved in flash,
   # and kept in sync with the tiles on the Themes page.
   - platform: template
@@ -9784,6 +9879,7 @@ select:
         # Before LVGL is up this does nothing; on_boot applies the restored theme then.
         - lambda: lvx_theme::apply(i, id(theme_grid));
         - script.execute: theme_mark_selected
+        - script.execute: site_update_label
         # Save now instead of after flash_write_interval (5 min), so a power cut keeps it
         - lambda: global_preferences->sync();
 
@@ -10030,6 +10126,33 @@ image:
   type: RGB565
   transparency: alpha_channel
 script:
+- id: site_update_label
+  then:
+  - lambda: |-
+      if (id(lbl_site_sub) == nullptr) return;  // LVGL not set up yet
+      bool two_sites = !std::string("${api_key_site_2}").empty();
+      int cur = (two_sites && id(site_select).active_index().value_or(0) == 1) ? 1 : 0;
+      lv_label_set_text(id(lbl_site_sub), two_sites ? "Switching restarts the display" : "One site configured");
+      lv_obj_t *btns[2] = {id(btn_site_1), id(btn_site_2)};
+      for (int i = 0; i < 2; i++) {
+        // Active site in the theme's control colour; without a site 2 key only site 1 is shown
+        lv_obj_set_style_bg_color(btns[i], lv_color_hex(lvx_theme::color(i == cur ? 0x2196F3 : 0x2E3A46)), LV_PART_MAIN);
+        if (i == 1 && !two_sites) lv_obj_add_flag(btns[i], LV_OBJ_FLAG_HIDDEN);
+      }
+      if (!two_sites) lv_obj_align(id(btn_site_1), LV_ALIGN_RIGHT_MID, -20, 0);
+- id: site_switch
+  mode: single
+  parameters:
+    index: int
+  then:
+  - lambda: |-
+      auto call = id(site_select).make_call();
+      call.set_index(index);
+      call.perform();
+      global_preferences->sync();  // save now, not after flash_write_interval
+      lv_label_set_text(id(lbl_site_sub), "Restarting…");
+  - delay: 500ms
+  - lambda: App.safe_reboot();
 # Page change after an edge swipe; same spinner as the navigation buttons
 - id: edge_swipe_show_page
   mode: restart
@@ -10060,7 +10183,11 @@ script:
   then:
   - lvgl.page.show: boot_page
   - lvgl.widget.hide: btn_boot_menu
-  - lambda: lv_label_set_text(id(lbl_boot_status), "Connecting to Home Assistant…");
+  - lambda: |-
+      bool site2 = id(site_select).active_index().value_or(0) == 1 && !std::string("${api_key_site_2}").empty();
+      char b[96];
+      snprintf(b, sizeof(b), "Connecting to Home Assistant (%s)…", site2 ? "${site_2_name}" : "${site_1_name}");
+      lv_label_set_text(id(lbl_boot_status), b);
 - id: finish_boot
   mode: restart
   then:

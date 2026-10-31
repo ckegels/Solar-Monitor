@@ -180,6 +180,14 @@ How it was measured (throwaway code, not in the repo, easy to recreate): a heade
 - Checked: each of the three packages defines all 244 display entities; the firmware compiles.
 - **Secrets:** `secrets.yaml` is untracked and ignored (root `.gitignore`); `Firmware/secrets.example.yaml` is the template, without the previously committed key. The example `energydevices.yaml` files now use neutral sensor names (they held the owner's device and place names).
 
+### Two Home Assistant sites (2026-10-31)
+- **Settings → Home Assistant** (top card) has a button per site. The choice is saved (`site_select`, internal, `restore_value`), and tapping the other site restarts the display (`site_switch`).
+- Site 2 uses `api_encryption_key_site_2`. `on_boot` priority 150 runs after the API is set up (`AFTER_WIFI` = 200) and before any client can connect. It decodes the key into a static buffer and calls `api::global_api_server->set_noise_psk()`. Only the selected site's Home Assistant can connect.
+- **One site:** an empty `api_encryption_key_site_2` disables switching (only the site 1 button is shown). Use that for displays that belong to one Home Assistant only.
+- The boot screen shows the site. The API-key reveal on the info page shows the active site's key. With the wrong site and no connection, the boot screen's "Menu" button (after 30 s) still leads to Settings.
+- `esphome logs` from the PC uses `api_encryption_key`, so it only works while site 1 is active. OTA uses the OTA password and works on both.
+- **ESPHome Builder with the repo link works.** Tested: a config with `packages: {url: https://github.com/ckegels/Solar-Monitor, files: [Firmware/solar-display.yaml]}` plus local `substitutions` and `secrets.yaml` validates and compiles. `includes/`, fonts and icons are taken from the cloned repo. Each Builder needs the same `secrets.yaml`, or a flash from there changes the keys.
+
 ### README
 ESPHome version requirement, an upgrade guide for people with modified YAMLs, OTA update instructions, a warning to generate your own API key, and the single-inverter SolarEdge package.
 
