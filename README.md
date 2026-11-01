@@ -256,12 +256,32 @@ esphome run solar-display.yaml
 
 ### Two Home Assistant sites (optional)
 
-One display can be used with two Home Assistant installations, for example your own and a family member's. Choose the site at the top of **Settings → Home Assistant**; the display then restarts.
+One display can be used with two Home Assistant installations, for example your own and a family member's. Choose the site with the two buttons at the top of the **boot screen**, or at the top of **Settings → Home Assistant**; the display then restarts. Rename the sites with the ✎ button there (on-screen keyboard), or with the *Site 1 Name* / *Site 2 Name* entities in Home Assistant.
 
-- **Site 1** is the display's own Home Assistant: `api_encryption_key` on the normal API port **6053**. **Site 2** uses `api_encryption_key_site_2` on port **6055**. The button labels come from `site_1_name` / `site_2_name` in `secrets.yaml`. Leave the site 2 key empty (`""`) if you only use one Home Assistant.
+- **Every display uses the same two sites:** site 1 = `api_encryption_key` on the normal API port **6053**, site 2 = `api_encryption_key_site_2` on port **6055**. So `secrets.yaml` is the same for all your displays. `site_1_name` / `site_2_name` are only the initial names. Leave the site 2 key empty (`""`) if you only use one Home Assistant.
+- Per display, set `default_site` (`"0"` = site 1, `"1"` = site 2): the site a newly flashed display starts on.
 - Add the display in **each** Home Assistant (ESPHome integration) with **that site's** port and key. For site 2, use Reconfigure (or add it) with port `6055` and the site 2 key.
 - Only the selected site's port is open. The other Home Assistant just sees "connection refused", shows the display as unavailable and keeps retrying, so it reconnects by itself when you switch back. Separate keys alone are not enough: on a wrong key Home Assistant stops retrying and asks for re-authentication.
 - Switching is only possible on the display itself, not from Home Assistant, so a Home Assistant cannot lock itself out.
+
+### ESPHome Builder (Home Assistant add-on)
+
+You can build straight from this repository. Create a small config per display, e.g. `solar-display.yaml`, next to your `secrets.yaml` (with the same keys as above):
+
+```yaml
+substitutions:
+  device_name: solar-display        # must match the display's current name
+  friendly_name: Solar Display
+  default_site: "0"                 # "1" for a display that belongs to site 2
+
+packages:
+  solar_display:
+    url: https://github.com/ckegels/Solar-Monitor
+    ref: main
+    files: [Firmware/solar-display.yaml]
+```
+
+Fonts, icons and the C++ helpers are taken from the repository. If you use more than one Builder, give them all the same `secrets.yaml`; a different key or OTA password there would change it on the display at the next install.
 
 ### Updating over Wi-Fi (OTA)
 

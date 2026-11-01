@@ -39,11 +39,11 @@ esphome:
     then:
     - lambda: |-
         // Site 2: choose its port before the API opens its socket (AFTER_WIFI = 200)
-        if (id(site_select).active_index().value_or(0) != 1) return;
+        if (id(site_index) != 1) return;
         uint8_t psk[32];
         const std::string key = "${api_key_site_2}";
         if (key.empty() || base64_decode(key, psk, sizeof(psk)) != sizeof(psk)) {
-          ESP_LOGE("site", "No valid api_encryption_key_site_2; using ${site_1_name}");
+          ESP_LOGE("site", "No valid api_encryption_key_site_2; using site 1");
           return;
         }
         id(site2_active) = true;
@@ -56,7 +56,7 @@ esphome:
         if (!id(site2_active)) return;
         base64_decode("${api_key_site_2}", site2_psk, sizeof(site2_psk));
         api::global_api_server->set_noise_psk(site2_psk);
-        ESP_LOGI("site", "Using ${site_2_name}: API port ${api_port_site_2} with its own key");
+        ESP_LOGI("site", "Using site 2: API port ${api_port_site_2} with its own key");
   - priority: -100
     then:
     - script.execute: boot_flow
@@ -77,8 +77,11 @@ substitutions:
   # the selected site's Home Assistant can connect; the other one just sees the port closed and keeps
   # retrying (a wrong key would make Home Assistant stop and ask for re-authentication).
   # Leave api_encryption_key_site_2 empty for one site.
+  # Initial site names (renamable on the display and in Home Assistant afterwards)
   site_1_name: !secret site_1_name
   site_2_name: !secret site_2_name
+  # Site a display starts on until someone picks another one: 0 = site 1, 1 = site 2
+  default_site: "0"
   api_key_site_2: !secret api_encryption_key_site_2
   api_port_site_2: "6055"
   ota_key_full: !secret ota_password
@@ -351,6 +354,10 @@ number:
                 return str_sprintf("%.0fm", v / 60.0f);
               }
 globals:
+- id: site_index            # selected Home Assistant site (0/1), saved in flash
+  type: int
+  restore_value: yes
+  initial_value: "${default_site}"
 - id: site2_active          # site 2 selected and its key is valid (set at boot)
   type: bool
   restore_value: false
@@ -1767,6 +1774,34 @@ sensor:
   id: hu_sp2_usage
   entity_id: sensor.hu_subpanel_2_usage
 
+text:
+  # Home Assistant site names (Settings → Home Assistant → ✎, or from Home Assistant)
+  - platform: template
+    id: site_1_name_text
+    name: "Site 1 Name"
+    icon: mdi:home-switch-outline
+    entity_category: config
+    mode: text
+    min_length: 1
+    max_length: 20
+    optimistic: true
+    restore_value: true
+    initial_value: "${site_1_name}"
+    on_value:
+      - script.execute: site_update_label
+  - platform: template
+    id: site_2_name_text
+    name: "Site 2 Name"
+    icon: mdi:home-switch-outline
+    entity_category: config
+    mode: text
+    min_length: 1
+    max_length: 20
+    optimistic: true
+    restore_value: true
+    initial_value: "${site_2_name}"
+    on_value:
+      - script.execute: site_update_label
 text_sensor:
 
 - platform: wifi_info
@@ -1954,6 +1989,46 @@ lvgl:
         align: center
         y: -38
         bg_opa: 0%
+    - button:
+        id: btn_boot_site_1
+        width: 220
+        height: 60
+        radius: 12
+        align: top_mid
+        x: -120
+        y: 20
+        bg_color: 0x2E3A46
+        border_width: 0
+        shadow_width: 0
+        on_click:
+          - lambda: if (id(site_index) != 0) id(site_switch).execute(0);
+        widgets:
+          - label:
+              id: lbl_boot_site_1
+              align: center
+              text: "${site_1_name}"
+              text_font: my_font
+              text_color: 0xFFFFFF
+    - button:
+        id: btn_boot_site_2
+        width: 220
+        height: 60
+        radius: 12
+        align: top_mid
+        x: 120
+        y: 20
+        bg_color: 0x2E3A46
+        border_width: 0
+        shadow_width: 0
+        on_click:
+          - lambda: if (id(site_index) != 1) id(site_switch).execute(1);
+        widgets:
+          - label:
+              id: lbl_boot_site_2
+              align: center
+              text: "${site_2_name}"
+              text_font: my_font
+              text_color: 0xFFFFFF
     - label:
         id: lbl_boot_status
         text: Starting…
@@ -5524,6 +5599,29 @@ lvgl:
                 text_font: my_font_small
                 text_color: 10395294
             - button:
+                id: btn_site_names
+                width: 64
+                height: 64
+                radius: 12
+                align: right_mid
+                x: -450
+                bg_color: 0x2E3A46
+                border_width: 0
+                shadow_width: 0
+                pad_all: 0
+                on_click:
+                - lvgl.widget.show: loading_overlay
+                - delay: 20ms
+                - lvgl.page.show: site_names_page
+                - delay: 250ms
+                - lvgl.widget.hide: loading_overlay
+                widgets:
+                - label:
+                    align: center
+                    text: "\U000F03EB"
+                    text_font: mdi_36
+                    text_color: 0xFFFFFF
+            - button:
                 id: btn_site_1
                 width: 200
                 height: 64
@@ -5534,9 +5632,10 @@ lvgl:
                 border_width: 0
                 shadow_width: 0
                 on_click:
-                - lambda: if (id(site_select).active_index().value_or(0) != 0) id(site_switch).execute(0);
+                - lambda: if (id(site_index) != 0) id(site_switch).execute(0);
                 widgets:
                 - label:
+                    id: lbl_site_btn_1
                     align: center
                     text: "${site_1_name}"
                     text_font: my_font
@@ -5552,9 +5651,10 @@ lvgl:
                 border_width: 0
                 shadow_width: 0
                 on_click:
-                - lambda: if (id(site_select).active_index().value_or(0) != 1) id(site_switch).execute(1);
+                - lambda: if (id(site_index) != 1) id(site_switch).execute(1);
                 widgets:
                 - label:
+                    id: lbl_site_btn_2
                     align: center
                     text: "${site_2_name}"
                     text_font: my_font
@@ -7814,6 +7914,157 @@ lvgl:
                 align: center
                 bg_opa: 0
                 scale: 0.5  
+  - id: site_names_page
+    bg_color: 0x141B21
+    on_load:
+      then:
+        - lambda: |-
+            lv_textarea_set_text(id(ta_site_1_name), id(site_1_name_text).state.c_str());
+            lv_textarea_set_text(id(ta_site_2_name), id(site_2_name_text).state.c_str());
+    widgets:
+      - label:
+          x: 51
+          y: 20
+          text: Site names
+          text_font: my_font_large
+          text_color: 16777215
+      - button:
+          id: btn_topright_site_names
+          width: 102
+          height: 70
+          align: top_right
+          x: -38
+          y: 15
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          shadow_color: 0x23282F
+          on_click:
+            - lvgl.widget.hide: kb_site_names
+            - lvgl.widget.hide: btn_site_kb_done
+            - lvgl.widget.show: loading_overlay
+            - delay: 20ms
+            - lvgl.page.show: settings_page
+            - delay: 250ms
+            - lvgl.widget.hide: loading_overlay
+          widgets:
+            - image:
+                src: img_menu_res
+                align: center
+                bg_opa: 0
+                scale: 0.5
+      - label:
+          x: 40
+          y: 100
+          text: "Site 1 name (port 6053):"
+          text_font: my_font_small
+          text_color: 0x9AA4AE
+      - textarea:
+          id: ta_site_1_name
+          x: 40
+          y: 130
+          width: 700
+          height: 44
+          text: ""
+          text_font: my_font
+          text_color: 0x000000
+          max_length: 20
+          one_line: true
+          scrollable: false
+          scrollbar_mode: 'off'
+          on_click:
+            - lvgl.keyboard.update:
+                id: kb_site_names
+                textarea: ta_site_1_name
+            - lvgl.widget.show: kb_site_names
+            - lvgl.widget.show: btn_site_kb_done
+      - label:
+          x: 40
+          y: 190
+          text: "Site 2 name (port ${api_port_site_2}):"
+          text_font: my_font_small
+          text_color: 0x9AA4AE
+      - textarea:
+          id: ta_site_2_name
+          x: 40
+          y: 220
+          width: 700
+          height: 44
+          text: ""
+          text_font: my_font
+          text_color: 0x000000
+          max_length: 20
+          one_line: true
+          scrollable: false
+          scrollbar_mode: 'off'
+          on_click:
+            - lvgl.keyboard.update:
+                id: kb_site_names
+                textarea: ta_site_2_name
+            - lvgl.widget.show: kb_site_names
+            - lvgl.widget.show: btn_site_kb_done
+      - button:
+          id: btn_site_names_save
+          x: 780
+          y: 125
+          width: 200
+          height: 50
+          radius: 14
+          bg_color: 0x1C2229
+          border_width: 0
+          on_click:
+            - lambda: |-
+                // Empty names are not allowed (min_length 1); keep the old one then
+                for (auto [ta, txt] : {std::make_pair(id(ta_site_1_name), id(site_1_name_text)),
+                                       std::make_pair(id(ta_site_2_name), id(site_2_name_text))}) {
+                  std::string v = lv_textarea_get_text(ta);
+                  if (!v.empty()) txt->make_call().set_value(v).perform();
+                }
+            - lvgl.widget.hide: kb_site_names
+            - lvgl.widget.hide: btn_site_kb_done
+            - lvgl.page.show: settings_page
+          widgets:
+            - label:
+                align: center
+                text: "Save"
+                text_font: my_font
+                text_color: 0xFFFFFF
+      - keyboard:
+          id: kb_site_names
+          width: 1024
+          height: 220
+          align: bottom_mid
+          y: 0
+          mode: TEXT_LOWER
+          floating: true
+          bg_color: 0x1C2229
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          hidden: true
+      - obj:
+          id: btn_site_kb_done
+          hidden: true
+          x: 20
+          y: -230
+          width: 120
+          height: 50
+          align: bottom_left
+          radius: 10
+          bg_color: 0x1C2229
+          border_width: 0
+          on_click:
+            - lvgl.widget.hide: kb_site_names
+            - lvgl.widget.hide: btn_site_kb_done
+          widgets:
+            - label:
+                align: center
+                text: "Done"
+                text_font: my_font
+                text_color: 0xFFFFFF
   - id: theme_page
     bg_color: 0x141B21
     widgets:
@@ -9859,18 +10110,6 @@ lvgl:
               bg_opa: 0
               scale: 0.5  
 select:
-  # Home Assistant site (Settings → Home Assistant). Internal: switching from Home Assistant
-  # would lock that Home Assistant out. Applied at boot (on_boot priority 150).
-  - platform: template
-    id: site_select
-    name: "Home Assistant Site"
-    internal: true
-    options:
-      - "${site_1_name}"
-      - "${site_2_name}"
-    initial_option: "${site_1_name}"
-    optimistic: true
-    restore_value: true
   # Colour theme (see includes/themes.h). Shown in Home Assistant, saved in flash,
   # and kept in sync with the tiles on the Themes page.
   - platform: template
@@ -9958,6 +10197,11 @@ font:
     - "\U000F0140" # mdi-chevron-down
     - "\U000F0156" # mdi-return
     - "\U000F0208" # mdi-eye
+- file: fonts/materialdesignicons-webfont.ttf
+  id: mdi_36
+  size: 36
+  glyphs:
+    - "\U000F03EB" # mdi-pencil
 color:
 - id: mdi_blue
   hex: 2196F3
@@ -10148,26 +10392,36 @@ script:
       if (id(lbl_site_sub) == nullptr) return;  // LVGL not set up yet
       bool two_sites = !std::string("${api_key_site_2}").empty();
       int cur = id(site2_active) ? 1 : 0;
+      const std::string *names[2] = {&id(site_1_name_text).state, &id(site_2_name_text).state};
       lv_label_set_text(id(lbl_site_sub), two_sites ? "Switching restarts the display" : "One site configured");
-      lv_obj_t *btns[2] = {id(btn_site_1), id(btn_site_2)};
-      for (int i = 0; i < 2; i++) {
-        // Active site in the theme's control colour; without a site 2 key only site 1 is shown
-        lv_obj_set_style_bg_color(btns[i], lv_color_hex(lvx_theme::color(i == cur ? 0x2196F3 : 0x2E3A46)), LV_PART_MAIN);
-        if (i == 1 && !two_sites) lv_obj_add_flag(btns[i], LV_OBJ_FLAG_HIDDEN);
+      lv_obj_t *btns[4] = {id(btn_site_1), id(btn_site_2), id(btn_boot_site_1), id(btn_boot_site_2)};
+      lv_obj_t *lbls[4] = {id(lbl_site_btn_1), id(lbl_site_btn_2), id(lbl_boot_site_1), id(lbl_boot_site_2)};
+      for (int i = 0; i < 4; i++) {
+        int site = i % 2;
+        lv_label_set_text(lbls[i], names[site]->c_str());
+        // Active site in the theme's control colour
+        lv_obj_set_style_bg_color(btns[i], lv_color_hex(lvx_theme::color(site == cur ? 0x2196F3 : 0x2E3A46)), LV_PART_MAIN);
       }
-      if (!two_sites) lv_obj_align(id(btn_site_1), LV_ALIGN_RIGHT_MID, -20, 0);
+      if (!two_sites) {
+        // One site: no selector on the boot screen, only the site 1 button in Settings
+        lv_obj_add_flag(id(btn_site_2), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(id(btn_boot_site_1), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(id(btn_boot_site_2), LV_OBJ_FLAG_HIDDEN);
+        lv_obj_align(id(btn_site_1), LV_ALIGN_RIGHT_MID, -20, 0);
+        lv_obj_align(id(btn_site_names), LV_ALIGN_RIGHT_MID, -235, 0);
+      }
 - id: site_switch
   mode: single
   parameters:
     index: int
   then:
   - lambda: |-
-      auto call = id(site_select).make_call();
-      call.set_index(index);
-      call.perform();
-      global_preferences->sync();  // save now, not after flash_write_interval
+      id(site_index) = index;
       lv_label_set_text(id(lbl_site_sub), "Restarting…");
+      lv_label_set_text(id(lbl_boot_status), "Restarting…");
+  # Let the globals component store the new value, then write it to flash
   - delay: 500ms
+  - lambda: global_preferences->sync();
   - lambda: App.safe_reboot();
 # Page change after an edge swipe; same spinner as the navigation buttons
 - id: edge_swipe_show_page
@@ -10202,7 +10456,7 @@ script:
   - lambda: |-
       bool site2 = id(site2_active);
       char b[96];
-      snprintf(b, sizeof(b), "Connecting to Home Assistant (%s)…", site2 ? "${site_2_name}" : "${site_1_name}");
+      snprintf(b, sizeof(b), "Connecting to Home Assistant (%s)…", (site2 ? id(site_2_name_text) : id(site_1_name_text))->state.c_str());
       lv_label_set_text(id(lbl_boot_status), b);
 - id: finish_boot
   mode: restart
