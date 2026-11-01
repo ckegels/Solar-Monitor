@@ -256,7 +256,7 @@ esphome run solar-display.yaml
 
 ### Two Home Assistant sites (optional)
 
-One display can be used with two Home Assistant installations, for example your own and a family member's. Choose the site with the two buttons at the top of the **boot screen**, or at the top of **Settings → Home Assistant**; the display then restarts. Rename the sites with the ✎ button there (on-screen keyboard), or with the *Site 1 Name* / *Site 2 Name* entities in Home Assistant.
+One display can be used with two Home Assistant installations, for example your own and a family member's. Choose the site with the two buttons at the top of the **boot screen**, or at the top of **Settings → Home Assistant**; the display then restarts. You can also switch from Home Assistant with the *Home Assistant Site* select. Rename the sites with the ✎ button there (on-screen keyboard), or with the *Site 1 Name* / *Site 2 Name* entities in Home Assistant. A new name appears in the select after the display's next restart.
 
 - **Every display uses the same two sites:** site 1 = `api_encryption_key` on the normal API port **6053**, site 2 = `api_encryption_key_site_2` on port **6055**. So `secrets.yaml` is the same for all your displays. `site_1_name` / `site_2_name` are only the initial names. Leave the site 2 key empty (`""`) if you only use one Home Assistant.
 - Per display, set `default_site` (`"0"` = site 1, `"1"` = site 2): the site a newly flashed display starts on.

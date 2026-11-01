@@ -19,6 +19,14 @@ esphome:
     # Apply the saved colour theme (the YAML itself is drawn in theme 0, Graphite)
     - lambda: lvx_theme::apply(id(theme_select).active_index().value_or(0), id(theme_grid));
     - script.execute: theme_mark_selected
+    - lambda: |-
+        // Site select shows the site names (strings must outlive the select)
+        static char n1[21], n2[21];
+        snprintf(n1, sizeof(n1), "%s", id(site_1_name_text).state.c_str());
+        snprintf(n2, sizeof(n2), "%s", id(site_2_name_text).state.c_str());
+        if (strcmp(n1, n2) == 0) snprintf(n2, sizeof(n2), "%.17s (2)", id(site_2_name_text).state.c_str());
+        id(site_ha_select).traits.set_options({n1, n2});
+        id(site_ha_select).publish_state((size_t) (id(site2_active) ? 1 : 0));
     - script.execute: site_update_label
     - delay: 30s
     - lambda: lvx_log_draw_buffer();
@@ -10110,6 +10118,23 @@ lvgl:
               bg_opa: 0
               scale: 0.5  
 select:
+  # Home Assistant site, also switchable from Home Assistant: the Home Assistant you switch away from
+  # just sees the port closed and keeps retrying. The options are replaced by the site names at boot
+  # (Home Assistant reads them when it connects, so a rename shows up there after the next restart).
+  - platform: template
+    id: site_ha_select
+    name: "Home Assistant Site"
+    icon: mdi:home-switch
+    entity_category: config
+    options:
+      - "Site 1"
+      - "Site 2"
+    optimistic: false
+    set_action:
+      - lambda: |-
+          auto idx = id(site_ha_select).index_of(x.c_str(), x.size());
+          if (!idx.has_value() || std::string("${api_key_site_2}").empty()) return;
+          if ((int) *idx != (id(site2_active) ? 1 : 0)) id(site_switch).execute((int) *idx);
   # Colour theme (see includes/themes.h). Shown in Home Assistant, saved in flash,
   # and kept in sync with the tiles on the Themes page.
   - platform: template
