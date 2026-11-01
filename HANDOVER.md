@@ -1,6 +1,6 @@
 # Handover – Solar Display
 
-State of the project and everything learned while moving it from ESPHome 2025.10.0 to current ESPHome (October 2026).
+State of the project and everything learned since moving it from ESPHome 2025.10.0 to current ESPHome (October–November 2026, now on ESPHome 2026.10.0).
 Read this before changing the firmware.
 
 ---
@@ -12,11 +12,12 @@ The firmware is ESPHome + LVGL; all data comes from Home Assistant.
 
 | Path | What it is |
 |---|---|
-| `Firmware/solar-display.yaml` | The display firmware, the same for every inverter brand (~10.8k lines) |
+| `Firmware/solar-display.yaml` | The display firmware, the same for every inverter brand (~13k lines) |
 | `Firmware/secrets.example.yaml` | Template for `Firmware/secrets.yaml` (API key, OTA password, Wi-Fi). The real `secrets.yaml` is git-ignored |
 | `Firmware/includes/ap_mode_helper.h` | Helper for the on-device "AP-only setup mode" |
 | `Firmware/includes/themes.h` | Colour themes: palette table and the runtime theme switch (see §3 Themes) |
 | `Firmware/includes/edge_swipe.h` | Edge-swipe gesture detection for switching pages (see §3 Edge swipe) |
+| `Firmware/includes/hu_sites.h` | `HuSiteSet`: the other site's Home Usage settings as one 161-byte flash block (see §3 Two Home Assistant sites) |
 | `Firmware/includes/lvgl_helpers.h` | Performance helpers: skip unchanged label texts, internal-RAM draw buffer, draw-buffer log line (see §3 Performance) |
 | `Firmware/fonts`, `Firmware/icons` | Fonts and PNG icons used by the firmware |
 | `Homeassistant/sigenergy/packages/` | HA packages (`energy.yaml`, `energydevices.yaml`) for Sigenergy |
@@ -45,7 +46,7 @@ That only worked with ESPHome versions from around that time. **PR #10071 was me
 
 ---
 
-## 3. Everything that was changed (October 2026)
+## 3. Everything that was changed (October–November 2026)
 
 ### Build / platform
 - Removed the `external_components` block (built-in now).
@@ -115,14 +116,14 @@ What each change does and why:
 - **`esp32: framework: advanced: compiler_optimization: PERF`** (-O2 instead of -Os). Setting `CONFIG_COMPILER_OPTIMIZATION_PERF` in `sdkconfig_options` does **not** work; ESPHome overrides it.
 - **`lvgl: theme: button: shadow_width: 0`**: LVGL's default theme gives every button a grey drop shadow; shadows are among the slowest things to draw.
 - **No per-frame byte swap**: with `data_pins: {red, green, blue}` the `mipi_rgb` driver always swaps the two pixel bytes in its pin mapping and reports big-endian, so ESPHome sets `LV_COLOR_16_SWAP 1` and LVGL 9 byte-swaps **every pixel of every flushed frame** in PSRAM. Fix: `byte_order: little_endian` and a flat 16-pin list in natural order `[14, 38, 18, 17, 10, 39, 0, 45, 48, 47, 21, 1, 2, 42, 41, 40]` (B3–B7, G2–G7, R3–R7). Images are unaffected (ESPHome stores RGB565 images little-endian by default). Colours confirmed correct on the display; a wrong pin order would show up as wrong colours, so check them after touching this list.
-- **Internal-RAM draw buffer** (`lvx_use_internal_draw_buffer(20)` in `on_boot`, priority −150): ESPHome always gives LVGL a buffer of at least 1/8 screen (here: full screen) in PSRAM, which is slow to draw into. The helper allocates a 20-line strip (40 KB) in internal RAM and calls `lv_display_set_buffers()`; LVGL then draws in strips. 30 s after boot it logs e.g. `Draw buffer: 40960 bytes in internal RAM; internal RAM free 51696 bytes (largest block 36864, lowest 37232)`. If there is not enough internal RAM it silently keeps the PSRAM buffer.
+- **Internal-RAM draw buffer** (`lvx_use_internal_draw_buffer(16)` in `on_boot`, priority −150; 20 lines until 2026-11-01, reduced for internal RAM, see §6): ESPHome always gives LVGL a buffer of at least 1/8 screen (here: full screen) in PSRAM, which is slow to draw into. The helper allocates a 16-line strip (32 KB) in internal RAM and calls `lv_display_set_buffers()`; LVGL then draws in strips. 30 s after boot it logs e.g. `Draw buffer: 40960 bytes in internal RAM; internal RAM free 51696 bytes (largest block 36864, lowest 37232)`. If there is not enough internal RAM it silently keeps the PSRAM buffer.
   Strip height trade-off (page loads in ms: settings / graph / info / menu / home):
 
   | Buffer | Scroll frame | Page loads | Internal RAM free |
   |---|---|---|---|
   | PSRAM full screen | 133 ms | 172 / 178 / 177 / 150–166 / 293 | ~80 KB |
-  | 16 lines | 87 ms | 110 / 192 / 195 / 122 / 250 | ~47 KB |
-  | **20 lines** | **81 ms** | **103 / 179 / 179 / 111 / 232** | **~38–52 KB** |
+  | **16 lines (current)** | **87 ms** | 110 / 192 / 195 / 122 / 250 | ~47 KB |
+  | 20 lines (until 2026-11-01) | 81 ms | 103 / 179 / 179 / 111 / 232 | ~38–52 KB |
   | 24 lines | 78 ms | 101 / 160 / 160 / 108 / 223 | ~30 KB, dipped to 22 KB with a 6 KB largest block: **too tight** |
 - **LVGL caches** (`esphome: build_flags:`): `-DLV_DRAW_SW_CIRCLE_CACHE_SIZE=16` (default 4; this UI uses ~10 corner radii, so rounded corners were recomputed for every strip) and `-DLV_DRAW_SW_SHADOW_CACHE_SIZE=32` (default 0; the home cards use 6 px shadows with 19 px radius). ESPHome removes `LV_*` names passed as build flags from its generated `lv_conf.h`, so this is the supported way to change LVGL options.
 - **750 ms `interval` cost 92 ms → ~2 ms** (it blocked the screen for 92 ms every 750 ms, on every page):
@@ -180,31 +181,64 @@ How it was measured (throwaway code, not in the repo, easy to recreate): a heade
 - Checked: each of the three packages defines all 244 display entities; the firmware compiles.
 - **Secrets:** `secrets.yaml` is untracked and ignored (root `.gitignore`); `Firmware/secrets.example.yaml` is the template, without the previously committed key. The example `energydevices.yaml` files now use neutral sensor names (they held the owner's device and place names).
 
-### Two Home Assistant sites (2026-10-31)
+### Two Home Assistant sites (2026-10-31, optional since 2026-11-01)
+- **Off by default.** `dual_site_mode` (global, restored: 1 = on, 0 = off, −1 = not decided yet) is set on **Settings → Two Home Assistant sites** (`dual_site_page`: explanation + on/off button) or with the *Two Home Assistant Sites* switch (`dual_site_set`). The first boot with this firmware turns it on only for a display that is already on site 2, so it keeps working. `dual_site` holds it for this boot and the UI. Off: no site card in Settings, no site buttons on the boot screen, and turning it off while on site 2 switches back to site 1 (restart). The owner's three displays have it on; the repo default stays off.
 - **Choosing a site:** the boot screen (two buttons at the top) and **Settings → Home Assistant** (top card) have a button per site. The choice is the global `site_index` (`restore_value`, initial `${default_site}`). Tapping the other site runs `site_switch`: it sets the index, waits 500 ms so the globals component stores it, calls `global_preferences->sync()`, then reboots.
 - **Switching from Home Assistant:** the template select `site_ha_select` ("Home Assistant Site"). At boot its options are set to the two names (static buffers, `traits.set_options`) and its state to the active site. `set_action` runs `site_switch`. Home Assistant reads the options when it connects, so a rename shows up there after the next restart. Safe because the Home Assistant you switch away from just sees a closed port and keeps retrying.
-- **Site names** are the template texts `site_1_name_text` / `site_2_name_text` ("Site 1 Name", "Site 2 Name" in HA, `restore_value`, initial from `secrets.yaml`). They're edited on `site_names_page` (✎ on the Settings card) with the same floating keyboard + Done button as the subpanel editor. `site_update_label` refreshes all four buttons (labels and active colour); it runs at boot, on a theme change and on a name change.
-- Site 2 uses **port 6055** (`api_port_site_2`) and `api_encryption_key_site_2`. `on_boot` priority 225 (before the API opens its socket at `AFTER_WIFI` = 200) calls `set_port()`. Priority 150 (after the API setup, before any client can connect) calls `set_noise_psk()` with the key decoded into a static buffer. `site2_active` holds the boot-time decision.
+- **Site names** are the template texts `site_1_name_text` / `site_2_name_text` ("Site 1 Name", "Site 2 Name" in HA, `restore_value`, initial from the `site_1_name` / `site_2_name` substitutions, default "Home" / "Site 2"; disabled by default in HA, like the *Home Assistant Site* select). They're edited on `site_names_page` (✎ on the Settings card) with the same floating keyboard + Done button as the subpanel editor. `site_update_label` refreshes all four buttons (labels and active colour); it runs at boot, on a theme change and on a name change.
+- Site 2 uses **port 6055** (`api_port_site_2`) and the key in the `api_key_site_2` substitution. Its repo default is `""` = the site 1 key (only the port differs). The owner's displays are built with `-s api_key_site_2 <api_encryption_key_site_2 from secrets.yaml>` (see §5); **without it a display on site 2 offers the site 1 key and the Sigenergy HA asks for re-authentication.** `on_boot` priority 225 (before the API opens its socket at `AFTER_WIFI` = 200) calls `set_port()`. Priority 150 (after the API setup, before any client can connect) calls `set_noise_psk()` with the key decoded into a static buffer. `site2_active` holds the boot-time decision.
 - **Why the port too:** on a wrong key, Home Assistant's ESPHome integration calls `_start_reauth_and_disconnect()`: it stops reconnecting and waits for re-authentication. On "connection refused" it keeps retrying with backoff (max 60 s, immediately on an mDNS announcement). A discovered port is only adopted if the probe with the entry's own key succeeds, so with different keys the inactive Home Assistant never overwrites its port.
-- **Key and port belong to the site, the same on every display:** site 1 = SolarEdge HA (key A, 6053), site 2 = Sigenergy HA (key B, 6055). `secrets.yaml` is identical everywhere. Per display only `device_name` and `default_site` (`.13` = 0, `.92` = 1, built with `-s default_site 1`). Each Home Assistant uses the same port and key for all displays.
-- **One site:** an empty `api_encryption_key_site_2` disables switching (only the site 1 button is shown). Use that for displays that belong to one Home Assistant only.
+- **Key and port belong to the site, the same on every display:** site 1 = SolarEdge HA (key A, 6053), site 2 = Sigenergy HA (key B, 6055). `secrets.yaml` is identical everywhere. Per display only `device_name`, `friendly_name` and `default_site` differ (see §5). Each Home Assistant uses the same port and key for all displays.
+- **Home Usage settings are per site** (names, icons, routing, subpanels on/off): the `hu_*` globals hold the active site's set, `hu_alt_set` (`std::array<uint8_t, 161>`, layout `HuSiteSet` in `includes/hu_sites.h`) the other one. `on_boot` priority 225 swaps them when `hu_set_site` differs from the site of this boot; on the first boot with this firmware both sites start with the current set. The *Home Usage …* entities follow the active site.
+- **Boot screen after a switch:** `site_switch` sets `site_switch_boot`; the next boot copies it to `boot_after_switch` and the boot screen says that Home Assistant can take up to a minute.
 - The boot screen shows the site. The API-key reveal on the info page shows the active site's key. With the wrong site and no connection, the boot screen's "Menu" button (after 30 s) still leads to Settings.
-- `esphome logs` from the PC uses `api_encryption_key`, so it only works while site 1 is active. OTA uses the OTA password and works on both.
+- `esphome logs` from the PC uses `api_encryption_key` on 6053, so it only works while site 1 is active. For a display on site 2 (.92) use `aioesphomeapi` on port 6055 with the site 2 key. OTA uses the OTA password and works on both.
 - **ESPHome Builder with the repo link works.** Tested: a config with `packages: {url: https://github.com/ckegels/Solar-Monitor, files: [Firmware/solar-display.yaml]}` plus local `substitutions` and `secrets.yaml` validates and compiles. `includes/`, fonts and icons are taken from the cloned repo. Each Builder needs the same `secrets.yaml`, or a flash from there changes the keys.
 
+### Screen sleep, wake and brightness (2026-11-01)
+- **Three modes** on the Display page's *Screen Sleep* card (cycles Always → Motion → Touch): *Motion* = HMMD presence sensor (GPIO6) + touch, *Touch* = no sensor fitted, the timeout runs from the last touch, *Always* = never sleeps. In HA: *Display Auto Sleep* (off = Always) and *Presence Sensor* (off = Touch). `presence_sensor_default` (substitution, `"ON"`) is the initial value for a display without the sensor.
+- `screen_last_activity_ms` (was `ld1125_last_presence_ms`) is updated by touch (press, release), presence and every wake; the 1 s sleep check compares it with *Display Timeout (s)*. Turning auto sleep on restarts the count.
+- **Touch mode pulls GPIO6 down** (`presence_pin_apply`, also run at boot priority −150 because the binary sensor's own pin setup would undo it): an open input floated and flickered *HMMD Presence* in HA.
+- The touch that wakes a dark screen calls `lv_indev_wait_release()`, so it does not also press the button under the finger.
+- **Screen = `backlight_switch`** (*Screen* in HA). The `lcd_backlight` light is `internal` now: its on/off did not match the screen. Every wake turns the light back on if it was off (otherwise the PWM sits at `min_power` 3 %).
+- **Brightness** is the template number *Screen Brightness* (`screen_brightness`, 5–100 %, restored): the Display page slider sets it through `make_call()`, and `on_boot` priority 500 applies it (was a fixed 80 %).
+- **Backlight watchdog** (30 s interval): the CH32V003 holds the backlight enable (EXIO2) and PWM, and ESPHome only writes them on a change, so after a chip reset the screen stayed dark/dim. The interval reads input register 0x04, restores EXIO2 if it differs from the switch, and rewrites the PWM level.
+- `display_timeout_seconds` changes on the display use `make_call()` (saved) instead of `publish_state()` (lost at restart).
+
+### Boot screen status (2026-11-01)
+- `boot_status_update` runs every second until Home Assistant connects and on Wi-Fi/API events: *Connecting to Wi-Fi…* / *Waiting for Home Assistant (site)… N s*, plus `lbl_boot_info` with SSID, IP and API port, the setup hotspot name when there is no Wi-Fi after 20 s, and a hint after 30 s (90 s after a site switch) to check that the display is added in that Home Assistant. Labels are only set on a change.
+- The boot page is `scrollable: false` + `scrollbar_mode: 'off'`: it scrolled sideways at boot (scrollbar at the bottom, everything ~10 cm to the left) once the site buttons were visible. The overflowing widget was not found; with scrolling off it cannot shift.
+
+### Network and diagnostics (2026-11-01)
+- `wifi: power_save_mode: none`: with the ESP32 default (light) the radio slept between beacons: ~90 % ping loss, slow commands, HA briefly "unavailable". The display is mains powered.
+- `debug:` component + `uptime`: *Uptime*, *Reset Reason*, *Free Internal RAM*, *Largest Free RAM Block*, *Lowest Free Internal RAM* in HA. "other watchdogs" as reset reason means a hang, not a requested restart ("Reboot request from …").
+- *Page Rotation* switch and *Page Rotation Interval (s)* number control the Menu → Interval rotation from HA.
+
+### Settings in Home Assistant (2026-11-01)
+- Every on-display setting except Wi-Fi has an HA entity, and every setting has `entity_category: config` (HA "Configuration" section); the raw HMMD pin and the debug/Wi-Fi sensors are diagnostic. The full list is in the README (*Settings in Home Assistant*).
+- New: *Rotate …* switches (one bit each of `interval_pages_mask`, via `interval_page_set`, which refuses to clear the last page), *Home Usage Subpanel 1/2* switches (`hu_sp*_enabled`), *Home Usage … Icon* and *… Panel* selects (`hu_*_icon_idx`, `hu_dev*_route`).
+- Two patterns: **switches** poll a lambda (template switches dedupe, so nothing is sent unless it changed). **Selects** do not dedupe, so they are not polled: `set_action` writes the global and runs `hu_publish_settings`, which publishes all Home Usage names/icons/routes from the globals. It also runs at boot (after the per-site swap) and after every on-display Home Usage edit (Save buttons, subpanel route buttons). A new on-display Home Usage control must call it too.
+- `prefs_sync` (1 s, then `global_preferences->sync()`) saves a change made from HA right away instead of after `flash_write_interval`.
+- Renamed: *homepage toggle* → *Original Home Page*, *Show Tips/Suggestions* → *Show Tips* (the `/` TODO). The restore state is keyed by name, so both start from their default once. Removed the never-updated *LD1125H Distance* sensor; *Screen Backlight* is internal (*Screen* + *Screen Brightness* replace it).
+- All lambda-driven template switches have `restore_mode: DISABLED` (see §6).
+- Tested on 192.168.10.13 over the API: categories, rotation page on/off incl. last-page guard, icon and panel selects set and restored, settings kept across restarts.
+
 ### README
-ESPHome version requirement, an upgrade guide for people with modified YAMLs, OTA update instructions, a warning to generate your own API key, and the single-inverter SolarEdge package.
+ESPHome version requirement, an upgrade guide for people with modified YAMLs, OTA update instructions, a warning to generate your own API key, the single-inverter SolarEdge package, two Home Assistant sites, screen sleep modes, and the list of HA entities (*Settings in Home Assistant*).
 
 ---
 
 ## 4. Test status
 
-| Firmware | Compiles on 2026.9.1 | Tested on hardware |
-|---|---|---|
-| SolarEdge | yes | **yes**: boots, Wi-Fi, HA API, PSRAM, touch, layout; glitching and scrollbar confirmed fixed by the owner; `mipi_rgb` + no touch reset: 10/10 software restarts with working touch; performance changes confirmed by the owner (stable picture, correct colours, no flicker, much smoother) |
-| Sigenergy | yes | **no**: identical to SolarEdge apart from HA entities, but nobody has run it on a display yet; the new Sigenergy package sensors are untested on a real Sigenergy system |
+One firmware, compiled on ESPHome 2026.10.0. All three of the owner's displays run the 2026-11-01 build:
 
-Build sizes: RAM ~56%, flash ~48% of the 8 MB app partition. Internal RAM free at runtime: ~50 KB (lowest seen ~37 KB).
+| Display | Site | Tested |
+|---|---|---|
+| 192.168.10.13 `solar-display` (test display, owner's network) | 1 | boots, Wi-Fi, HA API, touch, layout; earlier: glitching/scrollbar fixed, 10/10 restarts with working touch, performance confirmed. 2026-11-01: all HA settings set/restored over the API, settings survive restarts, site switch both ways, boot screen no longer shifts (confirmed by the owner) |
+| 192.168.2.164 `solar-display-dev7b` (SolarEdge site, VPN) | 1 | flashed, two sites on, survives a restart, name kept |
+| 192.168.1.92 `solar-display-bb59` (Sigenergy site, VPN) | 2 (6055) | flashed, two sites on (by itself), survives a restart, name kept |
+
+Build sizes: RAM ~58 %, flash ~49 % of the 8 MB app partition. Internal RAM at runtime with the 16-line draw buffer: ~50 KB free, lowest ~36 KB on .13 after boot (was 23 KB with 20 lines; .92 had dipped to 14.9 KB).
 
 ---
 
@@ -212,14 +246,22 @@ Build sizes: RAM ~56%, flash ~48% of the 8 MB app partition. Internal RAM free a
 
 ```bash
 python -m pip install --upgrade esphome        # 2026.7.0 or newer
-cd Solaredge                                    # or Sigenergy
+cd Firmware
 esphome compile solar-display.yaml
 esphome upload solar-display.yaml --device <display-ip>   # OTA over Wi-Fi
 esphome logs solar-display.yaml --device <display-ip>     # live logs
 ```
 
+- **The owner's displays** (ESPHome venv at `~/esphome-venv`): always pass the site 2 key, plus the per-display names. Compile first; `upload` does not build.
+  ```bash
+  K2=$(python -I -c "import yaml;print(yaml.safe_load(open('secrets.yaml'))['api_encryption_key_site_2'])")
+  # .13:  esphome -s api_key_site_2 "$K2" compile|upload solar-display.yaml --device 192.168.10.13
+  # .164: esphome -s device_name solar-display-dev7b -s friendly_name solar-display-dev7b -s default_site 0 -s api_key_site_2 "$K2" …  --device 192.168.2.164
+  # .92:  esphome -s device_name solar-display-bb59 -s friendly_name "Solar Display BB59" -s default_site 1 -s api_key_site_2 "$K2" …  --device 192.168.1.92
+  ```
+  Test on .13 first; the other two are behind a site-to-site VPN (~100 ms) in sealed cases.
 - First build downloads ESP-IDF (~minutes); later builds are fast. A 16-core PC is fine; a Raspberry Pi is not.
-- OTA upload of ~3.7 MB takes ~17 s.
+- OTA upload of ~3.9 MB takes ~20 s (longer over the VPN).
 - `esphome logs` connects through the API, so it doubles as a test that `api_encryption_key` in `secrets.yaml` matches the device. Run it **before** uploading.
 - Safe mode is active (comes with OTA): after 10 failed boots the device starts a minimal Wi-Fi + OTA system for 5 minutes. A boot counts as good after 60 s.
 - Wi-Fi credentials entered on the device are kept across OTA updates; there's also a fallback hotspot.
@@ -231,12 +273,14 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 
 - **`secrets.yaml` is never committed.** Copy `Firmware/secrets.example.yaml` to `Firmware/secrets.yaml`; the root `.gitignore` ignores every `secrets.yaml`. Until 2026-10-31 the secrets files were tracked, and the API key committed then (2026-02-07) is still in the public git history. Devices that use that key should get a new one; changing it on an existing device means updating the key in Home Assistant too.
 - **`ota_password` vs encryption:** ESPHome 2026 warns that an OTA password wastes flash/RAM and recommends `ota: encryption:` instead. The plaintext OTA fallback is removed in **2027.3.0**, so switch before then (and update every display once with the new config).
-- **Internal RAM is the scarce resource**, not PSRAM. The draw buffer takes 40 KB of it; keep ~35 KB free for Wi-Fi, the API and OTA. Don't raise the strip height above 20 lines without checking the `Draw buffer:` log line.
+- **Internal RAM is the scarce resource**, not PSRAM. The draw buffer takes 32 KB of it (16 lines); keep ~25–35 KB free for Wi-Fi, the API and OTA. On 2026-11-01 it went from 20 to 16 lines: with 20, the *Lowest Free Internal RAM* sensor read 23 KB on .13 and 14.9 KB on .92. Check that sensor before raising it again.
 - `lv_label_set_text()` in the YAML lambdas is a macro from `lvgl_helpers.h` that skips identical text (see §3 Performance).
 - **The firmware may only read entities from `display-entities.txt`.** Reading an integration entity directly (e.g. `solaredge_…`, `sigen_plant_…`) ties the firmware to one brand again. Wrap it in a package sensor with a shared name instead.
 - **New UI colours:** write them in theme 0's colours. If a lambda sets a UI (role) colour at runtime, wrap it in `lvx_theme::color(...)`; data/warning colours stay plain `lv_color_hex(...)`.
 - **Adding a main page:** add it to the `pages[]` list in the touchscreen's `on_update` (edge swipe) as well as to the menu.
 - **Moving a node icon on the Power Flow page** (`node_solar`, `node_home`, `node_battery`, `node_grid`): also update the node centres at the top of the `solar_info_page` animation lambda (image `x`/`y` + 50), or the dots no longer line up with the icons.
+- **Template switches that mirror a setting** (`lambda:` + `turn_on_action`/`turn_off_action`) need `restore_mode: DISABLED`. Without it the switch runs its `turn_off_action` once at every boot: that silently turned *Two Home Assistant Sites* off on every restart, and cleared the rotation pages and Home Usage subpanels (fixed 2026-11-01).
+- The boot page is `scrollable: false`: it scrolled sideways at boot (scrollbar at the bottom, everything shifted left); the overflowing widget was not found.
 - Keep `loading_overlay` small and transparent. Making it full-screen again (e.g. to dim the page) brings back two extra full-screen redraws on every page change.
 
 ---
@@ -246,9 +290,13 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 | Item | Deadline / reason |
 |---|---|
 | Move OTA from `password` to `encryption` | plaintext OTA fallback removed in **2027.3.0** |
-| "Show Tips/Suggestions" switch name: remove the `/` | becomes an error in **2027.7.0** |
 | Confirm touch also starts reliably after a real power cut (only software restarts were tested) | the GT911 fix relies on the chip coming up by itself at power-on |
-| Run the HA migrations (`Homeassistant/migration/HANDOVER-*.md`), then flash the one firmware to every display | displays on the old firmware read the old names |
+| Confirm the HA migrations (`Homeassistant/migration/HANDOVER-*.md`) ran on both Home Assistants | all displays now run the one firmware and read the new names |
+| .13: choose the rotation pages again (only *Graph* is left; the old switch bug cleared the rest) | owner will do it later |
+| .164: site names are *SolarEdge* / *Sigenergy* (from `secrets.yaml`), .13 uses *EW14* / *BB59*; align if wanted | cosmetic |
+| Check *Lowest Free Internal RAM* on .92 and .164 after a few hours | first runtime with the 16-line draw buffer there |
+| Find what made the boot page wider than the screen | scrolling is off, so it no longer shows |
+| Rotation page selection (`interval_pages_mask`) and the theme are not per site | only Home Usage is |
 | Optional: shorten the 250 ms spinner delay in the navigation handlers (e.g. to 100 ms) | it is now most of a page change; the owner kept 250 ms for now |
 | Graph page: replace the 24 `lv_obj_align_to()` calls for the value labels with computed positions | a graph refresh still takes ~85 ms every 750 ms while the graph page is open |
 | Remove `ch422g` leftovers, `old_icon_sun_100.png` | cleanup |
@@ -256,18 +304,18 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 
 ---
 
-## 8. Where we left off (2026-10-07)
+## 8. Where we left off (2026-11-01)
 
 **Repo state**
-- Everything is committed and pushed to GitHub `main` (setting-row centring + brightness slider, colour themes, firmware parity + energy packages, this handover).
-- The owner's display (SolarEdge firmware) runs the latest build. The owner still has to copy the updated `Homeassistant/solaredge/2 inverters/packages/energy.yaml` into Home Assistant; until then the display's lifetime value shows "--" (it now reads `sensor.solar_lifetime_energy`).
+- Committed and pushed to GitHub `main`: optional two-site mode, per-site Home Usage settings, screen sleep modes, boot status screen, all settings in HA, the switch restore fix, the 16-line draw buffer, docs.
+- All three displays run that build with two sites on (see §4).
 
-**Agreed roadmap** (discussed, not started)
-1. **Done 2026-10-31 (see §3 One firmware); the original plan follows.** **One firmware for all inverter brands.** Define a fixed list of Home Assistant sensor names the display reads (a "display contract"); every brand package provides exactly those names (Sigenergy gets extra sensors with the standard names next to its existing ones, so nothing breaks). Then there is a single `solar-display.yaml`, and a new brand only needs a new HA package. Do **not** select the brand on the device: ESPHome compiles HA entity names into the firmware, so that would mean subscribing to every brand's ~250 sensors and using scarce internal RAM. Device-side setup options (e.g. "Battery installed", optional brand name/logo) can be selects/switches like Theme.
-2. **SolarEdge 1 or 2 inverters in one package:** treat I2 as optional (missing entities already read as 0 with `float(0)`; fix the `is_state(..., 'unknown')` guards), keep the "Panel To House" clamps, and detect grid charging from I1's DC power going negative instead of "AC output <= 0" (more reliable with one hybrid inverter).
-3. **Systems without a battery:** package treats a missing B1 as 0 (today "Solar Panel Production W" is forced to 0 when B1 is unknown); firmware gets a "Battery installed" setting that hides the battery card on the home page (the flex row re-centres the other three), the battery node/flows on the info page, the battery page and its menu button, the battery graph datasets, the "Remaining Battery" line and the battery-related tips. Testable on the owner's own display by switching the setting off.
+**Done from the 2026-10-07 roadmap:** 1. one firmware for all brands (2026-10-31, §3 One firmware).
+
+**Still open from that roadmap** (discussed, not started)
+- **SolarEdge 1 or 2 inverters in one package:** treat I2 as optional (missing entities already read as 0 with `float(0)`; fix the `is_state(..., 'unknown')` guards), keep the "Panel To House" clamps, and detect grid charging from I1's DC power going negative instead of "AC output <= 0" (more reliable with one hybrid inverter).
+- **Systems without a battery:** package treats a missing B1 as 0 (today "Solar Panel Production W" is forced to 0 when B1 is unknown); firmware gets a "Battery installed" setting that hides the battery card on the home page (the flex row re-centres the other three), the battery node/flows on the info page, the battery page and its menu button, the battery graph datasets, the "Remaining Battery" line and the battery-related tips. Testable on the owner's own display by switching the setting off.
 
 **Open questions for the owner**
 - Which other inverter brands should the display contract cover?
 - Private WiFi network names were removed from the files but are still in old git history; leave as is (low risk) or rewrite history (needs a force-push)?
-

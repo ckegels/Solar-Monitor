@@ -256,13 +256,39 @@ esphome run solar-display.yaml
 
 ### Two Home Assistant sites (optional)
 
-One display can be used with two Home Assistant installations, for example your own and a family member's. Choose the site with the two buttons at the top of the **boot screen**, or at the top of **Settings → Home Assistant**; the display then restarts. You can also switch from Home Assistant with the *Home Assistant Site* select. Rename the sites with the ✎ button there (on-screen keyboard), or with the *Site 1 Name* / *Site 2 Name* entities in Home Assistant. A new name appears in the select after the display's next restart.
+One display can be used with two Home Assistant installations, for example your own and a family member's. It is off by default: turn it on in **Settings → Two Home Assistant sites** (or with the *Two Home Assistant Sites* switch). Then choose the site with the two buttons at the top of the **boot screen**, or at the top of **Settings → Home Assistant**; the display then restarts. You can also switch from Home Assistant with the *Home Assistant Site* select. Rename the sites with the ✎ button there (on-screen keyboard), or with the *Site 1 Name* / *Site 2 Name* entities in Home Assistant. A new name appears in the select after the display's next restart.
 
-- **Every display uses the same two sites:** site 1 = `api_encryption_key` on the normal API port **6053**, site 2 = `api_encryption_key_site_2` on port **6055**. So `secrets.yaml` is the same for all your displays. `site_1_name` / `site_2_name` are only the initial names. Leave the site 2 key empty (`""`) if you only use one Home Assistant.
+- **Every display uses the same two sites:** site 1 = `api_encryption_key` on the normal API port **6053**, site 2 = `api_encryption_key_site_2` on port **6055**. So `secrets.yaml` is the same for all your displays. `site_1_name` / `site_2_name` are only the initial names. With `api_key_site_2: ""` (the default) site 2 uses the site 1 key; only the port differs.
 - Per display, set `default_site` (`"0"` = site 1, `"1"` = site 2): the site a newly flashed display starts on.
+- The **Home Usage** settings (device and subpanel names, icons, routing) are kept per site: after a switch the display shows the names of that site's devices. The *Home Usage …* entities follow the active site, so each Home Assistant sees and edits its own. With one site none of this is visible.
+- After a switch the boot screen says so and shows what it is waiting for: Home Assistant can take up to a minute to reconnect.
 - Add the display in **each** Home Assistant (ESPHome integration) with **that site's** port and key. For site 2, use Reconfigure (or add it) with port `6055` and the site 2 key.
 - Only the selected site's port is open. The other Home Assistant just sees "connection refused", shows the display as unavailable and keeps retrying, so it reconnects by itself when you switch back. Separate keys alone are not enough: on a wrong key Home Assistant stops retrying and asks for re-authentication.
-- Switching is only possible on the display itself, not from Home Assistant, so a Home Assistant cannot lock itself out.
+- After switching from Home Assistant, that Home Assistant can no longer reach the display; switch back on the display or from the other site's Home Assistant.
+
+### Screen sleep
+
+The **Screen Sleep** card on the Display page cycles through three modes:
+
+- **Motion**: the screen stays on while the presence sensor (HMMD on GPIO6) sees someone, and wakes when someone walks past.
+- **Touch**: for a display without the presence sensor. The sensor input is ignored; the screen sleeps a set time after the last touch.
+- **Always**: the screen never sleeps.
+
+The timeout (**Screen Timeout**) counts from the last presence or touch. A touch on a dark screen only wakes it; it does not press the button under your finger. In Home Assistant: *Display Auto Sleep* (off = Always), *Presence Sensor* (off = Touch) and *Display Timeout (s)*; turning the *Screen* switch on also wakes the screen. Set `presence_sensor_default: "OFF"` for a display without the sensor, so it starts in Touch mode.
+
+### Settings in Home Assistant
+
+Everything you can set on the display, apart from Wi-Fi, can also be set on the display's device page in Home Assistant, and a change on either side shows up on the other:
+
+| Section | Entities |
+|---|---|
+| Controls | *Screen* (on/off, wakes it), *Screen Brightness*, *Page Rotation* (start/stop), *Presence* |
+| Configuration | *Theme*, *Display Auto Sleep*, *Presence Sensor*, *Display Timeout (s)*, *Show Tips*, *Show Graph Values*, *Show Daily Totals*, *Original Home Page*, *Simulate Backup Mode*, *Page Rotation Interval (s)*, *Rotate …* (one per page), *Home Usage Device 1–5 Name / Icon / Panel*, *Home Usage Subpanel 1–2* (shown or not) *Name / Icon*, *Two Home Assistant Sites*, *Restart Device*. Hidden until you enable them: *Home Assistant Site*, *Site 1/2 Name* |
+| Diagnostic | *Uptime*, *Reset Reason*, *Free Internal RAM*, *Largest Free RAM Block*, *Lowest Free Internal RAM*, *WiFi Signal*, *WiFi IP*, *WiFi SSID*, *HMMD Presence* (the raw sensor pin) |
+
+*Uptime*, *Reset Reason* and the RAM sensors show whether a display restarted unexpectedly or ran low on memory.
+
+Renamed in this version (Home Assistant creates new entity ids, update automations that used them): *homepage toggle* → *Original Home Page*, *Show Tips/Suggestions* → *Show Tips*. Both start from their default once after the update. *Screen Backlight* and *LD1125H Distance* are gone; use *Screen* and *Screen Brightness*.
 
 ### ESPHome Builder (Home Assistant add-on)
 
@@ -273,6 +299,7 @@ substitutions:
   device_name: solar-display        # must match the display's current name
   friendly_name: Solar Display
   default_site: "0"                 # "1" for a display that belongs to site 2
+  presence_sensor_default: "ON"     # "OFF" for a display without the presence sensor
 
 packages:
   solar_display:

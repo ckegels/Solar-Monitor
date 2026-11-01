@@ -10,12 +10,14 @@ esphome:
     - includes/lvgl_helpers.h
     - includes/themes.h
     - includes/edge_swipe.h
+    - includes/hu_sites.h
   on_boot:
   - priority: -150
     then:
-    # Render in 20-line strips in fast internal RAM instead of a full-screen
+    # Render in 16-line strips in fast internal RAM instead of a full-screen
     # buffer in PSRAM: scrolling ~40% faster, page loads as fast or faster.
-    - lambda: lvx_use_internal_draw_buffer(20);
+    # 16 lines (32 KB), not 20: 20 left only 15–23 KB internal RAM free (see HANDOVER)
+    - lambda: lvx_use_internal_draw_buffer(16);
     # Apply the saved colour theme (the YAML itself is drawn in theme 0, Graphite)
     - lambda: lvx_theme::apply(id(theme_select).active_index().value_or(0), id(theme_grid));
     - script.execute: theme_mark_selected
@@ -28,6 +30,10 @@ esphome:
         id(site_ha_select).traits.set_options({n1, n2});
         id(site_ha_select).publish_state((size_t) (id(site2_active) ? 1 : 0));
     - script.execute: site_update_label
+    # After setup: the HMMD binary sensor's pin setup would otherwise undo it
+    - script.execute: presence_pin_apply
+    # Also saves the Home Usage set swap of priority 225
+    - script.execute: hu_publish_settings
     - delay: 30s
     - lambda: lvx_log_draw_buffer();
   - priority: 500
@@ -36,7 +42,9 @@ esphome:
     - switch.turn_on: backlight_switch
     - light.turn_on:
         id: lcd_backlight
-        brightness: 80%
+        brightness: !lambda |-
+          const float b = id(screen_brightness).state;
+          return std::isnan(b) ? 0.8f : b / 100.0f;
   - priority: 600
     then:
       - lambda: |-
@@ -46,23 +54,62 @@ esphome:
   - priority: 225
     then:
     - lambda: |-
+        // Two Home Assistant sites (optional, Settings): first start with this firmware turns it on
+        // for a display that is already on site 2, so it keeps working
+        if (id(dual_site_mode) < 0) id(dual_site_mode) = (id(site_index) == 1) ? 1 : 0;
+        id(dual_site) = id(dual_site_mode) == 1;
         // Site 2: choose its port before the API opens its socket (AFTER_WIFI = 200)
-        if (id(site_index) != 1) return;
-        uint8_t psk[32];
-        const std::string key = "${api_key_site_2}";
-        if (key.empty() || base64_decode(key, psk, sizeof(psk)) != sizeof(psk)) {
-          ESP_LOGE("site", "No valid api_encryption_key_site_2; using site 1");
-          return;
-        }
+        if (!id(dual_site) || id(site_index) != 1) return;
         id(site2_active) = true;
         api::global_api_server->set_port(${api_port_site_2});
+    - lambda: |-
+        // Home Usage names, icons, routing and subpanels are per site: the hu_* globals hold the
+        // active site's set, hu_alt_set the other one. Swap them when the site has changed.
+        // With one site this never happens.
+        std::string *names[7] = {&id(hu_dev1_name_str), &id(hu_dev2_name_str), &id(hu_dev3_name_str),
+                                 &id(hu_dev4_name_str), &id(hu_dev5_name_str), &id(hu_sp1_name_str), &id(hu_sp2_name_str)};
+        int *icons[7] = {&id(hu_dev1_icon_idx), &id(hu_dev2_icon_idx), &id(hu_dev3_icon_idx),
+                         &id(hu_dev4_icon_idx), &id(hu_dev5_icon_idx), &id(hu_sp1_icon_idx), &id(hu_sp2_icon_idx)};
+        int *routes[5] = {&id(hu_dev1_route), &id(hu_dev2_route), &id(hu_dev3_route), &id(hu_dev4_route), &id(hu_dev5_route)};
+        bool *sp_en[2] = {&id(hu_sp1_enabled), &id(hu_sp2_enabled)};
+
+        HuSiteSet cur{};
+        for (int i = 0; i < 7; i++) {
+          snprintf(cur.name[i], sizeof(cur.name[i]), "%s", names[i]->c_str());
+          cur.icon[i] = *icons[i];
+        }
+        for (int i = 0; i < 5; i++) cur.route[i] = *routes[i];
+        for (int i = 0; i < 2; i++) cur.sp_enabled[i] = *sp_en[i];
+
+        const int site = id(site2_active) ? 1 : 0;
+        if (id(hu_set_site) < 0) {
+          hu_set_store(id(hu_alt_set), cur);   // first start with this firmware: both sites begin with the current set
+        } else if (id(hu_set_site) != site) {
+          const HuSiteSet other = hu_set_load(id(hu_alt_set));
+          hu_set_store(id(hu_alt_set), cur);
+          for (int i = 0; i < 7; i++) {
+            *names[i] = other.name[i];
+            *icons[i] = other.icon[i];
+          }
+          for (int i = 0; i < 5; i++) *routes[i] = other.route[i];
+          for (int i = 0; i < 2; i++) *sp_en[i] = other.sp_enabled[i];
+          ESP_LOGI("site", "Home Usage settings of site %d loaded", site + 1);
+        }
+        id(hu_set_site) = site;
+
+        // Started by a site switch: the boot screen explains the wait
+        id(boot_after_switch) = id(site_switch_boot);
+        id(site_switch_boot) = false;
   - priority: 150
     then:
     - lambda: |-
-        // Site 2 also uses its own API key (applied after the API setup)
+        // Site 2 with its own API key (applied after the API setup); without one it keeps the site 1 key
         static uint8_t site2_psk[32];  // set_noise_psk keeps the pointer
-        if (!id(site2_active)) return;
-        base64_decode("${api_key_site_2}", site2_psk, sizeof(site2_psk));
+        if (!id(site2_active) || std::string("${api_key_site_2}").empty()) return;
+        if (base64_decode("${api_key_site_2}", site2_psk, sizeof(site2_psk)) != sizeof(site2_psk)) {
+          ESP_LOGE("site", "api_key_site_2 is not a valid key; site 2 uses the site 1 key");
+          return;
+        }
         api::global_api_server->set_noise_psk(site2_psk);
         ESP_LOGI("site", "Using site 2: API port ${api_port_site_2} with its own key");
   - priority: -100
@@ -81,21 +128,29 @@ substitutions:
   wifi_preset_2_label: !secret wifi_ssid_2
   wifi_preset_3_label: !secret wifi_ssid_3
   api_key_full: !secret api_encryption_key
-  # Home Assistant sites (Settings → Home Assistant). Site 2 has its own API key and port, so only
-  # the selected site's Home Assistant can connect; the other one just sees the port closed and keeps
-  # retrying (a wrong key would make Home Assistant stop and ask for re-authentication).
-  # Leave api_encryption_key_site_2 empty for one site.
+  # Optional: two Home Assistant sites (Settings → Two Home Assistant sites, off by default).
+  # Site 2 uses its own API port, so only the selected site's Home Assistant can connect; the other one
+  # just sees the port closed and keeps retrying.
   # Initial site names (renamable on the display and in Home Assistant afterwards)
-  site_1_name: !secret site_1_name
-  site_2_name: !secret site_2_name
-  # Site a display starts on until someone picks another one: 0 = site 1, 1 = site 2
+  site_1_name: "Home"
+  site_2_name: "Site 2"
+  # Site a display starts on until someone picks another one: 0 = site 1, 1 = site 2 (turns the
+  # feature on)
   default_site: "0"
-  api_key_site_2: !secret api_encryption_key_site_2
+  # Site 2's API key. Empty = the same key as site 1 (api_encryption_key). For a separate key:
+  #   api_key_site_2: !secret api_encryption_key_site_2
+  api_key_site_2: ""
   api_port_site_2: "6055"
   ota_key_full: !secret ota_password
+  # Presence sensor (HMMD on GPIO6) fitted: ON. Without one, OFF: the screen then sleeps after the
+  # last touch. Only the initial value; switchable on the Display page and in Home Assistant.
+  presence_sensor_default: "ON"
 
 preferences:
   flash_write_interval: 5min
+
+debug:
+  update_interval: 60s
 
 esp32:
   board: esp32-s3-devkitc-1
@@ -131,7 +186,7 @@ api:
   on_client_connected:
     - script.execute: finish_boot
   on_client_disconnected:
-    - lambda: "if (!id(api_ready)) {\n  lv_label_set_text(id(lbl_boot_status), \"Disconnected. Retrying…\");\n}"
+    - script.execute: boot_status_update
 ota:
   - platform: esphome
     password: !secret ota_password
@@ -144,6 +199,9 @@ wifi:
     - ssid: !secret wifi_ssid_3
       password: !secret wifi_password_3
   reboot_timeout: 0s
+  # Mains powered: keep the radio awake. With the ESP32 default (light) it sleeps between beacons,
+  # which delayed or dropped packets (90% ping loss, slow commands, HA briefly "unavailable").
+  power_save_mode: none
   ap:
     ssid: ${fallback_ap_ssid}
     ap_timeout: 15s
@@ -155,14 +213,13 @@ wifi:
           esp_wifi_disconnect();
           esp_wifi_set_mode(WIFI_MODE_AP);
         }
-    - lambda: if (!id(api_ready)) lv_label_set_text(id(lbl_boot_status), "Wi-Fi OK. Waiting
-        for API…");
+    - script.execute: boot_status_update
     - lambda: |-
         lv_label_set_text(id(lbl_wifi_state), "Connected");
         lv_label_set_text(id(lbl_addwifi_state), "Connected");
   on_disconnect:
     then:
-    - lambda: if (!id(api_ready)) lv_label_set_text(id(lbl_boot_status), "Wi-Fi lost. Reconnecting…");
+    - script.execute: boot_status_update
     - lambda: |-
         if (id(force_ap_mode)) {
           lv_label_set_text(id(lbl_wifi_state), "AP");
@@ -205,6 +262,9 @@ light:
   - platform: monochromatic
     id: lcd_backlight
     name: "Screen Backlight"
+    # Not in HA: its on/off did not match the screen (sleep uses backlight_switch). HA gets the
+    # "Screen" switch and the "Screen Brightness" number instead.
+    internal: true
     output: pwm_backlight_output
     restore_mode: ALWAYS_ON
     default_transition_length: 0ms
@@ -230,29 +290,216 @@ switch:
 - platform: template
   id: display_auto_sleep_toggle
   name: Display Auto Sleep
+  icon: mdi:sleep
+  entity_category: config
   optimistic: true
   restore_mode: RESTORE_DEFAULT_ON
+  on_turn_on:
+    # Count the timeout from now, not from the last activity (which may be long ago)
+    - lambda: |-
+        id(screen_last_activity_ms) = millis();
+        global_preferences->sync();
+  on_turn_off:
+    # "Always on": the screen may be asleep right now
+    - switch.turn_on: backlight_switch
+    - lambda: global_preferences->sync();
+# Presence sensor fitted (Motion mode). Off = Touch mode: the timeout runs from the last touch.
+- platform: template
+  id: presence_sensor_toggle
+  name: Presence Sensor
+  icon: mdi:motion-sensor
+  entity_category: config
+  optimistic: true
+  restore_mode: RESTORE_DEFAULT_${presence_sensor_default}
+  on_turn_on:
+    - script.execute: presence_pin_apply
+    - lambda: global_preferences->sync();
+  on_turn_off:
+    - script.execute: presence_pin_apply
+    - lambda: |-
+        id(screen_last_activity_ms) = millis();
+        global_preferences->sync();
+# Page rotation (Menu → Interval): on = start it (after the short countdown), off = stop and go home
+- platform: template
+  id: page_rotation_switch
+  name: Page Rotation
+  icon: mdi:page-next-outline
+  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
+  lambda: return id(interval_mode_active);
+  turn_on_action:
+    - if:
+        condition:
+          lambda: return id(api_ready) && !id(interval_mode_active);
+        then:
+          - lvgl.page.show: interval_page
+  turn_off_action:
+    - lambda: |-
+        id(interval_mode_active) = false;
+        id(interval_running) = false;
+    - if:
+        condition:
+          switch.is_on: change_homepage
+        then:
+          - lvgl.page.show: home_page
+        else:
+          - lvgl.page.show: home_page_2
+# Two Home Assistant sites (optional): same as Settings → Two Home Assistant sites
+- platform: template
+  id: dual_site_ha_switch
+  name: Two Home Assistant Sites
+  icon: mdi:home-switch
+  entity_category: config
+  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
+  lambda: return id(dual_site);
+  turn_on_action:
+    - lambda: id(dual_site_set).execute(true);
+  turn_off_action:
+    - lambda: id(dual_site_set).execute(false);
+# Pages in the rotation (Menu → Interval tiles; bit numbers as in interval_pages_mask)
+- platform: template
+  name: Rotate Home
+  icon: mdi:page-next-outline
+  entity_category: config
+  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
+  lambda: return (id(interval_pages_mask) >> 1) & 1;
+  turn_on_action:
+    - lambda: id(interval_page_set).execute(1, true);
+  turn_off_action:
+    - lambda: id(interval_page_set).execute(1, false);
+- platform: template
+  name: Rotate Original Home
+  icon: mdi:page-next-outline
+  entity_category: config
+  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
+  lambda: return (id(interval_pages_mask) >> 0) & 1;
+  turn_on_action:
+    - lambda: id(interval_page_set).execute(0, true);
+  turn_off_action:
+    - lambda: id(interval_page_set).execute(0, false);
+- platform: template
+  name: Rotate Power Flow
+  icon: mdi:page-next-outline
+  entity_category: config
+  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
+  lambda: return (id(interval_pages_mask) >> 3) & 1;
+  turn_on_action:
+    - lambda: id(interval_page_set).execute(3, true);
+  turn_off_action:
+    - lambda: id(interval_page_set).execute(3, false);
+- platform: template
+  name: Rotate Solar
+  icon: mdi:page-next-outline
+  entity_category: config
+  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
+  lambda: return (id(interval_pages_mask) >> 2) & 1;
+  turn_on_action:
+    - lambda: id(interval_page_set).execute(2, true);
+  turn_off_action:
+    - lambda: id(interval_page_set).execute(2, false);
+- platform: template
+  name: Rotate Battery
+  icon: mdi:page-next-outline
+  entity_category: config
+  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
+  lambda: return (id(interval_pages_mask) >> 4) & 1;
+  turn_on_action:
+    - lambda: id(interval_page_set).execute(4, true);
+  turn_off_action:
+    - lambda: id(interval_page_set).execute(4, false);
+- platform: template
+  name: Rotate Grid
+  icon: mdi:page-next-outline
+  entity_category: config
+  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
+  lambda: return (id(interval_pages_mask) >> 5) & 1;
+  turn_on_action:
+    - lambda: id(interval_page_set).execute(5, true);
+  turn_off_action:
+    - lambda: id(interval_page_set).execute(5, false);
+- platform: template
+  name: Rotate Graph
+  icon: mdi:page-next-outline
+  entity_category: config
+  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
+  lambda: return (id(interval_pages_mask) >> 6) & 1;
+  turn_on_action:
+    - lambda: id(interval_page_set).execute(6, true);
+  turn_off_action:
+    - lambda: id(interval_page_set).execute(6, false);
+- platform: template
+  name: Rotate Home Usage
+  icon: mdi:page-next-outline
+  entity_category: config
+  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
+  lambda: return (id(interval_pages_mask) >> 7) & 1;
+  turn_on_action:
+    - lambda: id(interval_page_set).execute(7, true);
+  turn_off_action:
+    - lambda: id(interval_page_set).execute(7, false);
+# Home Usage subpanels shown (set up on the display: Home Usage → Subpanel)
+- platform: template
+  name: Home Usage Subpanel 1
+  icon: mdi:home-lightning-bolt-outline
+  entity_category: config
+  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
+  lambda: return id(hu_sp1_enabled);
+  turn_on_action:
+    - lambda: id(hu_sp1_enabled) = true;
+    - script.execute: prefs_sync
+  turn_off_action:
+    - lambda: id(hu_sp1_enabled) = false;
+    - script.execute: prefs_sync
+- platform: template
+  name: Home Usage Subpanel 2
+  icon: mdi:home-lightning-bolt-outline
+  entity_category: config
+  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
+  lambda: return id(hu_sp2_enabled);
+  turn_on_action:
+    - lambda: id(hu_sp2_enabled) = true;
+    - script.execute: prefs_sync
+  turn_off_action:
+    - lambda: id(hu_sp2_enabled) = false;
+    - script.execute: prefs_sync
+# The screen itself: on = lit, off = asleep. Turning it on (touch, presence, HA) wakes it.
 - platform: gpio
   id: backlight_switch
+  name: Screen
+  icon: mdi:monitor
   restore_mode: ALWAYS_ON
   pin:
     waveshare_io_ch32v003: wave_io
     number: 2
     mode: { output: true }
+  on_turn_on:
+    # Every wake (touch, presence, HA) restarts the timeout
+    - lambda: id(screen_last_activity_ms) = millis();
+    # Woken while the light is off: the PWM is at min_power (3%), so the screen would be very dim
+    - if:
+        condition:
+          light.is_off: lcd_backlight
+        then:
+          - light.turn_on: lcd_backlight
 
 - platform: template
   id: graph_values_toggle
   name: Show Graph Values
+  icon: mdi:chart-bar
+  entity_category: config
   optimistic: true
   restore_mode: RESTORE_DEFAULT_ON
 - platform: template
   id: show_totals_toggle
   name: Show Daily Totals
+  icon: mdi:sigma
+  entity_category: config
   optimistic: true
   restore_mode: RESTORE_DEFAULT_ON
 - platform: template
   id: suggestion_toggle
-  name: Show Tips/Suggestions
+  name: Show Tips   # was "Show Tips/Suggestions": a "/" in a name is an error from ESPHome 2027.7
+  icon: mdi:lightbulb-on-outline
+  entity_category: config
   optimistic: true
   restore_mode: RESTORE_DEFAULT_ON
 
@@ -260,6 +507,8 @@ switch:
 - platform: template
   id: simulate_backup_switch
   name: Simulate Backup Mode
+  icon: mdi:transmission-tower-off
+  entity_category: config
   optimistic: true
   restore_mode: RESTORE_DEFAULT_OFF
   on_turn_on:
@@ -273,7 +522,9 @@ switch:
           - lvgl.page.show: home_page_2       # new homepage
 - platform: template
   id: change_homepage
-  name: homepage toggle
+  name: Original Home Page   # on = the old basic home page, off = the 4-box one
+  icon: mdi:home-variant-outline
+  entity_category: config
   optimistic: true
   restore_mode: RESTORE_DEFAULT_OFF
   on_turn_on:
@@ -307,7 +558,13 @@ touchscreen:
       condition:
         switch.is_off: backlight_switch
       then:
+      # The touch that wakes the screen must not also click what is under the finger
+      - lambda: |-
+          for (lv_indev_t *indev = lv_indev_get_next(nullptr); indev != nullptr; indev = lv_indev_get_next(indev)) {
+            if (lv_indev_get_type(indev) == LV_INDEV_TYPE_POINTER) lv_indev_wait_release(indev);
+          }
       - switch.turn_on: backlight_switch
+  - lambda: id(screen_last_activity_ms) = millis();
   # Edge swipe (includes/edge_swipe.h): from the right edge inwards = next page, from the
   # left edge inwards = previous page, through the pages below (same order as the menu).
   # Runs before on_touch, so a touch that wakes the screen does not switch pages.
@@ -338,12 +595,50 @@ touchscreen:
       ESP_LOGI("edge_swipe", "Swipe %s: page %d -> %d", dir > 0 ? "next" : "previous", pos, target);
       id(edge_swipe_show_page).execute((int) pages[target]->index);
   on_release:
-  - lambda: edge_swipe::detector.release();
+  - lambda: |-
+      edge_swipe::detector.release();
+      id(screen_last_activity_ms) = millis();   // a long press or scroll counts until release
 
 number:
+  # Screen brightness (also the slider on the Display page)
+  - platform: template
+    id: screen_brightness
+    name: "Screen Brightness"
+    icon: mdi:brightness-6
+    unit_of_measurement: "%"
+    mode: slider
+    optimistic: true
+    restore_value: true
+    initial_value: 80
+    min_value: 5
+    max_value: 100
+    step: 1
+    on_value:
+      - light.turn_on:
+          id: lcd_backlight
+          brightness: !lambda return x / 100.0f;
+  # Page rotation (Menu → Interval): seconds per page
+  - platform: template
+    id: page_rotation_seconds
+    name: "Page Rotation Interval (s)"
+    icon: mdi:timer-sync-outline
+    entity_category: config
+    unit_of_measurement: "s"
+    mode: box
+    min_value: 2
+    max_value: 300
+    step: 1
+    update_interval: 5s
+    lambda: return id(interval_seconds);
+    set_action:
+      - lambda: id(interval_seconds) = (int) x;
+      - script.execute: interval_refresh_settings_ui
+      - script.execute: prefs_sync
   - platform: template
     id: display_timeout_seconds
     name: "Display Timeout (s)"
+    icon: mdi:timer-outline
+    entity_category: config
     optimistic: true
     restore_value: true
     initial_value: 300
@@ -361,14 +656,40 @@ number:
               } else {
                 return str_sprintf("%.0fm", v / 60.0f);
               }
+        # Save now instead of after flash_write_interval (5 min), so a restart keeps it
+        - lambda: global_preferences->sync();
 globals:
 - id: site_index            # selected Home Assistant site (0/1), saved in flash
   type: int
   restore_value: yes
   initial_value: "${default_site}"
-- id: site2_active          # site 2 selected and its key is valid (set at boot)
+- id: site2_active          # this boot uses site 2 (set at boot)
   type: bool
   restore_value: false
+  initial_value: "false"
+- id: dual_site_mode        # two Home Assistant sites: 1 = on, 0 = off, -1 = not decided yet (first start)
+  type: int
+  restore_value: yes
+  initial_value: "-1"
+- id: dual_site             # two sites on, for this boot and the UI (from dual_site_mode)
+  type: bool
+  restore_value: no
+  initial_value: "false"
+- id: hu_alt_set            # Home Usage settings of the other site (HuSiteSet, see on_boot priority 225)
+  type: std::array<uint8_t, 161>
+  restore_value: yes
+  initial_value: "std::array<uint8_t, 161>{}"
+- id: hu_set_site           # site the hu_* globals belong to; -1 = not known yet
+  type: int
+  restore_value: yes
+  initial_value: "-1"
+- id: site_switch_boot      # set by site_switch, so the next boot can explain the wait
+  type: bool
+  restore_value: yes
+  initial_value: "false"
+- id: boot_after_switch     # this boot came from a site switch
+  type: bool
+  restore_value: no
   initial_value: "false"
 - id: force_ap_mode
   type: bool
@@ -462,10 +783,10 @@ globals:
   restore_value: no
   initial_value: 'false'
 
-- id: ld1125_last_presence_ms
+- id: screen_last_activity_ms   # last touch, presence or wake; the screen timeout counts from here
   type: uint32_t
   restore_value: no
-  initial_value: '0'
+  initial_value: '0'           # boot counts as activity
 - id: hu_d1_phase
   type: float
   initial_value: '0'
@@ -629,8 +950,8 @@ binary_sensor:
   name: "Presence"
   device_class: occupancy
   lambda: |-
-    // For now presence = HMMD only
-    return id(hmmd_presence).state;
+    // For now presence = HMMD only; nothing in Touch mode (no sensor fitted)
+    return id(presence_sensor_toggle).state && id(hmmd_presence).state;
 
   # Wake the screen immediately whenever presence becomes true
   on_press:
@@ -644,6 +965,7 @@ binary_sensor:
 - platform: gpio
   id: hmmd_presence
   name: "HMMD Presence"
+  entity_category: diagnostic   # the raw sensor pin; "Presence" is the one to use
   device_class: occupancy
   pin:
     number: GPIO6        # HMMD OT2 wired to GP6 on the board
@@ -655,7 +977,7 @@ binary_sensor:
   on_press:
     - lambda: |-
         // HMMD saw presence: remember the time for the screen timeout logic
-        id(ld1125_last_presence_ms) = millis();
+        if (id(presence_sensor_toggle).state) id(screen_last_activity_ms) = millis();
     - logger.log: "HMMD PRESENCE: ON (OT2 went HIGH)"
   on_release:
     - logger.log: "HMMD PRESENCE: OFF (OT2 went LOW)"
@@ -680,11 +1002,6 @@ binary_sensor:
               - lvgl.page.show: home_page_2       # new homepage
 sensor:
 
-- platform: template
-  id: ld1125_distance
-  name: "LD1125H Distance"
-  unit_of_measurement: "m"
-  accuracy_decimals: 2
 - platform: homeassistant
   id: export_daily_kwh
   entity_id: sensor.solar_exported_power_daily
@@ -1042,6 +1359,17 @@ sensor:
       snprintf(b, sizeof(b), "%.0f%%", x);
 
       lv_label_set_text(id(lbl_autarkie), b);'
+# Diagnostics: an unexpected restart or running out of internal RAM shows up in HA's history
+- platform: uptime
+  name: Uptime
+  update_interval: 60s
+- platform: debug
+  free:
+    name: Free Internal RAM
+  block:
+    name: Largest Free RAM Block
+  min_free:
+    name: Lowest Free Internal RAM
 - platform: wifi_signal
   name: WiFi Signal
   id: wifi_signal_sensor
@@ -1789,6 +2117,7 @@ text:
     name: "Site 1 Name"
     icon: mdi:home-switch-outline
     entity_category: config
+    disabled_by_default: true   # only for two sites; enable in HA when used
     mode: text
     min_length: 1
     max_length: 20
@@ -1802,6 +2131,7 @@ text:
     name: "Site 2 Name"
     icon: mdi:home-switch-outline
     entity_category: config
+    disabled_by_default: true   # only for two sites; enable in HA when used
     mode: text
     min_length: 1
     max_length: 20
@@ -1810,7 +2140,83 @@ text:
     initial_value: "${site_2_name}"
     on_value:
       - script.execute: site_update_label
+  # Home Usage names, also editable in Home Assistant. The display keeps a set per site, so each
+  # site's Home Assistant sees its own names. hu_publish_settings publishes them.
+  - platform: template
+    id: hu_dev1_name_text
+    name: "Home Usage Device 1 Name"
+    icon: mdi:rename-outline
+    entity_category: config
+    mode: text
+    max_length: 20
+    set_action:
+      - lambda: id(hu_dev1_name_str) = x;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev2_name_text
+    name: "Home Usage Device 2 Name"
+    icon: mdi:rename-outline
+    entity_category: config
+    mode: text
+    max_length: 20
+    set_action:
+      - lambda: id(hu_dev2_name_str) = x;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev3_name_text
+    name: "Home Usage Device 3 Name"
+    icon: mdi:rename-outline
+    entity_category: config
+    mode: text
+    max_length: 20
+    set_action:
+      - lambda: id(hu_dev3_name_str) = x;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev4_name_text
+    name: "Home Usage Device 4 Name"
+    icon: mdi:rename-outline
+    entity_category: config
+    mode: text
+    max_length: 20
+    set_action:
+      - lambda: id(hu_dev4_name_str) = x;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev5_name_text
+    name: "Home Usage Device 5 Name"
+    icon: mdi:rename-outline
+    entity_category: config
+    mode: text
+    max_length: 20
+    set_action:
+      - lambda: id(hu_dev5_name_str) = x;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_sp1_name_text
+    name: "Home Usage Subpanel 1 Name"
+    icon: mdi:rename-outline
+    entity_category: config
+    mode: text
+    max_length: 20
+    set_action:
+      - lambda: id(hu_sp1_name_str) = x;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_sp2_name_text
+    name: "Home Usage Subpanel 2 Name"
+    icon: mdi:rename-outline
+    entity_category: config
+    mode: text
+    max_length: 20
+    set_action:
+      - lambda: id(hu_sp2_name_str) = x;
+      - script.execute: hu_publish_settings
 text_sensor:
+
+- platform: debug
+  reset_reason:
+    name: Reset Reason
 
 - platform: wifi_info
   ip_address:
@@ -1990,6 +2396,9 @@ lvgl:
   - id: boot_page
 #    bg_color: 0x141B21
     bg_color: 0x1C2229
+    # A fixed screen: it scrolled sideways at boot (scrollbar at the bottom, everything shifted left)
+    scrollable: false
+    scrollbar_mode: 'off'
     widgets:
     - image:
         id: boot_logo
@@ -2044,6 +2453,16 @@ lvgl:
         text_color: 16777215
         align: center
         y: 150
+    # What the display is doing / waiting for (filled by boot_status_tick)
+    - label:
+        id: lbl_boot_info
+        text: " "
+        text_font: my_font_small
+        text_color: 10395294
+        text_align: center
+        width: 960
+        align: bottom_mid
+        y: -24
     - button:
         id: btn_boot_menu
         width: 102
@@ -6138,6 +6557,137 @@ lvgl:
                     text_align: center
                     x: 0
                     y: 0
+        # Optional feature, off by default: explanation and on/off on dual_site_page
+        - button:
+            id: card_setting_dual_site
+            width: 883
+            height: 100
+            radius: 15
+            bg_color: 0x1C2229
+            border_width: 1
+            border_color: 3355443
+            scrollable: false
+            scrollbar_mode: 'off'
+            on_click:
+            - lvgl.widget.show: loading_overlay
+            - delay: 20ms
+            - lvgl.page.show: dual_site_page
+            - delay: 250ms
+            - lvgl.widget.hide: loading_overlay
+            widgets:
+            - label:
+                x: 20
+                align: left_mid
+                y: -16
+                text: Two Home Assistant sites
+                text_font: my_font
+                text_color: 16777215
+            - label:
+                x: 20
+                align: left_mid
+                y: 19
+                text: Optional, for one display with two Home Assistants
+                text_font: my_font_small
+                text_color: 10395294
+            - obj:
+                id: pill_dual_site
+                width: 141
+                height: 45
+                radius: 22
+                bg_color: 4342338
+                align: right_mid
+                x: -15
+                pad_all: 0
+                scrollable: false
+                scrollbar_mode: 'off'
+                widgets:
+                - label:
+                    id: lbl_dual_site_state
+                    text: "OFF"
+                    text_font: my_font_small
+                    text_color: 16777215
+                    align: center
+                    width: 141
+                    text_align: center
+                    x: 0
+                    y: 0
+
+  - id: dual_site_page
+    bg_color: 0x141B21
+    widgets:
+      - label:
+          x: 51
+          y: 20
+          text: Two Home Assistant sites
+          text_font: my_font_large
+          text_color: 0xFFFFFF
+      - button:
+          width: 70
+          height: 70
+          align: top_right
+          x: -38
+          y: 15
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - lvgl.widget.show: loading_overlay
+            - delay: 20ms
+            - lvgl.page.show: settings_page
+            - delay: 250ms
+            - lvgl.widget.hide: loading_overlay
+          widgets:
+            - image:
+                src: img_close_res
+                align: center
+                bg_opa: 0
+                scale: 0.5
+      - label:
+          x: 80
+          y: 105
+          width: 864
+          long_mode: wrap
+          text_font: my_font_small
+          text_color: 0xDDDDDD
+          text: "Use this display with two Home Assistant installations, for example your own and a family member's. One is connected at a time; switching restarts the display."
+      - label:
+          x: 80
+          y: 195
+          width: 864
+          long_mode: wrap
+          text_font: my_font_small
+          text_color: 0xDDDDDD
+          text: "1. Turn it on. Two site buttons appear at the top of Settings and on the start screen.\n2. Site 1 is the Home Assistant you already use (API port 6053).\n3. Choose site 2. In the second Home Assistant, add the display (ESPHome integration) with its IP, port ${api_port_site_2} and the encryption key shown on the Wi-Fi page.\n4. Rename the sites with the pencil button in Settings."
+      - label:
+          align: bottom_left
+          x: 80
+          y: -105
+          width: 864
+          long_mode: wrap
+          text_font: my_font_small
+          text_color: 0x9E9E9E
+          text: "After a switch, Home Assistant can take up to a minute to reconnect. Home Usage names, icons and routing are kept per site."
+      - button:
+          id: btn_dual_site_toggle
+          width: 260
+          height: 64
+          radius: 12
+          align: bottom_mid
+          y: -25
+          bg_color: 0x2E3A46
+          border_width: 0
+          shadow_width: 0
+          on_click:
+            - lambda: id(dual_site_set).execute(!id(dual_site));
+          widgets:
+            - label:
+                id: lbl_dual_site_toggle
+                align: center
+                text: Turn on
+                text_font: my_font
+                text_color: 0xFFFFFF
 
   - id: usage_device_select_page
     bg_color: 0x141B21
@@ -6850,6 +7400,7 @@ lvgl:
                 else if (dev == 3) id(hu_dev3_icon_idx) = icon_idx;
                 else if (dev == 4) id(hu_dev4_icon_idx) = icon_idx;
                 else if (dev == 5) id(hu_dev5_icon_idx) = icon_idx;
+            - script.execute: hu_publish_settings
             - lvgl.widget.hide: kb_usage
             - lvgl.widget.hide: btn_usage_kb_done
             - lvgl.widget.show: loading_overlay
@@ -6981,6 +7532,7 @@ lvgl:
                   id(hu_sp2_icon_idx) = id(hu_sp_edit_icon_idx);
                   id(hu_sp2_enabled) = true;
                 }
+            - script.execute: hu_publish_settings
             - lvgl.widget.hide: kb_sp_usage
             - lvgl.widget.hide: btn_sp_kb_done
             - lvgl.page.show: usage_device_select_page
@@ -7315,6 +7867,7 @@ lvgl:
                         id(hu_dev1_route) = (id(hu_dev1_route) == 2) ? 0 : 2;
                       }
                   - script.execute: hu_refresh_sp_device_picker
+                  - script.execute: hu_publish_settings
                 widgets:
                   - label:
                       id: lbl_sp_dev1
@@ -7348,6 +7901,7 @@ lvgl:
                         id(hu_dev2_route) = (id(hu_dev2_route) == 2) ? 0 : 2;
                       }
                   - script.execute: hu_refresh_sp_device_picker
+                  - script.execute: hu_publish_settings
                 widgets:
                   - label:
                       id: lbl_sp_dev2
@@ -7381,6 +7935,7 @@ lvgl:
                         id(hu_dev3_route) = (id(hu_dev3_route) == 2) ? 0 : 2;
                       }
                   - script.execute: hu_refresh_sp_device_picker
+                  - script.execute: hu_publish_settings
                 widgets:
                   - label:
                       id: lbl_sp_dev3
@@ -7414,6 +7969,7 @@ lvgl:
                         id(hu_dev4_route) = (id(hu_dev4_route) == 2) ? 0 : 2;
                       }
                   - script.execute: hu_refresh_sp_device_picker
+                  - script.execute: hu_publish_settings
                 widgets:
                   - label:
                       id: lbl_sp_dev4
@@ -7447,6 +8003,7 @@ lvgl:
                         id(hu_dev5_route) = (id(hu_dev5_route) == 2) ? 0 : 2;
                       }
                   - script.execute: hu_refresh_sp_device_picker
+                  - script.execute: hu_publish_settings
                 widgets:
                   - label:
                       id: lbl_sp_dev5
@@ -7666,7 +8223,16 @@ lvgl:
           scrollable: false
           scrollbar_mode: 'off'
           on_click:
-            - switch.toggle: display_auto_sleep_toggle
+            - lambda: |-
+                // Cycle Always -> Motion -> Touch -> Always
+                if (!id(display_auto_sleep_toggle).state) {
+                  id(presence_sensor_toggle).turn_on();
+                  id(display_auto_sleep_toggle).turn_on();
+                } else if (id(presence_sensor_toggle).state) {
+                  id(presence_sensor_toggle).turn_off();
+                } else {
+                  id(display_auto_sleep_toggle).turn_off();
+                }
           widgets:
             - label:
                 x: 20
@@ -7679,7 +8245,7 @@ lvgl:
                 x: 20
                 align: left_mid
                 y: 19
-                text: Sensor + touch when ON, always on when OFF
+                text: "Motion: sensor + touch. Touch: touch only. Always: on"
                 text_font: my_font_small
                 text_color: 10395294
             - obj:
@@ -7733,7 +8299,8 @@ lvgl:
                   default:    next = 30;    break;   // back to 30s
                 }
 
-                id(display_timeout_seconds).publish_state(next);
+                // make_call() saves it (publish_state() would only show it until the next restart)
+                id(display_timeout_seconds).make_call().set_value(next).perform();
           widgets:
             - label:
                 x: 20
@@ -7746,7 +8313,7 @@ lvgl:
                 x: 20
                 align: left_mid
                 y: 19
-                text: Time screen stays on after last movement
+                text: Time screen stays on after last movement or touch
                 text_font: my_font_small
                 text_color: 10395294
             - obj:
@@ -7864,9 +8431,8 @@ lvgl:
                 value: 80
                 on_value:
                   - lambda: |-
-                      const float b = (float)x / 100.0f;
-                      // Keep backlight power on while adjusting brightness
-                      id(lcd_backlight).turn_on().set_brightness(b).perform();
+                      // Through the Screen Brightness number, so HA follows and it is saved
+                      id(screen_brightness).make_call().set_value((float) x).perform();
 
                       char buf[8];
                       snprintf(buf, sizeof(buf), "%d%%", (int)x);
@@ -8927,7 +9493,7 @@ lvgl:
                   - lambda: |-
                       lv_label_set_text(id(secret_title), "API encryption key");
                       bool site2 = id(site2_active);
-                      lv_label_set_text(id(secret_value), site2 ? "${api_key_site_2}" : "${api_key_full}");
+                      lv_label_set_text(id(secret_value), (site2 && !std::string("${api_key_site_2}").empty()) ? "${api_key_site_2}" : "${api_key_full}");
                   - lvgl.widget.show: secret_overlay
                 widgets:
                   - label:
@@ -10126,6 +10692,7 @@ select:
     name: "Home Assistant Site"
     icon: mdi:home-switch
     entity_category: config
+    disabled_by_default: true   # only for two sites; enable in HA when used
     options:
       - "Site 1"
       - "Site 2"
@@ -10133,7 +10700,7 @@ select:
     set_action:
       - lambda: |-
           auto idx = id(site_ha_select).index_of(x.c_str(), x.size());
-          if (!idx.has_value() || std::string("${api_key_site_2}").empty()) return;
+          if (!idx.has_value() || !id(dual_site)) return;   // two sites turned off on the display
           if ((int) *idx != (id(site2_active) ? 1 : 0)) id(site_switch).execute((int) *idx);
   # Colour theme (see includes/themes.h). Shown in Home Assistant, saved in flash,
   # and kept in sync with the tiles on the Themes page.
@@ -10162,6 +10729,141 @@ select:
         - script.execute: site_update_label
         # Save now instead of after flash_write_interval (5 min), so a power cut keeps it
         - lambda: global_preferences->sync();
+
+  # Home Usage icons and routing (same as on the display). Per site like the names:
+  # hu_publish_settings publishes them.
+  - platform: template
+    id: hu_dev1_icon_select
+    name: "Home Usage Device 1 Icon"
+    icon: mdi:shape-outline
+    entity_category: config
+    options: [Home, Towel, Dehumidifier, Heater, Heating, Office, PC Desk, Sauna, Sofa, Spa]
+    set_action:
+      - lambda: |-
+          auto idx = id(hu_dev1_icon_select).index_of(x.c_str(), x.size());
+          if (idx.has_value()) id(hu_dev1_icon_idx) = (int) *idx;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev2_icon_select
+    name: "Home Usage Device 2 Icon"
+    icon: mdi:shape-outline
+    entity_category: config
+    options: [Home, Towel, Dehumidifier, Heater, Heating, Office, PC Desk, Sauna, Sofa, Spa]
+    set_action:
+      - lambda: |-
+          auto idx = id(hu_dev2_icon_select).index_of(x.c_str(), x.size());
+          if (idx.has_value()) id(hu_dev2_icon_idx) = (int) *idx;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev3_icon_select
+    name: "Home Usage Device 3 Icon"
+    icon: mdi:shape-outline
+    entity_category: config
+    options: [Home, Towel, Dehumidifier, Heater, Heating, Office, PC Desk, Sauna, Sofa, Spa]
+    set_action:
+      - lambda: |-
+          auto idx = id(hu_dev3_icon_select).index_of(x.c_str(), x.size());
+          if (idx.has_value()) id(hu_dev3_icon_idx) = (int) *idx;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev4_icon_select
+    name: "Home Usage Device 4 Icon"
+    icon: mdi:shape-outline
+    entity_category: config
+    options: [Home, Towel, Dehumidifier, Heater, Heating, Office, PC Desk, Sauna, Sofa, Spa]
+    set_action:
+      - lambda: |-
+          auto idx = id(hu_dev4_icon_select).index_of(x.c_str(), x.size());
+          if (idx.has_value()) id(hu_dev4_icon_idx) = (int) *idx;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev5_icon_select
+    name: "Home Usage Device 5 Icon"
+    icon: mdi:shape-outline
+    entity_category: config
+    options: [Home, Towel, Dehumidifier, Heater, Heating, Office, PC Desk, Sauna, Sofa, Spa]
+    set_action:
+      - lambda: |-
+          auto idx = id(hu_dev5_icon_select).index_of(x.c_str(), x.size());
+          if (idx.has_value()) id(hu_dev5_icon_idx) = (int) *idx;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_sp1_icon_select
+    name: "Home Usage Subpanel 1 Icon"
+    icon: mdi:shape-outline
+    entity_category: config
+    options: [Home, Towel, Dehumidifier, Heater, Heating, Office, PC Desk, Sauna, Sofa, Spa]
+    set_action:
+      - lambda: |-
+          auto idx = id(hu_sp1_icon_select).index_of(x.c_str(), x.size());
+          if (idx.has_value()) id(hu_sp1_icon_idx) = (int) *idx;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_sp2_icon_select
+    name: "Home Usage Subpanel 2 Icon"
+    icon: mdi:shape-outline
+    entity_category: config
+    options: [Home, Towel, Dehumidifier, Heater, Heating, Office, PC Desk, Sauna, Sofa, Spa]
+    set_action:
+      - lambda: |-
+          auto idx = id(hu_sp2_icon_select).index_of(x.c_str(), x.size());
+          if (idx.has_value()) id(hu_sp2_icon_idx) = (int) *idx;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev1_route_select
+    name: "Home Usage Device 1 Panel"
+    icon: mdi:transit-connection-variant
+    entity_category: config
+    options: [Main Panel, Subpanel 1, Subpanel 2]
+    set_action:
+      - lambda: |-
+          auto idx = id(hu_dev1_route_select).index_of(x.c_str(), x.size());
+          if (idx.has_value()) id(hu_dev1_route) = (int) *idx;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev2_route_select
+    name: "Home Usage Device 2 Panel"
+    icon: mdi:transit-connection-variant
+    entity_category: config
+    options: [Main Panel, Subpanel 1, Subpanel 2]
+    set_action:
+      - lambda: |-
+          auto idx = id(hu_dev2_route_select).index_of(x.c_str(), x.size());
+          if (idx.has_value()) id(hu_dev2_route) = (int) *idx;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev3_route_select
+    name: "Home Usage Device 3 Panel"
+    icon: mdi:transit-connection-variant
+    entity_category: config
+    options: [Main Panel, Subpanel 1, Subpanel 2]
+    set_action:
+      - lambda: |-
+          auto idx = id(hu_dev3_route_select).index_of(x.c_str(), x.size());
+          if (idx.has_value()) id(hu_dev3_route) = (int) *idx;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev4_route_select
+    name: "Home Usage Device 4 Panel"
+    icon: mdi:transit-connection-variant
+    entity_category: config
+    options: [Main Panel, Subpanel 1, Subpanel 2]
+    set_action:
+      - lambda: |-
+          auto idx = id(hu_dev4_route_select).index_of(x.c_str(), x.size());
+          if (idx.has_value()) id(hu_dev4_route) = (int) *idx;
+      - script.execute: hu_publish_settings
+  - platform: template
+    id: hu_dev5_route_select
+    name: "Home Usage Device 5 Panel"
+    icon: mdi:transit-connection-variant
+    entity_category: config
+    options: [Main Panel, Subpanel 1, Subpanel 2]
+    set_action:
+      - lambda: |-
+          auto idx = id(hu_dev5_route_select).index_of(x.c_str(), x.size());
+          if (idx.has_value()) id(hu_dev5_route) = (int) *idx;
+      - script.execute: hu_publish_settings
 
 button:
 - platform: restart
@@ -10411,14 +11113,61 @@ image:
   type: RGB565
   transparency: alpha_channel
 script:
+- id: presence_pin_apply
+  then:
+  - lambda: |-
+      // Touch mode (no sensor fitted): pull GPIO6 down so the open input does not float and
+      // flicker "HMMD Presence" in HA. Motion mode: as configured (HMMD drives the pin).
+      gpio_set_pull_mode(GPIO_NUM_6, id(presence_sensor_toggle).state ? GPIO_FLOATING : GPIO_PULLDOWN_ONLY);
+# Write changed settings to flash now instead of after flash_write_interval (5 min)
+- id: prefs_sync
+  mode: restart
+  then:
+  # Let the globals component store the new values first
+  - delay: 1s
+  - lambda: global_preferences->sync();
+# A page in the rotation on/off (HA "Rotate …" switches); the last page stays on
+- id: interval_page_set
+  parameters:
+    bit: int
+    enable: bool
+  then:
+  - lambda: |-
+      int mask = id(interval_pages_mask) & 0xFF;
+      mask = enable ? (mask | (1 << bit)) : (mask & ~(1 << bit));
+      if (mask != 0) id(interval_pages_mask) = mask;
+  - script.execute: interval_refresh_settings_ui
+  - script.execute: prefs_sync
+# Show the (active site's) Home Usage settings in HA, and save changes to flash
+- id: hu_publish_settings
+  mode: restart
+  then:
+  - lambda: |-
+      id(hu_dev1_name_text).publish_state(id(hu_dev1_name_str));
+      id(hu_dev2_name_text).publish_state(id(hu_dev2_name_str));
+      id(hu_dev3_name_text).publish_state(id(hu_dev3_name_str));
+      id(hu_dev4_name_text).publish_state(id(hu_dev4_name_str));
+      id(hu_dev5_name_text).publish_state(id(hu_dev5_name_str));
+      id(hu_sp1_name_text).publish_state(id(hu_sp1_name_str));
+      id(hu_sp2_name_text).publish_state(id(hu_sp2_name_str));
+      select::Select *icons[7] = {id(hu_dev1_icon_select), id(hu_dev2_icon_select), id(hu_dev3_icon_select),
+                                  id(hu_dev4_icon_select), id(hu_dev5_icon_select), id(hu_sp1_icon_select), id(hu_sp2_icon_select)};
+      const int icon_idx[7] = {id(hu_dev1_icon_idx), id(hu_dev2_icon_idx), id(hu_dev3_icon_idx),
+                               id(hu_dev4_icon_idx), id(hu_dev5_icon_idx), id(hu_sp1_icon_idx), id(hu_sp2_icon_idx)};
+      for (int i = 0; i < 7; i++) icons[i]->publish_state((size_t) (icons[i]->has_index(icon_idx[i]) ? icon_idx[i] : 0));
+      select::Select *routes[5] = {id(hu_dev1_route_select), id(hu_dev2_route_select), id(hu_dev3_route_select),
+                                   id(hu_dev4_route_select), id(hu_dev5_route_select)};
+      const int route[5] = {id(hu_dev1_route), id(hu_dev2_route), id(hu_dev3_route), id(hu_dev4_route), id(hu_dev5_route)};
+      for (int i = 0; i < 5; i++) routes[i]->publish_state((size_t) (routes[i]->has_index(route[i]) ? route[i] : 0));
+  - script.execute: prefs_sync
 - id: site_update_label
   then:
   - lambda: |-
       if (id(lbl_site_sub) == nullptr) return;  // LVGL not set up yet
-      bool two_sites = !std::string("${api_key_site_2}").empty();
+      bool two_sites = id(dual_site);
       int cur = id(site2_active) ? 1 : 0;
       const std::string *names[2] = {&id(site_1_name_text).state, &id(site_2_name_text).state};
-      lv_label_set_text(id(lbl_site_sub), two_sites ? "Switching restarts the display" : "One site configured");
+      lv_label_set_text(id(lbl_site_sub), "Switching restarts the display");
       lv_obj_t *btns[4] = {id(btn_site_1), id(btn_site_2), id(btn_boot_site_1), id(btn_boot_site_2)};
       lv_obj_t *lbls[4] = {id(lbl_site_btn_1), id(lbl_site_btn_2), id(lbl_boot_site_1), id(lbl_boot_site_2)};
       for (int i = 0; i < 4; i++) {
@@ -10427,14 +11176,32 @@ script:
         // Active site in the theme's control colour
         lv_obj_set_style_bg_color(btns[i], lv_color_hex(lvx_theme::color(site == cur ? 0x2196F3 : 0x2E3A46)), LV_PART_MAIN);
       }
-      if (!two_sites) {
-        // One site: no selector on the boot screen, only the site 1 button in Settings
-        lv_obj_add_flag(id(btn_site_2), LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(id(btn_boot_site_1), LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_flag(id(btn_boot_site_2), LV_OBJ_FLAG_HIDDEN);
-        lv_obj_align(id(btn_site_1), LV_ALIGN_RIGHT_MID, -20, 0);
-        lv_obj_align(id(btn_site_names), LV_ALIGN_RIGHT_MID, -235, 0);
+      // Two sites off (the default): no site card in Settings and no selector on the boot screen
+      lv_obj_t *dual_only[3] = {id(card_setting_site), id(btn_boot_site_1), id(btn_boot_site_2)};
+      for (auto *o : dual_only) {
+        if (two_sites) lv_obj_clear_flag(o, LV_OBJ_FLAG_HIDDEN);
+        else lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN);
       }
+      // The Two sites card and page
+      lv_label_set_text(id(lbl_dual_site_state), two_sites ? "ON" : "OFF");
+      lv_obj_set_style_bg_color(id(pill_dual_site), lv_color_hex(lvx_theme::color(two_sites ? 0x2E7D32 : 0x424242)), LV_PART_MAIN);
+      lv_label_set_text(id(lbl_dual_site_toggle), two_sites ? "Turn off" : "Turn on");
+# Two Home Assistant sites on/off (Settings page and the HA switch)
+- id: dual_site_set
+  mode: restart
+  parameters:
+    enable: bool
+  then:
+  - lambda: |-
+      id(dual_site_mode) = enable ? 1 : 0;
+      id(dual_site) = enable;
+      if (!enable && id(site2_active)) {
+        id(site_switch).execute(0);   // back to site 1 (restarts; site_switch saves)
+        return;
+      }
+      id(site_update_label).execute();
+  - delay: 1s
+  - lambda: global_preferences->sync();
 - id: site_switch
   mode: single
   parameters:
@@ -10442,8 +11209,10 @@ script:
   then:
   - lambda: |-
       id(site_index) = index;
+      id(site_switch_boot) = true;
       lv_label_set_text(id(lbl_site_sub), "Restarting…");
       lv_label_set_text(id(lbl_boot_status), "Restarting…");
+      lv_label_set_text(id(lbl_boot_info), " ");
   # Let the globals component store the new value, then write it to flash
   - delay: 500ms
   - lambda: global_preferences->sync();
@@ -10478,16 +11247,48 @@ script:
   then:
   - lvgl.page.show: boot_page
   - lvgl.widget.hide: btn_boot_menu
+  - script.execute: boot_status_update
+# Boot screen: what the display is doing and waiting for (every second until Home Assistant connects)
+- id: boot_status_update
+  then:
   - lambda: |-
-      bool site2 = id(site2_active);
-      char b[96];
-      snprintf(b, sizeof(b), "Connecting to Home Assistant (%s)…", (site2 ? id(site_2_name_text) : id(site_1_name_text))->state.c_str());
-      lv_label_set_text(id(lbl_boot_status), b);
+      if (id(api_ready) || id(force_ap_mode) || id(site_switch).is_running()) return;
+      if (id(lbl_boot_info) == nullptr) return;  // LVGL not set up yet
+      const bool two_sites = id(dual_site);
+      const char *site = (id(site2_active) ? id(site_2_name_text) : id(site_1_name_text))->state.c_str();
+      const unsigned secs = millis() / 1000;
+      const bool wifi_ok = wifi::global_wifi_component->is_connected();
+
+      char status[96];
+      if (!wifi_ok) snprintf(status, sizeof(status), "Connecting to Wi-Fi…");
+      else if (two_sites) snprintf(status, sizeof(status), "Waiting for Home Assistant (%s)… %u s", site, secs);
+      else snprintf(status, sizeof(status), "Waiting for Home Assistant… %u s", secs);
+
+      std::string info;
+      if (id(boot_after_switch)) info += str_sprintf("Switching site to %s: this can take up to a minute.\n", site);
+      if (wifi_ok && !id(wifi_ip_text).state.empty()) {
+        info += str_sprintf("Wi-Fi %s, IP %s, API port %u", id(wifi_ssid_text).state.c_str(),
+                            id(wifi_ip_text).state.c_str(), (unsigned) api::global_api_server->get_port());
+      } else if (!wifi_ok && secs >= 20) {
+        info += "No Wi-Fi yet. Setup hotspot: ${fallback_ap_ssid}";
+      }
+      // Home Assistant can take up to a minute to retry after a site switch
+      if (wifi_ok && secs >= (id(boot_after_switch) ? 90u : 30u)) {
+        info += two_sites ? str_sprintf("\nStill waiting: is this display added in the Home Assistant of %s? Menu: top right.", site)
+                          : std::string("\nStill waiting: is this display added in Home Assistant? Menu: top right.");
+      }
+      if (info.empty()) info = " ";
+
+      // Only on a change: every label change redraws it
+      if (strcmp(lv_label_get_text(id(lbl_boot_status)), status) != 0) lv_label_set_text(id(lbl_boot_status), status);
+      if (info != lv_label_get_text(id(lbl_boot_info))) lv_label_set_text(id(lbl_boot_info), info.c_str());
 - id: finish_boot
   mode: restart
   then:
   - lambda: id(api_ready) = true;
-  - lambda: lv_label_set_text(id(lbl_boot_status), "Connected. Loading entities…");
+  - lambda: |-
+      lv_label_set_text(id(lbl_boot_status), "Connected. Loading entities…");
+      lv_label_set_text(id(lbl_boot_info), " ");
   - delay: !lambda |
       return id(boot_extra_delay_ms);
   - lvgl.animation.stop: boot_logo_breathe
@@ -10509,7 +11310,6 @@ script:
       - logger.log: API connected; keeping boot menu hidden
       else:
       - lvgl.widget.show: btn_boot_menu
-      - lambda: lv_label_set_text(id(lbl_boot_status), "No API connection yet. Open Menu.");
 
 - id: interval_show_target_page
   mode: restart
@@ -10700,26 +11500,46 @@ interval:
             return;
           }
 
-          // If HMMD currently sees presence, refresh the last_seen time
-          if (id(hmmd_presence).state) {
-            id(ld1125_last_presence_ms) = now;
+          // Motion mode: while HMMD sees presence, refresh the last activity time
+          if (id(presence_sensor_toggle).state && id(hmmd_presence).state) {
+            id(screen_last_activity_ms) = now;
             return;  // never turn off while presence is ON
-          }
-
-          // If we've never seen presence, nothing to do
-          if (id(ld1125_last_presence_ms) == 0) {
-            return;
           }
 
           // Timeout in ms, based on your pill value (seconds)
           uint32_t timeout_ms = (uint32_t)(id(display_timeout_seconds).state * 1000.0f);
 
-          // If the timeout has passed since the last presence, and the screen is on, turn it off
-          if (now - id(ld1125_last_presence_ms) > timeout_ms) {
+          // If the timeout has passed since the last presence/touch, and the screen is on, turn it off
+          if (now - id(screen_last_activity_ms) > timeout_ms) {
             if (id(backlight_switch).state) {
               id(backlight_switch).turn_off();
             }
           }
+  - interval: 1s
+    then:
+      - script.execute: boot_status_update
+  - interval: 30s
+    then:
+      - lambda: |-
+          // The CH32V003 helper chip (wave_io) holds the backlight power (EXIO2) and brightness (PWM).
+          // ESPHome only writes them on a change, so if the chip resets they would stay lost
+          // (screen dark or dim while the firmware thinks it is on). Check and restore.
+          uint8_t in = 0;
+          if (!id(wave_io).read_bytes(0x04, &in, 1)) {   // 0x04 = input register
+            ESP_LOGW("backlight", "IO expander not responding");
+            return;
+          }
+          const bool want = id(backlight_switch).state;
+          const bool is = (in >> 2) & 1;
+          if (is != want) {
+            ESP_LOGW("backlight", "IO expander lost its state (EXIO2 reads %d, expected %d): restoring", is, want);
+            id(wave_io).pin_mode(2, gpio::FLAG_OUTPUT);   // rewrites the whole direction register
+            if (want) id(backlight_switch).turn_on(); else id(backlight_switch).turn_off();   // and the outputs
+          }
+          // Brightness cannot be read back; writing the same value again is harmless
+          float b;
+          id(lcd_backlight).current_values_as_brightness(&b);
+          id(pwm_backlight_output).set_level(b);
   - interval: 300ms
     then:
       - lambda: |-
@@ -11913,9 +12733,9 @@ interval:
 
             // choose text
             const char* text;
-            // Special case: Screen Sleep pill → "Motion" / "Always"
+            // Special case: Screen Sleep pill → "Motion" / "Touch" / "Always"
             if (lbl == id(lbl_display_mode_state)) {
-              text = on ? "Motion" : "Always";
+              text = !on ? "Always" : (id(presence_sensor_toggle).state ? "Motion" : "Touch");
             } else {
               // All other pills → "ON" / "OFF"
               text = on ? "ON" : "OFF";
