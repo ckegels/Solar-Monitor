@@ -230,13 +230,15 @@ ESPHome version requirement, an upgrade guide for people with modified YAMLs, OT
 
 ## 4. Test status
 
-One firmware, compiled on ESPHome 2026.10.0. All three of the owner's displays run the 2026-11-01 build:
+One firmware, compiled on ESPHome 2026.10.0. The owner's three displays:
 
-| Display | Site | Tested |
-|---|---|---|
-| 192.168.10.13 `solar-display` (test display, owner's network) | 1 | boots, Wi-Fi, HA API, touch, layout; earlier: glitching/scrollbar fixed, 10/10 restarts with working touch, performance confirmed. 2026-11-01: all HA settings set/restored over the API, settings survive restarts, site switch both ways, boot screen no longer shifts (confirmed by the owner) |
-| 192.168.2.164 `solar-display-dev7b` (SolarEdge site, VPN) | 1 | flashed, two sites on, survives a restart, name kept |
-| 192.168.1.92 `solar-display-bb59` (Sigenergy site, VPN) | 2 (6055) | flashed, two sites on (by itself), survives a restart, name kept |
+| Display | Location | Inverter / site | Build on it | Tested |
+|---|---|---|---|---|
+| 192.168.10.13 `solar-display` (MAC DC:B4:D9:21:AB:C4) | owner's home, test display, flashed first | shows EW14 (site 1) or BB59 (site 2) over the VPN | 2026-11-03 22:00 (one home page). Two sites read off at 22:20 (was on) | boots, Wi-Fi, HA API, touch, layout; earlier: glitching/scrollbar fixed, 10/10 restarts with working touch, performance confirmed. 2026-11-01: all HA settings set/restored over the API, settings survive restarts, site switch both ways, boot screen no longer shifts (confirmed by the owner) |
+| 192.168.2.164 `solar-display-dev7b` (MAC 20:6E:F1:8A:F7:78) | EW14 (house A), sealed case, VPN | SolarEdge, site 1 | 2026-11-01 16:58, two sites on | flashed, survives a restart, name kept |
+| 192.168.1.92 `solar-display-bb59` (MAC 9C:13:9E:AF:F4:F0) | BB59 (site B), sealed case, VPN | Sigenergy, site 2 (API on 6055) | 2026-11-01 17:03, two sites on | flashed, two sites on (by itself), survives a restart, name kept |
+
+Site 1 = EW14's Home Assistant (port 6053, the display's key); site 2 = BB59's (port 6055, the site 2 key).
 
 Build sizes: RAM ~58 %, flash ~49 % of the 8 MB app partition. Internal RAM at runtime with the 16-line draw buffer: ~50 KB free, lowest ~36 KB on .13 after boot (was 23 KB with 20 lines; .92 had dipped to 14.9 KB).
 
