@@ -307,6 +307,7 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 ## 8. Where we left off (2026-11-03)
 
 **Repo state**
+- 2026-11-03 (later): ESPHome logo top left on every page (`<page>_btn_logo`, x 13 / y 15, titles moved from x 51/40 to 125) → script `go_home` (the home page in use, also stops page rotation); on both home pages the logo opens the menu. Menu "Home" uses `go_home` too.
 - 2026-11-03: site button on the home page (`hp2_btn_site`), README rewritten (how it works: one firmware, only the Home Assistant package differs per inverter; repository map), unused fonts/icons and the finished SolarEdge migration note removed. Flashed on .13 only (compiled 17:57); .164 and .92 still run the 2026-11-01 build.
 - Committed and pushed to GitHub `main`: optional two-site mode, per-site Home Usage settings, screen sleep modes, boot status screen, all settings in HA, the switch restore fix, the 16-line draw buffer, docs.
 - All three displays run that build with two sites on (see §4).

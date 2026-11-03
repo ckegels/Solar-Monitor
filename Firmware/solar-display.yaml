@@ -3062,7 +3062,7 @@ lvgl:
       - label:
           id: hu_title
           text: "Home usage"
-          x: 40
+          x: 125
           y: 20
           text_color: 0xFFFFFF
           text_font: my_font_large    # or whatever you use for big titles
@@ -3252,6 +3252,27 @@ lvgl:
           y: 550
           text_color: 0xFFFFFF
           text_font: my_font
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: home_usage_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
           
   - id: home_page
     bg_color: 0x141B21
@@ -3447,6 +3468,31 @@ lvgl:
             align: center
             x: 0
             y: 0
+    # ESPHome logo top left: the menu (as on the new home page)
+    - button:
+        id: home_page_btn_logo
+        x: 13
+        y: 15
+        width: 102
+        height: 70
+        bg_color: 0x23282F
+        bg_opa: 0
+        border_width: 0
+        outline_width: 0
+        shadow_width: 0
+        pad_all: 0
+        on_click:
+          - lvgl.widget.show: loading_overlay
+          - delay: 20ms
+          - lvgl.page.show: menu_page
+          - delay: 250ms
+          - lvgl.widget.hide: loading_overlay
+        widgets:
+          - image:
+              src: esphome_logo
+              align: center
+              bg_opa: 0
+              scale: 0.25
 
   - id: home_page_2
     bg_color: 0x141B21
@@ -4485,12 +4531,33 @@ lvgl:
               align: center
               bg_opa: 0
               scale: 0.5      
+    # ESPHome logo top left: to the home page in use
+    - button:
+        id: solar_info_page_btn_logo
+        x: 13
+        y: 15
+        width: 102
+        height: 70
+        bg_color: 0x23282F
+        bg_opa: 0
+        border_width: 0
+        outline_width: 0
+        shadow_width: 0
+        pad_all: 0
+        on_click:
+          - script.execute: go_home
+        widgets:
+          - image:
+              src: esphome_logo
+              align: center
+              bg_opa: 0
+              scale: 0.25
 
   - id: battery_page
     bg_color: 0x141B21
     widgets:
     - label:
-        x: 51
+        x: 125
         y: 20
         text: Battery
         text_font: my_font_large
@@ -4716,12 +4783,33 @@ lvgl:
               align: center
               bg_opa: 0
               scale: 0.5                              
+    # ESPHome logo top left: to the home page in use
+    - button:
+        id: battery_page_btn_logo
+        x: 13
+        y: 15
+        width: 102
+        height: 70
+        bg_color: 0x23282F
+        bg_opa: 0
+        border_width: 0
+        outline_width: 0
+        shadow_width: 0
+        pad_all: 0
+        on_click:
+          - script.execute: go_home
+        widgets:
+          - image:
+              src: esphome_logo
+              align: center
+              bg_opa: 0
+              scale: 0.25
 
   - id: solar_page
     bg_color: 0x141B21
     widgets:
     - label:
-        x: 51
+        x: 125
         y: 20
         text: Solar
         text_font: my_font_large
@@ -4980,12 +5068,33 @@ lvgl:
               align: center
               bg_opa: 0
               scale: 0.5  
+    # ESPHome logo top left: to the home page in use
+    - button:
+        id: solar_page_btn_logo
+        x: 13
+        y: 15
+        width: 102
+        height: 70
+        bg_color: 0x23282F
+        bg_opa: 0
+        border_width: 0
+        outline_width: 0
+        shadow_width: 0
+        pad_all: 0
+        on_click:
+          - script.execute: go_home
+        widgets:
+          - image:
+              src: esphome_logo
+              align: center
+              bg_opa: 0
+              scale: 0.25
 
   - id: grid_page
     bg_color: 0x141B21
     widgets:
     - label:
-        x: 51
+        x: 125
         y: 20
         text: Grid
         text_font: my_font_large
@@ -5210,12 +5319,33 @@ lvgl:
               align: center
               bg_opa: 0
               scale: 0.5  
+    # ESPHome logo top left: to the home page in use
+    - button:
+        id: grid_page_btn_logo
+        x: 13
+        y: 15
+        width: 102
+        height: 70
+        bg_color: 0x23282F
+        bg_opa: 0
+        border_width: 0
+        outline_width: 0
+        shadow_width: 0
+        pad_all: 0
+        on_click:
+          - script.execute: go_home
+        widgets:
+          - image:
+              src: esphome_logo
+              align: center
+              bg_opa: 0
+              scale: 0.25
 
   - id: menu_page
     bg_color: 0x141B21
     widgets:
       - label:
-          x: 51
+          x: 125
           y: 20
           text: Menu
           text_font: my_font_large
@@ -5284,21 +5414,7 @@ lvgl:
                 border_width: 1
                 border_color: 3355443
                 on_click:
-                  - if:
-                      condition:
-                        switch.is_on: change_homepage 
-                      then:
-                        - lvgl.widget.show: loading_overlay
-                        - delay: 20ms
-                        - lvgl.page.show: home_page         # old/original homepage
-                        - delay: 250ms
-                        - lvgl.widget.hide: loading_overlay
-                      else:
-                        - lvgl.widget.show: loading_overlay
-                        - delay: 20ms
-                        - lvgl.page.show: home_page_2       # new homepage
-                        - delay: 250ms
-                        - lvgl.widget.hide: loading_overlay
+                  - script.execute: go_home
                 widgets:
                   - label:
                       text: Home
@@ -5473,6 +5589,27 @@ lvgl:
                       text_color: 16777215
                       text_font: my_font
                       align: center
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: menu_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
 
   - id: interval_page
     bg_color: 0x141B21
@@ -5511,7 +5648,7 @@ lvgl:
 
     widgets:
       - label:
-          x: 51
+          x: 125
           y: 20
           text: Interval
           text_font: my_font_large
@@ -5631,6 +5768,27 @@ lvgl:
                 text_font: my_font
                 text_color: 0xFFFFFF
                 align: center
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: interval_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
 
 
   - id: interval_settings_page
@@ -5641,7 +5799,7 @@ lvgl:
 
     widgets:
       - label:
-          x: 51
+          x: 125
           y: 20
           text: Interval settings
           text_font: my_font_large
@@ -5945,11 +6103,32 @@ lvgl:
                       align: center
                       text_font: my_font
                       text_color: 0xFFFFFF
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: interval_settings_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
   - id: settings_page
     bg_color: 0x141B21
     widgets:
     - label:
-        x: 51
+        x: 125
         y: 20
         text: Settings
         text_font: my_font_large
@@ -6650,12 +6829,33 @@ lvgl:
                     text_align: center
                     x: 0
                     y: 0
+    # ESPHome logo top left: to the home page in use
+    - button:
+        id: settings_page_btn_logo
+        x: 13
+        y: 15
+        width: 102
+        height: 70
+        bg_color: 0x23282F
+        bg_opa: 0
+        border_width: 0
+        outline_width: 0
+        shadow_width: 0
+        pad_all: 0
+        on_click:
+          - script.execute: go_home
+        widgets:
+          - image:
+              src: esphome_logo
+              align: center
+              bg_opa: 0
+              scale: 0.25
 
   - id: dual_site_page
     bg_color: 0x141B21
     widgets:
       - label:
-          x: 51
+          x: 125
           y: 20
           text: Two Home Assistant sites
           text_font: my_font_large
@@ -6727,6 +6927,27 @@ lvgl:
                 text: Turn on
                 text_font: my_font
                 text_color: 0xFFFFFF
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: dual_site_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
 
   - id: usage_device_select_page
     bg_color: 0x141B21
@@ -6757,7 +6978,7 @@ lvgl:
     widgets:
       # Title
       - label:
-          x: 51
+          x: 125
           y: 20
           text: Home Usage Devices
           text_font: my_font_large
@@ -6990,6 +7211,27 @@ lvgl:
                 text: "Device 5"
                 text_font: my_font
                 text_color: 0xFFFFFF
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: usage_device_select_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
 
   - id: usage_settings_page
     bg_color: 0x141B21
@@ -7027,7 +7269,7 @@ lvgl:
       # Title
       - label:
           id: lbl_usage_dev_title
-          x: 51
+          x: 125
           y: 20
           text: Device 1
           text_font: my_font_large
@@ -7468,6 +7710,27 @@ lvgl:
           outline_width: 0
           shadow_width: 0
           hidden: true
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: usage_settings_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
   - id: subpanel_settings_page
     bg_color: 0x141B21
     on_load:
@@ -7492,7 +7755,7 @@ lvgl:
       # Title
       - label:
           id: lbl_sp_settings_title
-          x: 40
+          x: 125
           y: 20
           text: "Subpanel Settings"
           text_font: my_font_large
@@ -8095,6 +8358,27 @@ lvgl:
                 text: "Done"
                 text_font: my_font
                 text_color: 0xFFFFFF
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: subpanel_settings_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
 
 
 
@@ -8103,7 +8387,7 @@ lvgl:
     widgets:
       # Title
       - label:
-          x: 51
+          x: 125
           y: 20
           text: Home Usage Help
           text_font: my_font_large
@@ -8184,12 +8468,33 @@ lvgl:
           text_font: my_font_small
           long_mode: wrap
           width: 864                      
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: usage_help_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
   - id: display_page
     bg_color: 0x141B21
     widgets:
       # Title
       - label:
-          x: 51
+          x: 125
           y: 20
           text: Display
           text_font: my_font_large
@@ -8527,6 +8832,27 @@ lvgl:
                 align: center
                 bg_opa: 0
                 scale: 0.5  
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: display_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
   - id: site_names_page
     bg_color: 0x141B21
     on_load:
@@ -8536,7 +8862,7 @@ lvgl:
             lv_textarea_set_text(id(ta_site_2_name), id(site_2_name_text).state.c_str());
     widgets:
       - label:
-          x: 51
+          x: 125
           y: 20
           text: Site names
           text_font: my_font_large
@@ -8678,11 +9004,32 @@ lvgl:
                 text: "Done"
                 text_font: my_font
                 text_color: 0xFFFFFF
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: site_names_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
   - id: theme_page
     bg_color: 0x141B21
     widgets:
       - label:
-          x: 51
+          x: 125
           y: 20
           text: Themes
           text_font: my_font_large
@@ -9407,11 +9754,32 @@ lvgl:
                       text: "Rose & plum"
                       text_font: my_font_small
                       text_color: 0xB89AAB
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: theme_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
   - id: wifi_page
     bg_color: 0x141B21
     widgets:
       - label:
-          x: 51
+          x: 125
           y: 20
           text: Wi-Fi
           text_font: my_font_large
@@ -9756,13 +10124,34 @@ lvgl:
                 text_font: my_font_small
                 text_color: 16777215
                 align: center
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: wifi_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
 
   - id: add_wifi_page
     bg_color: 0x141B21
     widgets:
       # Title
       - label:
-          x: 51
+          x: 125
           y: 20
           text: Add Network
           text_font: my_font_large
@@ -9930,6 +10319,27 @@ lvgl:
                 text_color: 0xFFFFFF
                 long_mode: dot
           hidden: true
+      # ESPHome logo top left: to the home page in use
+      - button:
+          id: add_wifi_page_btn_logo
+          x: 13
+          y: 15
+          width: 102
+          height: 70
+          bg_color: 0x23282F
+          bg_opa: 0
+          border_width: 0
+          outline_width: 0
+          shadow_width: 0
+          pad_all: 0
+          on_click:
+            - script.execute: go_home
+          widgets:
+            - image:
+                src: esphome_logo
+                align: center
+                bg_opa: 0
+                scale: 0.25
 
   - id: graph_page
     bg_color: 0x141B21
@@ -10722,6 +11132,27 @@ lvgl:
               align: center
               bg_opa: 0
               scale: 0.5  
+    # ESPHome logo top left: to the home page in use
+    - button:
+        id: graph_page_btn_logo
+        x: 13
+        y: 15
+        width: 102
+        height: 70
+        bg_color: 0x23282F
+        bg_opa: 0
+        border_width: 0
+        outline_width: 0
+        shadow_width: 0
+        pad_all: 0
+        on_click:
+          - script.execute: go_home
+        widgets:
+          - image:
+              src: esphome_logo
+              align: center
+              bg_opa: 0
+              scale: 0.25
 select:
   # Home Assistant site, also switchable from Home Assistant: the Home Assistant you switch away from
   # just sees the port closed and keeps retrying. The options are replaced by the site names at boot
@@ -11160,6 +11591,25 @@ script:
       // flicker "HMMD Presence" in HA. Motion mode: as configured (HMMD drives the pin).
       gpio_set_pull_mode(GPIO_NUM_6, id(presence_sensor_toggle).state ? GPIO_FLOATING : GPIO_PULLDOWN_ONLY);
 # Write changed settings to flash now instead of after flash_write_interval (5 min)
+# To the home page that is in use (original or new); also ends page rotation. Menu "Home" and the
+# ESPHome logo top left on every page
+- id: go_home
+  mode: restart
+  then:
+  - lambda: |-
+      id(interval_mode_active) = false;
+      id(interval_running) = false;
+  - lvgl.widget.show: loading_overlay
+  - delay: 20ms
+  - if:
+      condition:
+        switch.is_on: change_homepage
+      then:
+        - lvgl.page.show: home_page         # old/original homepage
+      else:
+        - lvgl.page.show: home_page_2       # new homepage
+  - delay: 250ms
+  - lvgl.widget.hide: loading_overlay
 - id: prefs_sync
   mode: restart
   then:

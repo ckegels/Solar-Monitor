@@ -173,6 +173,10 @@ Swipe in from the edge of the screen to move between the main pages, in the same
 
 Start the swipe within about 1 cm of the edge and move at least about 2 cm inwards. A tap near the edge still presses whatever button is there. Swiping does nothing on the menu and settings pages, or while the screen is off (the first touch only wakes it).
 
+### Getting back home
+
+Tap the **ESPHome logo** top left on any page to go back to the home page (the one chosen under *Original Home Page*); this also stops page rotation. On the home page itself the logo opens the menu. **Home** in the menu does the same.
+
 ### Themes
 
 The display has 8 colour themes (Graphite is the default look). Pick one under **Settings → Themes**, or use the **Theme** select entity in Home Assistant, for example in an automation that switches to *OLED* at night. The choice is saved on the display and survives a power cut.
