@@ -177,13 +177,13 @@ How it was measured (throwaway code, not in the repo, easy to recreate): a heade
   - **phase A:** unique_ids `energy_um_<new key>` / `energy_int_<name>` for the 35 utility meters and 7 integration sensors
   - **phase B:** the 219 renames in `sigenergy-entity-renames.csv` (`package_sigen_…` → `solar_…`, "pv" → "panel"), plus a new `solar_lifetime_energy` (kWh, from `sensor.sigen_plant_total_pv_generation`)
   - Template unique_ids were kept. The `package_sigen_*_kwh` integration sensors, `package_sigen_battery_soc_hours` and the input helpers keep their names.
-- **Live installs** follow `Homeassistant/migration/HANDOVER-solaredge-ha.md` (small) and `HANDOVER-sigenergy-ha.md`. The Sigenergy one renames the entities in the registry, so history and statistics move with them, and updates dashboards etc. **Order:** packages first, then flash the displays right after (displays on the old firmware read the old names).
+- **Live installs:** SolarEdge only needs the current package (nothing renamed; its one-off migration note was removed 2026-11-03, it is in the git history). Sigenergy follows `Homeassistant/migration/HANDOVER-sigenergy-ha.md`. The Sigenergy one renames the entities in the registry, so history and statistics move with them, and updates dashboards etc. **Order:** packages first, then flash the displays right after (displays on the old firmware read the old names).
 - Checked: each of the three packages defines all 244 display entities; the firmware compiles.
 - **Secrets:** `secrets.yaml` is untracked and ignored (root `.gitignore`); `Firmware/secrets.example.yaml` is the template, without the previously committed key. The example `energydevices.yaml` files now use neutral sensor names (they held the owner's device and place names).
 
 ### Two Home Assistant sites (2026-10-31, optional since 2026-11-01)
 - **Off by default.** `dual_site_mode` (global, restored: 1 = on, 0 = off, −1 = not decided yet) is set on **Settings → Two Home Assistant sites** (`dual_site_page`: explanation + on/off button) or with the *Two Home Assistant Sites* switch (`dual_site_set`). The first boot with this firmware turns it on only for a display that is already on site 2, so it keeps working. `dual_site` holds it for this boot and the UI. Off: no site card in Settings, no site buttons on the boot screen, and turning it off while on site 2 switches back to site 1 (restart). The owner's three displays have it on; the repo default stays off.
-- **Choosing a site:** the boot screen (two buttons at the top) and **Settings → Home Assistant** (top card) have a button per site. The choice is the global `site_index` (`restore_value`, initial `${default_site}`). Tapping the other site runs `site_switch`: it sets the index, waits 500 ms so the globals component stores it, calls `global_preferences->sync()`, then reboots.
+- **Choosing a site:** the boot screen (two buttons at the top) and **Settings → Home Assistant** (top card) have a button per site. The home page (`home_page_2`) has `hp2_btn_site` next to the logo (2026-11-03, only with two sites on): it shows the current site's name (`hp2_lbl_site`, set in `site_update_label`) and a tap runs `site_switch` for the other site, without asking. The choice is the global `site_index` (`restore_value`, initial `${default_site}`). Tapping the other site runs `site_switch`: it sets the index, waits 500 ms so the globals component stores it, calls `global_preferences->sync()`, then reboots.
 - **Switching from Home Assistant:** the template select `site_ha_select` ("Home Assistant Site"). At boot its options are set to the two names (static buffers, `traits.set_options`) and its state to the active site. `set_action` runs `site_switch`. Home Assistant reads the options when it connects, so a rename shows up there after the next restart. Safe because the Home Assistant you switch away from just sees a closed port and keeps retrying.
 - **Site names** are the template texts `site_1_name_text` / `site_2_name_text` ("Site 1 Name", "Site 2 Name" in HA, `restore_value`, initial from the `site_1_name` / `site_2_name` substitutions, default "Home" / "Site 2"; disabled by default in HA, like the *Home Assistant Site* select). They're edited on `site_names_page` (✎ on the Settings card) with the same floating keyboard + Done button as the subpanel editor. `site_update_label` refreshes all four buttons (labels and active colour); it runs at boot, on a theme change and on a name change.
 - Site 2 uses **port 6055** (`api_port_site_2`) and the key in the `api_key_site_2` substitution. Its repo default is `""` = the site 1 key (only the port differs). The owner's displays are built with `-s api_key_site_2 <api_encryption_key_site_2 from secrets.yaml>` (see §5); **without it a display on site 2 offers the site 1 key and the Sigenergy HA asks for re-authentication.** `on_boot` priority 225 (before the API opens its socket at `AFTER_WIFI` = 200) calls `set_port()`. Priority 150 (after the API setup, before any client can connect) calls `set_noise_psk()` with the key decoded into a static buffer. `site2_active` holds the boot-time decision.
@@ -299,14 +299,15 @@ esphome logs solar-display.yaml --device <display-ip>     # live logs
 | Rotation page selection (`interval_pages_mask`) and the theme are not per site | only Home Usage is |
 | Optional: shorten the 250 ms spinner delay in the navigation handlers (e.g. to 100 ms) | it is now most of a page change; the owner kept 250 ms for now |
 | Graph page: replace the 24 `lv_obj_align_to()` calls for the value labels with computed positions | a graph refresh still takes ~85 ms every 750 ms while the graph page is open |
-| Remove `ch422g` leftovers, `old_icon_sun_100.png` | cleanup |
+| Remove `ch422g` leftovers | cleanup (unused fonts/icons removed 2026-11-03) |
 | From the README: configurable suggestion texts/thresholds, interval page graphs | features |
 
 ---
 
-## 8. Where we left off (2026-11-01)
+## 8. Where we left off (2026-11-03)
 
 **Repo state**
+- 2026-11-03: site button on the home page (`hp2_btn_site`), README rewritten (how it works: one firmware, only the Home Assistant package differs per inverter; repository map), unused fonts/icons and the finished SolarEdge migration note removed. Flashed on .13 only (compiled 17:57); .164 and .92 still run the 2026-11-01 build.
 - Committed and pushed to GitHub `main`: optional two-site mode, per-site Home Usage settings, screen sleep modes, boot status screen, all settings in HA, the switch restore fix, the 16-line draw buffer, docs.
 - All three displays run that build with two sites on (see §4).
 
