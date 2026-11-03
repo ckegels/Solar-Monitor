@@ -54,6 +54,9 @@ esphome:
   - priority: 225
     then:
     - lambda: |-
+        // The original home page was removed: rotate the home page instead (bit0 → bit1)
+        if (id(interval_pages_mask) & 1) id(interval_pages_mask) = (id(interval_pages_mask) & ~1) | 2;
+    - lambda: |-
         // Two Home Assistant sites (optional, Settings): first start with this firmware turns it on
         // for a display that is already on site 2, so it keeps working
         if (id(dual_site_mode) < 0) id(dual_site_mode) = (id(site_index) == 1) ? 1 : 0;
@@ -336,13 +339,7 @@ switch:
     - lambda: |-
         id(interval_mode_active) = false;
         id(interval_running) = false;
-    - if:
-        condition:
-          switch.is_on: change_homepage
-        then:
-          - lvgl.page.show: home_page
-        else:
-          - lvgl.page.show: home_page_2
+    - lvgl.page.show: home_page_2
 # Two Home Assistant sites (optional): same as Settings → Two Home Assistant sites
 - platform: template
   id: dual_site_ha_switch
@@ -366,16 +363,6 @@ switch:
     - lambda: id(interval_page_set).execute(1, true);
   turn_off_action:
     - lambda: id(interval_page_set).execute(1, false);
-- platform: template
-  name: Rotate Original Home
-  icon: mdi:page-next-outline
-  entity_category: config
-  restore_mode: DISABLED   # only mirrors the setting; would otherwise run turn_off_action at boot
-  lambda: return (id(interval_pages_mask) >> 0) & 1;
-  turn_on_action:
-    - lambda: id(interval_page_set).execute(0, true);
-  turn_off_action:
-    - lambda: id(interval_page_set).execute(0, false);
 - platform: template
   name: Rotate Power Flow
   icon: mdi:page-next-outline
@@ -513,38 +500,7 @@ switch:
   restore_mode: RESTORE_DEFAULT_OFF
   on_turn_on:
     then:
-    - if:
-        condition:
-          switch.is_on: change_homepage 
-        then:
-          - lvgl.page.show: home_page         # old/original homepage
-        else:
-          - lvgl.page.show: home_page_2       # new homepage
-- platform: template
-  id: change_homepage
-  name: Original Home Page   # on = the old basic home page, off = the 4-box one
-  icon: mdi:home-variant-outline
-  entity_category: config
-  optimistic: true
-  restore_mode: RESTORE_DEFAULT_OFF
-  on_turn_on:
-    then:
-    - if:
-        condition:
-            lambda: return id(api_ready);
-        then:
-        - lvgl.page.show: home_page
-        - lambda: |-
-            id(use_original_home) = true;
-  on_turn_off:
-    then:
-    - if:
-        condition:
-            lambda: return id(api_ready);
-        then:
-        - lvgl.page.show: home_page_2
-        - lambda: |-
-            id(use_original_home) = false;
+    - lvgl.page.show: home_page_2
 touchscreen:
 - platform: gt911
   id: my_touchscreen
@@ -571,8 +527,7 @@ touchscreen:
   on_update:
   - lambda: |-
       if (touches.empty()) return;
-      lvgl::LvPageType *home = id(change_homepage).state ? id(home_page) : id(home_page_2);
-      lvgl::LvPageType *pages[] = { home, id(solar_info_page), id(solar_page), id(battery_page),
+      lvgl::LvPageType *pages[] = { id(home_page_2), id(solar_info_page), id(solar_page), id(battery_page),
                                     id(grid_page), id(graph_page), id(home_usage_page) };
       const int count = sizeof(pages) / sizeof(pages[0]);
       int pos = -1;
@@ -807,10 +762,6 @@ globals:
   type: float
   initial_value: '0'
   restore_value: no
-- id: use_original_home
-  type: bool
-  restore_value: true
-  initial_value: "false"    # false => home_page_2 is default
 - id: current_dataset
   type: int
   restore_value: true
@@ -836,12 +787,13 @@ globals:
   initial_value: '10'
 
 # Bitmask of selected pages to rotate between
-# bit0 home_page, bit1 home_page_2, bit2 solar_page, bit3 solar_info_page,
-# bit4 battery_page, bit5 grid_page, bit6 graph_page, bit7 home_usage_page
+# bit1 home_page_2, bit2 solar_page, bit3 solar_info_page, bit4 battery_page,
+# bit5 grid_page, bit6 graph_page, bit7 home_usage_page. bit0 is unused (was the
+# original home page, removed; on_boot moves it to bit1)
 - id: interval_pages_mask
   type: int
   restore_value: yes
-  initial_value: '1'   # default: home_page only
+  initial_value: '2'   # default: Home only
 
 - id: interval_countdown
   type: int
@@ -993,13 +945,7 @@ binary_sensor:
         condition:
             lambda: return id(api_ready) && (x == false);
         then:
-        - if:
-            condition:
-              switch.is_on: change_homepage 
-            then:
-              - lvgl.page.show: home_page         # old/original homepage
-            else:
-              - lvgl.page.show: home_page_2       # new homepage
+        - lvgl.page.show: home_page_2
 sensor:
 
 - platform: homeassistant
@@ -1042,26 +988,6 @@ sensor:
   name: Solar Panel Production
   entity_id: sensor.solar_panel_production_w
   id: solar_panel_production_sensor
-  on_value:
-  - lambda: 'char buffer[20];
-
-      snprintf(buffer, sizeof(buffer), "%.0f W", x);
-
-      lv_label_set_text(id(solar_input_value_label), buffer);
-
-      if (x > 6000) {
-
-      lv_obj_set_style_text_color(id(solar_input_value_label), lv_color_hex(0x388E3C), LV_PART_MAIN);
-
-      } else if (x > 1000) {
-
-      lv_obj_set_style_text_color(id(solar_input_value_label), lv_color_hex(0xFF9800), LV_PART_MAIN);
-
-      } else {
-
-      lv_obj_set_style_text_color(id(solar_input_value_label), lv_color_hex(0xB71C1C), LV_PART_MAIN);
-
-      }'
 - platform: homeassistant
   name: Solar House Consumption
   entity_id: sensor.solar_house_consumption_w
@@ -1071,11 +997,8 @@ sensor:
 
       snprintf(buffer, sizeof(buffer), "%.0f W", x);
 
-      lv_label_set_text(id(home_usage_value_label), buffer);
-
       lv_label_set_text(id(hu_home_usage_value_label), buffer);
 
-      lv_obj_set_style_text_color(id(home_usage_value_label), lv_color_white(), LV_PART_MAIN);
       lv_obj_set_style_text_color(id(hu_home_usage_value_label), lv_color_white(), LV_PART_MAIN);'
 - platform: homeassistant
   name: Battery State of Charge
@@ -1083,19 +1006,12 @@ sensor:
   id: battery_soc
   on_value:
     - lambda: |-
-        lv_bar_set_value(id(battery_bar), x, LV_ANIM_ON);
-
         char buffer[10];
         snprintf(buffer, sizeof(buffer), "%.0f%%", x);
-        lv_label_set_text(id(battery_percent_label), buffer);
 
-        // Update circular SoC display
+        // Circular SoC display
         lv_label_set_text(id(batt_soc_circle_text), buffer);
         lv_arc_set_value(id(batt_soc_arc), (int)x);
-        lv_label_set_text(id(batt_soc_circle_text), buffer);
-
-        // Optional: set bar color
-        lv_obj_set_style_bg_color(id(battery_bar), lv_color_hex(0x388E3C), LV_PART_INDICATOR);
 
     - lambda: |-
         // ---- home_page_2 battery image visibility ----
@@ -3274,226 +3190,6 @@ lvgl:
                 bg_opa: 0
                 scale: 0.25
           
-  - id: home_page
-    bg_color: 0x141B21
-    border_width: 0
-    outline_width: 0
-    shadow_width: 0
-    pad_all: 0
-    scrollable: false
-    scrollbar_mode: 'off'
-    widgets:
-    - obj:
-        id: col_solar
-        scrollable: false
-        scrollbar_mode: 'off'
-        x: 51
-        y: 150
-        width: 282
-        height: 400
-        bg_opa: 0%
-        border_width: 0
-        outline_width: 0
-        shadow_width: 0
-        pad_all: 0
-        widgets:
-        - image:
-            id: img_home_solar
-            src: node_solar_img
-            align: top_mid
-            bg_opa: 0%
-            clickable: true
-            on_click:
-              - lvgl.widget.show: loading_overlay
-              - delay: 20ms
-              - lvgl.page.show: solar_page
-              - delay: 250ms
-              - lvgl.widget.hide: loading_overlay
-        - image:
-            id: img_home_grid
-            src: node_grid_100
-            align: top_mid
-            bg_opa: 0%
-            clickable: true
-            on_click:
-              - lvgl.widget.show: loading_overlay
-              - delay: 20ms
-              - lvgl.page.show: grid_page
-              - delay: 250ms
-              - lvgl.widget.hide: loading_overlay
-        - label:
-            id: solar_input_value_label
-            text: 0 W
-            text_font: my_font_large
-            text_color: 65280
-            align: bottom_mid
-            y: -125
-    - obj:
-        id: col_battery
-        scrollable: false
-        scrollbar_mode: 'off'
-        x: 307
-        y: 150
-        width: 410
-        height: 400
-        bg_opa: 0%
-        border_width: 0
-        outline_width: 0
-        shadow_width: 0
-        pad_all: 0
-        widgets:
-        - image:
-            id: img_home_battery
-            src: node_battery_100
-            align: top_mid
-            bg_opa: 0%
-            clickable: true
-            on_click:
-              - lvgl.widget.show: loading_overlay
-              - delay: 20ms
-              - lvgl.page.show: battery_page
-              - delay: 250ms
-              - lvgl.widget.hide: loading_overlay
-        - label:
-            id: battery_percent_label
-            text: 0%
-            text_font: my_font
-            text_color: 16777215
-            align: center
-            y: 0
-        - bar:
-            id: battery_bar
-            width: 384
-            height: 28
-            value: 0
-            align: bottom_mid
-            y: -138
-            border_width: 0
-            outline_width: 0
-            shadow_width: 0
-            pad_all: 0
-            bg_color: 0
-            bg_opa: 100%
-    - obj:
-        id: col_home
-        scrollable: false
-        scrollbar_mode: 'off'
-        x: 717
-        y: 150
-        width: 256
-        height: 400
-        bg_opa: 0%
-        border_width: 0
-        outline_width: 0
-        shadow_width: 0
-        pad_all: 0
-        widgets:
-        - image:
-            id: img_home_home
-            src: node_home_100
-            align: top_mid
-            bg_opa: 0%
-            clickable: true
-            on_click:
-              - if:
-                  condition:
-                    switch.is_on: change_homepage 
-                  then:
-                    - lvgl.widget.show: loading_overlay
-                    - delay: 20ms
-                    - lvgl.page.show: home_page         # old/original homepage
-                    - delay: 250ms
-                    - lvgl.widget.hide: loading_overlay
-                  else:
-                    - lvgl.widget.show: loading_overlay
-                    - delay: 20ms
-                    - lvgl.page.show: home_page_2       # new homepage
-                    - delay: 250ms
-                    - lvgl.widget.hide: loading_overlay
-        - label:
-            id: home_usage_value_label
-            text: 0 W
-            text_font: my_font_large
-            text_color: mdi_red
-            align: bottom_mid
-            y: -125
-    - button:
-        id: btn_topright_home
-        width: 102
-        height: 70
-        align: top_right
-        x: -38            # nudge from right edge
-        y: 15             # nudge from top
-        bg_color: 0x23282F
-        bg_opa: 0
-        border_width: 0
-        outline_width: 0
-        shadow_width: 0
-        pad_all: 0
-        shadow_color: 0x23282F
-        on_click:
-          - lvgl.widget.show: loading_overlay
-          - delay: 20ms
-          - lvgl.page.show: menu_page
-          - delay: 250ms
-          - lvgl.widget.hide: loading_overlay
-        widgets:
-          - image:
-              src: img_menu_res
-              align: center
-              bg_opa: 0
-              scale: 0.5  
-
-    - obj:
-        id: suggestion_box
-        scrollable: false
-        scrollbar_mode: 'off'
-        x: 0
-        y: 125
-        width: 1024
-        height: 150
-        bg_color: 2236962
-        bg_opa: 100%
-        border_width: 4
-        border_color: 16711680
-        radius: 10
-        align: top_mid
-        widgets:
-        - label:
-            id: suggestion_label
-            text: ''
-            text_font: my_font_medium
-            text_color: 16777215
-            long_mode: wrap
-            align: center
-            x: 0
-            y: 0
-    # ESPHome logo top left: the menu (as on the new home page)
-    - button:
-        id: home_page_btn_logo
-        x: 13
-        y: 15
-        width: 102
-        height: 70
-        bg_color: 0x23282F
-        bg_opa: 0
-        border_width: 0
-        outline_width: 0
-        shadow_width: 0
-        pad_all: 0
-        on_click:
-          - lvgl.widget.show: loading_overlay
-          - delay: 20ms
-          - lvgl.page.show: menu_page
-          - delay: 250ms
-          - lvgl.widget.hide: loading_overlay
-        widgets:
-          - image:
-              src: esphome_logo
-              align: center
-              bg_opa: 0
-              scale: 0.25
-
   - id: home_page_2
     bg_color: 0x141B21
     border_width: 0
@@ -3707,7 +3403,7 @@ lvgl:
                 then:
                   - lvgl.widget.show: loading_overlay
                   - delay: 20ms
-                  - lvgl.page.show: battery_page      # old/original homepage
+                  - lvgl.page.show: battery_page
                   - delay: 250ms
                   - lvgl.widget.hide: loading_overlay
               widgets:
@@ -4060,21 +3756,11 @@ lvgl:
         y: 238
         clickable: true
         on_click:
-          - if:
-              condition:
-                switch.is_on: change_homepage 
-              then:
-                - lvgl.widget.show: loading_overlay
-                - delay: 20ms
-                - lvgl.page.show: home_page         # old/original homepage
-                - delay: 250ms
-                - lvgl.widget.hide: loading_overlay
-              else:
-                - lvgl.widget.show: loading_overlay
-                - delay: 20ms
-                - lvgl.page.show: home_page_2       # new homepage
-                - delay: 250ms
-                - lvgl.widget.hide: loading_overlay
+          - lvgl.widget.show: loading_overlay
+          - delay: 20ms
+          - lvgl.page.show: home_page_2
+          - delay: 250ms
+          - lvgl.widget.hide: loading_overlay
     - obj:
         id: batt_soc_circle
         width: 82
@@ -5366,21 +5052,11 @@ lvgl:
           pad_all: 0
           shadow_color: 0x23282F
           on_click:
-            - if:
-                condition:
-                  switch.is_on: change_homepage 
-                then:
-                  - lvgl.widget.show: loading_overlay
-                  - delay: 20ms
-                  - lvgl.page.show: home_page         # old/original homepage
-                  - delay: 250ms
-                  - lvgl.widget.hide: loading_overlay
-                else:
-                  - lvgl.widget.show: loading_overlay
-                  - delay: 20ms
-                  - lvgl.page.show: home_page_2       # new homepage
-                  - delay: 250ms
-                  - lvgl.widget.hide: loading_overlay
+            - lvgl.widget.show: loading_overlay
+            - delay: 20ms
+            - lvgl.page.show: home_page_2
+            - delay: 250ms
+            - lvgl.widget.hide: loading_overlay
           widgets:
             - image:
                 src: img_close_res
@@ -5624,7 +5300,7 @@ lvgl:
             int mask = id(interval_pages_mask) & 0xFF;
             if (mask == 0) {
               // default to Home if nothing selected
-              mask = 1;
+              mask = 2;
               id(interval_pages_mask) = mask;
             }
 
@@ -5901,7 +5577,7 @@ lvgl:
           text_font: my_font_small
           text_color: 0x9E9E9E
 
-      # 3x3 grid of page toggles (8 pages + All/None)
+      # 3-column grid of page toggles (7 pages + All/None)
       - obj:
           id: interval_pages_grid
           x: 51
@@ -5918,26 +5594,6 @@ lvgl:
             pad_column: 14
           pad_all: 0
           widgets:
-            - button:
-                id: btn_int_home
-                width: 298
-                height: 95
-                radius: 15
-                bg_color: 0x1C2229
-                border_width: 1
-                border_color: 0x333333
-                on_click:
-                  - lambda: |-
-                      id(interval_pages_mask) ^= (1 << 0);
-                  - script.execute: interval_refresh_settings_ui
-                widgets:
-                  - label:
-                      text: Alt Home
-                      x: 16
-                      y: 30
-                      text_font: my_font
-                      text_color: 0xFFFFFF
-
             - button:
                 id: btn_int_home2
                 width: 298
@@ -6090,10 +5746,10 @@ lvgl:
                   - lambda: |-
                       // Toggle all pages on/off
                       int mask = id(interval_pages_mask) & 0xFF;
-                      if (mask == 0xFF) {
-                        id(interval_pages_mask) = 1;  // default back to Home only
+                      if (mask == 0xFE) {
+                        id(interval_pages_mask) = 2;  // default back to Home only
                       } else {
-                        id(interval_pages_mask) = 0xFF;
+                        id(interval_pages_mask) = 0xFE;
                       }
                   - script.execute: interval_refresh_settings_ui
                 widgets:
@@ -6718,55 +6374,6 @@ lvgl:
                 widgets:
                 - label:
                     id: lbl_backup_sim_state
-                    text: --
-                    text_font: my_font_small
-                    text_color: 16777215
-                    align: center
-                    width: 141
-                    text_align: center
-                    x: 0
-                    y: 0
-        - button:
-            id: card_setting_homepage_toggle
-            width: 883
-            height: 100
-            radius: 15
-            bg_color: 0x1C2229
-            border_width: 1
-            border_color: 3355443
-            scrollable: false
-            scrollbar_mode: 'off'
-            on_click:
-            - switch.toggle: change_homepage
-            widgets:
-            - label:
-                x: 20
-                align: left_mid
-                y: -16
-                text: Original Homepage
-                text_font: my_font
-                text_color: 16777215
-            - label:
-                x: 20
-                align: left_mid
-                y: 19
-                text: Change Back to the Old Basic Homepage
-                text_font: my_font_small
-                text_color: 10395294
-            - obj:
-                id: pill_homepage_select
-                width: 141
-                height: 45
-                radius: 22
-                bg_color: 4342338
-                align: right_mid
-                x: -15
-                pad_all: 0
-                scrollable: false
-                scrollbar_mode: 'off'
-                widgets:
-                - label:
-                    id: lbl_homepage_select_state
                     text: --
                     text_font: my_font_small
                     text_color: 16777215
@@ -11591,7 +11198,7 @@ script:
       // flicker "HMMD Presence" in HA. Motion mode: as configured (HMMD drives the pin).
       gpio_set_pull_mode(GPIO_NUM_6, id(presence_sensor_toggle).state ? GPIO_FLOATING : GPIO_PULLDOWN_ONLY);
 # Write changed settings to flash now instead of after flash_write_interval (5 min)
-# To the home page that is in use (original or new); also ends page rotation. Menu "Home" and the
+# To the home page; also ends page rotation. Menu "Home" and the
 # ESPHome logo top left on every page
 - id: go_home
   mode: restart
@@ -11601,13 +11208,7 @@ script:
       id(interval_running) = false;
   - lvgl.widget.show: loading_overlay
   - delay: 20ms
-  - if:
-      condition:
-        switch.is_on: change_homepage
-      then:
-        - lvgl.page.show: home_page         # old/original homepage
-      else:
-        - lvgl.page.show: home_page_2       # new homepage
+  - lvgl.page.show: home_page_2
   - delay: 250ms
   - lvgl.widget.hide: loading_overlay
 - id: prefs_sync
@@ -11784,13 +11385,7 @@ script:
   - delay: !lambda |
       return id(boot_extra_delay_ms);
   - lvgl.animation.stop: boot_logo_breathe
-  - if:
-      condition:
-        switch.is_on: change_homepage 
-      then:
-        - lvgl.page.show: home_page         # old/original homepage
-      else:
-        - lvgl.page.show: home_page_2       # new homepage
+  - lvgl.page.show: home_page_2
 - id: maybe_show_boot_menu
   mode: restart
   then:
@@ -11806,11 +11401,6 @@ script:
 - id: interval_show_target_page
   mode: restart
   then:
-    - if:
-        condition:
-          lambda: 'return id(interval_target_bit) == 0;'
-        then:
-          - lvgl.page.show: home_page
     - if:
         condition:
           lambda: 'return id(interval_target_bit) == 1;'
@@ -11864,7 +11454,6 @@ script:
         }
 
         // Tile outlines
-        set_border(id(btn_int_home), 0);
         set_border(id(btn_int_home2), 1);
         set_border(id(btn_int_info), 3);
         set_border(id(btn_int_solar), 2);
@@ -11876,7 +11465,7 @@ script:
         // "All/None" tile text
         if (id(lbl_int_allnone) != nullptr) {
           int mask = id(interval_pages_mask) & 0xFF;
-          lv_label_set_text(id(lbl_int_allnone), (mask == 0xFF) ? "None" : "All");
+          lv_label_set_text(id(lbl_int_allnone), (mask == 0xFE) ? "None" : "All");
         }
 
 
@@ -12703,143 +12292,37 @@ interval:
       - lambda: |-
 
 
-          // ===== Dynamic Home left tile: Solar when producing, otherwise Grid import ====
+          // ==================== Tips on the home page (hp2_lbl_suggestion) ====================
           {
             auto nz = [](float v) { return (std::isnan(v) ? 0.0f : v); };
 
-            const float SOLAR_MIN_W = 64.0f;  // threshold to consider "no solar"
-
-            float solar_w = nz(id(solar_panel_production_sensor).state);
-            float grid_w  = nz(id(imported_power_w).state);
-
-            char b[20];
-
-            if (solar_w > SOLAR_MIN_W) {
-              // --- Show SOLAR production
-              if (fabsf(solar_w) >= 1000.0f) snprintf(b, sizeof(b), "%.1f kW", solar_w / 1000.0f);
-              else                            snprintf(b, sizeof(b), "%.0f W",  solar_w);
-              lv_label_set_text(id(solar_input_value_label), b);
-
-              // color (green high, orange mid, red low)
-              if      (solar_w > 6000) lv_obj_set_style_text_color(id(solar_input_value_label), lv_color_hex(0x388E3C), LV_PART_MAIN);
-              else if (solar_w > 1000) lv_obj_set_style_text_color(id(solar_input_value_label), lv_color_hex(0xFF9800), LV_PART_MAIN);
-              else                     lv_obj_set_style_text_color(id(solar_input_value_label), lv_color_hex(0xB71C1C), LV_PART_MAIN);
-
-              // show sun, hide grid (Solar tile navigates to Solar page)
-              lv_obj_clear_flag(id(img_home_solar), LV_OBJ_FLAG_HIDDEN);
-              lv_obj_add_flag   (id(img_home_grid),  LV_OBJ_FLAG_HIDDEN);
-            } else {
-              // --- Show GRID import
-              if (fabsf(grid_w) >= 1000.0f) snprintf(b, sizeof(b), "%.1f kW", grid_w / 1000.0f);
-              else                          snprintf(b, sizeof(b), "%.0f W",  grid_w);
-              lv_label_set_text(id(solar_input_value_label), b);
-
-              // color for import (red high, orange mid, green low)
-              if      (grid_w > 5000) lv_obj_set_style_text_color(id(solar_input_value_label), lv_color_hex(0xB71C1C), LV_PART_MAIN);
-              else if (grid_w > 1000) lv_obj_set_style_text_color(id(solar_input_value_label), lv_color_hex(0xFF9800), LV_PART_MAIN);
-              else                    lv_obj_set_style_text_color(id(solar_input_value_label), lv_color_hex(0x388E3C), LV_PART_MAIN);
-
-              // show grid, hide sun (Grid tile navigates to Grid page)
-              lv_obj_clear_flag(id(img_home_grid),  LV_OBJ_FLAG_HIDDEN);
-              lv_obj_add_flag   (id(img_home_solar), LV_OBJ_FLAG_HIDDEN);
-            }
-          }
-
-          // ==================== Suggestion Box Logic (with OFF-GRID override) ====================
-          {
-            auto nz = [](float v) { return (std::isnan(v) ? 0.0f : v); };
-
-            // --- OFF-GRID / BACKUP detection ---
+            // Off grid (HA, or Simulate Backup Mode): always shown and flashing, also with Show Tips off
             bool ha_backup = false;
             if (id(grid_backup_status_ha).has_state()) {
               ha_backup = !id(grid_backup_status_ha).state;  // invert: "off" => backup
             }
-            bool sim_backup = id(simulate_backup_switch).state;
-            bool is_backup  = ha_backup || sim_backup;
+            const bool is_backup = ha_backup || id(simulate_backup_switch).state;
 
-            // Last normal suggestion shown; restyling the box forces a redraw, so
-            // set_box() skips it when nothing changed. Overrides reset it.
-            static const char* sug_last_msg = nullptr;
-            static uint32_t sug_last_border = 0;
-            static uint32_t sug_last_epoch = 0;
-
-            // Helper for consistent box layout
-            auto style_box_base = [&]() {
-              const int padL = 20, padR = 16, padT = 12, padB = 12;
-              lv_obj_set_width(id(suggestion_box), 973);
-              lv_obj_align(id(suggestion_box), LV_ALIGN_BOTTOM_MID, 0, -5);
-              lv_obj_set_style_pad_left  (id(suggestion_box), padL, LV_PART_MAIN);
-              lv_obj_set_style_pad_right (id(suggestion_box), padR, LV_PART_MAIN);
-              lv_obj_set_style_pad_top   (id(suggestion_box), padT, LV_PART_MAIN);
-              lv_obj_set_style_pad_bottom(id(suggestion_box), padB, LV_PART_MAIN);
-              lv_label_set_long_mode(id(suggestion_label), LV_LABEL_LONG_WRAP);
-              lv_obj_set_width(id(suggestion_label), 760 - (padL + padR));
-              lv_obj_align(id(suggestion_label), LV_ALIGN_TOP_LEFT, padL, padT);
-              lv_obj_clear_flag(id(suggestion_box),   LV_OBJ_FLAG_HIDDEN);
-              lv_obj_clear_flag(id(suggestion_label), LV_OBJ_FLAG_HIDDEN);
-            };
-
-            // === OFF-GRID override: force-visible, flashing RED background ===
+            const char *msg = "";
             if (is_backup) {
-              sug_last_msg = nullptr;
-              static int blink = 0;   // 150 ms interval above -> ~0.15s per tick
-              blink = (blink + 1) % 8; // ~1.2s cycle
-              bool on = (blink < 4);  // 50% duty
-
-              style_box_base();
-
-              // Red background flash + white text
-              lv_obj_set_style_bg_color(id(suggestion_box), lv_color_hex(0xB71C1C), LV_PART_MAIN);
-              lv_obj_set_style_bg_opa  (id(suggestion_box), on ? LV_OPA_COVER : LV_OPA_20, LV_PART_MAIN);
-              lv_obj_set_style_outline_width(id(suggestion_box), 6, LV_PART_MAIN);
-              lv_obj_set_style_outline_color(id(suggestion_box), lv_color_hex(0xFFFFFF), LV_PART_MAIN);
-              lv_obj_set_style_radius(id(suggestion_box), 12, LV_PART_MAIN);
-
-              lv_obj_set_style_text_color(id(suggestion_label), lv_color_hex(0xFFFFFF), LV_PART_MAIN);
-              lv_label_set_text(id(suggestion_label), "Off grid. Backup mode on. Reduce energy!");
-
-              // Do not run normal suggestions when in backup
-              goto _suggestion_done;
-            }
-
-            // === DATA WARNING override (all power flows ~0 W) ===
-            {
-              // If all power-flow entities are ≈ 0 W, assume inverter/Modbus data fault
-              auto nzf = [&](float v)->float { return std::isnan(v) ? 0.0f : v; };
+              msg = "Off grid. Backup mode on. Reduce energy!";
+            } else if (id(suggestion_toggle).state) {
+              // All power flows about 0 W: assume an inverter/Modbus data fault
               const float EPS_W = 1.0f;
               float flows[] = {
-                fabsf(nzf(id(generation_to_house).state)),
-                fabsf(nzf(id(grid_to_house).state)),
-                fabsf(nzf(id(battery_to_house).state)),
-                fabsf(nzf(id(generation_to_battery).state)),
-                fabsf(nzf(id(grid_to_battery).state)),
-                fabsf(nzf(id(generation_to_grid).state)),
-                fabsf(nzf(id(battery_to_grid).state))
+                fabsf(nz(id(generation_to_house).state)),
+                fabsf(nz(id(grid_to_house).state)),
+                fabsf(nz(id(battery_to_house).state)),
+                fabsf(nz(id(generation_to_battery).state)),
+                fabsf(nz(id(grid_to_battery).state)),
+                fabsf(nz(id(generation_to_grid).state)),
+                fabsf(nz(id(battery_to_grid).state))
               };
               bool all_zero = true;
               for (size_t i = 0; i < sizeof(flows) / sizeof(flows[0]); ++i) {
                 if (flows[i] > EPS_W) { all_zero = false; break; }
               }
-              if (all_zero) {
-                sug_last_msg = nullptr;
-                style_box_base();
-                lv_obj_set_style_bg_color(id(suggestion_box), lv_color_hex(0xFF9800), LV_PART_MAIN);
-                lv_obj_set_style_bg_opa  (id(suggestion_box), LV_OPA_COVER,          LV_PART_MAIN);
-                lv_obj_set_style_outline_width(id(suggestion_box), 6, LV_PART_MAIN);
-                lv_obj_set_style_outline_color(id(suggestion_box), lv_color_hex(0xFFFFFF), LV_PART_MAIN);
-                lv_obj_set_style_radius(id(suggestion_box), 12, LV_PART_MAIN);
-                lv_obj_set_style_text_color(id(suggestion_label), lv_color_hex(0xFFFFFF), LV_PART_MAIN);
-                lv_label_set_text(id(suggestion_label), "Data issue. Inverter is not sending information.");
-                goto _suggestion_done;
-              }
-            }
 
-            // === Normal suggestions (respect toggle) ===
-            if (id(suggestion_toggle).state == false) {
-              sug_last_msg = nullptr;
-              lv_obj_add_flag(id(suggestion_box),   LV_OBJ_FLAG_HIDDEN);
-              lv_obj_add_flag(id(suggestion_label), LV_OBJ_FLAG_HIDDEN);
-            } else {
               float solar_w = nz(id(solar_panel_production_sensor).state);
               float g2h_w   = nz(id(grid_to_house).state);
               float b2h_w   = nz(id(battery_to_house).state);
@@ -12848,54 +12331,31 @@ interval:
               float b_in_w  = nz(id(battery_in_w).state);
               float house_w = nz(id(solar_house_consumption_sensor).state);
               float soc_pct = nz(id(battery_soc).state);
-
-              auto set_box = [&](const char* msg, uint32_t border_hex) {
-                if (msg == sug_last_msg && border_hex == sug_last_border && sug_last_epoch == lvx_theme::epoch()) return;
-                sug_last_msg = msg;
-                sug_last_border = border_hex;
-                sug_last_epoch = lvx_theme::epoch();
-                style_box_base();
-                lv_obj_set_style_bg_color(id(suggestion_box), lv_color_hex(lvx_theme::color(0x424242)), LV_PART_MAIN);
-                lv_obj_set_style_bg_opa  (id(suggestion_box), LV_OPA_COVER,          LV_PART_MAIN);
-                lv_obj_set_style_outline_width(id(suggestion_box), 6, LV_PART_MAIN);
-                lv_obj_set_style_border_color(id(suggestion_box), lv_color_hex(border_hex), LV_PART_MAIN);
-                lv_obj_set_style_radius(id(suggestion_box), 12, LV_PART_MAIN);
-                lv_obj_set_style_text_color(id(suggestion_label), lv_color_hex(lvx_theme::color(0xFFFFFF)), LV_PART_MAIN);
-                lv_label_set_text(id(suggestion_label), msg);
-              };
-
               float export_w = fabsf(g2g_w) + fabsf(b2g_w);
 
-              if (soc_pct <= 5.0f && g2h_w > 100.0f) {
-                set_box("Battery is empty. Using grid power. Try to save energy.", 0xB71C1C);
-              } else if (soc_pct < 30.0f) {
-                set_box("Battery is low. Consider reducing usage.", 0xFF9800);
-              } else if (g2h_w >= 4000.0f) {
-                set_box("High grid use. Consider delaying or turning off appliances.", 0xB71C1C);
-              } else if (solar_w > 4000.0f && export_w >= 2000.0f) {
-                set_box("Lots of solar available. Good time to use energy.", 0x388E3C);
-              } else if (b_in_w >= 4000.0f) {
-                set_box("Battery is charging quickly. Storing extra solar.", 0x388E3C);
-              } else if (b2h_w >= 2000.0f) {
-                set_box("Battery is powering the home. Try to limit heavy appliances.", 0xFF9800);
-              } else if (solar_w >= 1000.0f && solar_w < 4000.0f) {
-                set_box("Solar production is moderate. Use energy normally.", 0x2196F3);
-              } else if (solar_w > 50.0f && g2h_w < 200.0f && export_w < 300.0f) {
-                set_box("Energy is balanced. Solar and battery are covering usage.", 0x388E3C);
-              } else if (solar_w <= 50.0f && b2h_w > 100.0f) {
-                set_box("No solar. Running on battery.", 0x2196F3);
-              } else if (solar_w > 50.0f && solar_w < 800.0f) {
-                set_box("Low solar. Battery may start discharging soon.", 0xFF9800);
-              } else if (house_w < 300.0f) {
-                set_box("Low household use. Efficient.", 0x388E3C);
-              } else {
-                set_box("Monitoring your energy flows.", 0x9E9E9E);
-              }
+              if (all_zero)                                          msg = "Data issue. Inverter is not sending information.";
+              else if (soc_pct <= 5.0f && g2h_w > 100.0f)            msg = "Battery is empty. Using grid power. Try to save energy.";
+              else if (soc_pct < 30.0f)                              msg = "Battery is low. Consider reducing usage.";
+              else if (g2h_w >= 4000.0f)                             msg = "High grid use. Consider delaying or turning off appliances.";
+              else if (solar_w > 4000.0f && export_w >= 2000.0f)     msg = "Lots of solar available. Good time to use energy.";
+              else if (b_in_w >= 4000.0f)                            msg = "Battery is charging quickly. Storing extra solar.";
+              else if (b2h_w >= 2000.0f)                             msg = "Battery is powering the home. Try to limit heavy appliances.";
+              else if (solar_w >= 1000.0f && solar_w < 4000.0f)      msg = "Solar production is moderate. Use energy normally.";
+              else if (solar_w > 50.0f && g2h_w < 200.0f && export_w < 300.0f) msg = "Energy is balanced. Solar and battery are covering usage.";
+              else if (solar_w <= 50.0f && b2h_w > 100.0f)           msg = "No solar. Running on battery.";
+              else if (solar_w > 50.0f && solar_w < 800.0f)          msg = "Low solar. Battery may start discharging soon.";
+              else if (house_w < 300.0f)                             msg = "Low household use. Efficient.";
+              else                                                   msg = "Monitoring your energy flows.";
             }
 
-            _suggestion_done:;
+            // Only on a change: every label or style change redraws it
+            if (strcmp(lv_label_get_text(id(hp2_lbl_suggestion)), msg) != 0) lv_label_set_text(id(hp2_lbl_suggestion), msg);
+            static uint8_t tick = 0;      // off grid: flash red / white, ~3 s each
+            tick = (tick + 1) & 7;
+            const lv_color_t color = (is_backup && tick < 4) ? lv_color_hex(0xFF3B30) : lv_color_hex(lvx_theme::color(0xFFFFFF));
+            if (!lv_color_eq(lv_obj_get_style_text_color(id(hp2_lbl_suggestion), LV_PART_MAIN), color))
+              lv_obj_set_style_text_color(id(hp2_lbl_suggestion), color, LV_PART_MAIN);
           }
-          // ==================== END Suggestion Box Logic ====================
 
 
           // --- Daily totals labels (PV, Home, Grid, Battery) ---
@@ -13258,9 +12718,6 @@ interval:
           set_pill(id(pill_backup_sim),  id(lbl_backup_sim_state),  id(simulate_backup_switch).state);
 
 
-          // Homepage selector (template switch)
-          set_pill(id(pill_homepage_select), id(lbl_homepage_select_state), id(change_homepage).state);
-
           // Wi-Fi status pill (connected/disconnected)
           {
             bool connected = (strcmp(lv_label_get_text(id(lbl_wifi_state)), "Connected") == 0);
@@ -13412,45 +12869,6 @@ interval:
             } else {
               lv_label_set_text(id(hp2_lbl_usage_today_value), "--");
               lv_label_set_text(id(hp2_lbl_selfuse_today_value), "--");
-            }
-          }
-      - lambda: |-
-          {
-            // Pull the text your original logic already builds on the other page
-            const char* s = lv_label_get_text(id(suggestion_label));
-
-            // Detect backup/off-grid exactly like elsewhere
-            bool ha_backup = false;
-            if (id(grid_backup_status_ha).has_state()) {
-              ha_backup = !id(grid_backup_status_ha).state;  // grid off => backup
-            }
-            bool sim_backup = id(simulate_backup_switch).state;
-            bool is_backup  = ha_backup || sim_backup;
-
-            // 1) BACKUP MODE HAS PRIORITY — always show & flash, ignore suggestions toggle
-            if (is_backup) {
-              // Use existing message if present, else a safe fallback
-              if (s && s[0]) lv_label_set_text(id(hp2_lbl_suggestion), s);
-              else           lv_label_set_text(id(hp2_lbl_suggestion), "BACKUP MODE — running on solar and battery");
-
-              static uint8_t tick = 0;      // flash red ↔ white
-              tick = (tick + 1) & 7;        // ~1.2s at your 150ms interval
-              bool on = (tick < 4);
-              lv_obj_set_style_text_color(
-                id(hp2_lbl_suggestion),
-                on ? lv_color_hex(0xFF3B30) : lv_color_hex(lvx_theme::color(0xFFFFFF)),
-                LV_PART_MAIN
-              );
-              // Do NOT return early anywhere else; backup already handled
-            }
-            else {
-              // 2) NOT in backup: now we respect the suggestions toggle
-              if (!id(suggestion_toggle).state || !(s && s[0])) {
-                lv_label_set_text(id(hp2_lbl_suggestion), "");
-              } else {
-                lv_label_set_text(id(hp2_lbl_suggestion), s);
-                lv_obj_set_style_text_color(id(hp2_lbl_suggestion), lv_color_hex(lvx_theme::color(0xFFFFFF)), LV_PART_MAIN);
-              }
             }
           }
   - interval: 1s

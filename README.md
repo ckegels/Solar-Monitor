@@ -175,7 +175,7 @@ Start the swipe within about 1 cm of the edge and move at least about 2 cm inwar
 
 ### Getting back home
 
-Tap the **ESPHome logo** top left on any page to go back to the home page (the one chosen under *Original Home Page*); this also stops page rotation. On the home page itself the logo opens the menu. **Home** in the menu does the same.
+Tap the **ESPHome logo** top left on any page to go back to the home page; this also stops page rotation. On the home page itself the logo opens the menu. **Home** in the menu does the same.
 
 ### Themes
 
@@ -216,7 +216,7 @@ Everything you can set on the display, apart from Wi-Fi, can also be set on the 
 | Section | Entities |
 |---|---|
 | Controls | *Screen* (on/off, wakes it), *Screen Brightness*, *Page Rotation* (start/stop), *Presence* |
-| Configuration | *Theme*, *Display Auto Sleep*, *Presence Sensor*, *Display Timeout (s)*, *Show Tips*, *Show Graph Values*, *Show Daily Totals*, *Original Home Page*, *Simulate Backup Mode*, *Page Rotation Interval (s)*, *Rotate …* (one per page), *Home Usage Device 1–5 Name / Icon / Panel*, *Home Usage Subpanel 1–2* (shown or not) *Name / Icon*, *Two Home Assistant Sites*, *Restart Device*. Hidden until you enable them: *Home Assistant Site*, *Site 1/2 Name* |
+| Configuration | *Theme*, *Display Auto Sleep*, *Presence Sensor*, *Display Timeout (s)*, *Show Tips*, *Show Graph Values*, *Show Daily Totals*, *Simulate Backup Mode*, *Page Rotation Interval (s)*, *Rotate …* (one per page), *Home Usage Device 1–5 Name / Icon / Panel*, *Home Usage Subpanel 1–2* (shown or not) *Name / Icon*, *Two Home Assistant Sites*, *Restart Device*. Hidden until you enable them: *Home Assistant Site*, *Site 1/2 Name* |
 | Diagnostic | *Uptime*, *Reset Reason*, *Free Internal RAM*, *Largest Free RAM Block*, *Lowest Free Internal RAM*, *WiFi Signal*, *WiFi IP*, *WiFi SSID*, *HMMD Presence* (the raw sensor pin) |
 
 Configuration and Diagnostic entities are not on Home Assistant's automatic dashboards; open the device page to see them. *Uptime*, *Reset Reason* and the RAM sensors show whether a display restarted unexpectedly or ran low on memory.
@@ -233,7 +233,7 @@ Take the new `Firmware/solar-display.yaml`, keep your own `secrets.yaml`, and up
 - **SolarEdge:** take the current package. It only adds `binary_sensor.solar_grid_connected` and `sensor.solar_battery_soc`.
 - **Sigenergy:** the package's `package_sigen_…` sensors were renamed to the shared `solar_…` names. Follow [`Homeassistant/migration/HANDOVER-sigenergy-ha.md`](Homeassistant/migration/HANDOVER-sigenergy-ha.md). It renames the entities in Home Assistant so their history is kept, and updates your dashboards. Then flash the display.
 
-Renamed entities (Home Assistant creates new entity ids, update automations that used them): *homepage toggle* → *Original Home Page*, *Show Tips/Suggestions* → *Show Tips*. Both start from their default once after the update. *Screen Backlight* and *LD1125H Distance* are gone; use *Screen* and *Screen Brightness*.
+The original (old, basic) home page and its *homepage toggle* / *Original Home Page* switch are gone; the display always uses the home page with the four tiles. Delete the switch's entity in Home Assistant if it stays behind as unavailable. Renamed entity (Home Assistant creates a new entity id, update automations that used it): *Show Tips/Suggestions* → *Show Tips*. It starts from its default once after the update. *Screen Backlight* and *LD1125H Distance* are gone; use *Screen* and *Screen Brightness*.
 
 ### If you changed the old YAML yourself
 
